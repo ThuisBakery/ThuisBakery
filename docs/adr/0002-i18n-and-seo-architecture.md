@@ -1,6 +1,6 @@
 # Bilingual URL structure and the SEO baseline
 
-Status: accepted (2026-09-19)
+Status: accepted (2026-09-19), amended 2026-09-21 (Business Profile address, issue #17)
 
 The site is bilingual English/Dutch. **English sits at the bare root and Dutch lives under a `/nl`
 prefix.** There is no automatic language detection anywhere: a single `proxy.ts` rewrite (never a
@@ -141,8 +141,36 @@ Every marked-up value — price, hours, phone — must be rendered on the page c
 is a constraint on the content model (issue #11), not a markup detail.
 
 The website never prints the street address; `areaServed` is therefore permanent, not a launch-time
-placeholder. Whether the Google Business Profile shows the address is a separate, owner-side
-decision and is not governed by this ADR.
+placeholder.
+
+### Amendment, 2026-09-21: the Business Profile withholds the address too (issue #17)
+
+This ADR originally left the Google Business Profile's address to a separate owner-side decision.
+It has been taken, and it lands the same way: **the address is withheld on the Profile as well, and
+Jana is registered as a service-area business covering Uithoorn.**
+
+This was decided against this repo's recommendation, and both sides are worth keeping.
+
+The case for showing it: Google ranks the local pack partly on **proximity to the searcher**,
+measured from the listed address, so a real Uithoorn address is materially stronger for a query
+like "taart Uithoorn" than none. Jana also genuinely qualifies as a storefront — pickup is the
+entire fulfilment model, so customers really are served at the location.
+
+The case that won: showing an address commits her to Google's storefront rule — **permanent
+signage on the house, staffed during stated hours** — and that is a change to where she and her
+family live, not a marketing setting. The owner declined it.
+
+The cost, stated plainly: a service-area listing is a visibly weaker class of listing, and the
+address being hidden does not stop proximity being computed from it — so the ranking cost of a
+home in a village is paid either way, without the strength of a full listing in return. Combined
+with issue #7's finding that the Profile *is* the ranking lever, this is the largest deliberate SEO
+concession the project makes.
+
+Recorded here rather than on the launch checklist because it is **hard to reverse** — flipping a
+Profile address later can trigger re-verification — and because a future reader finding this ADR
+would otherwise assume the website rule above settled the whole question. `areaServed` is now
+permanent in both places, and NAP carries no street address anywhere (see
+`docs/launch-checklist.md`).
 
 ## What is code-side and what is not
 
