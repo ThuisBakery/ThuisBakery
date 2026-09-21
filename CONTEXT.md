@@ -52,6 +52,10 @@ _Avoid_: Disclaimer, Allergy warning
 A page Jana assembles herself out of blocks, living at the bare root. Everything the catalogue and the conversation path do not cover — seasonal pages, Occasion pages, anything not yet imagined. Distinguished from the nine coded routes, whose sections Jana can fill but cannot rearrange.
 _Avoid_: Landing page, Content page, Custom page, CMS page
 
+**Published**:
+Said of an Item or page that is live to customers. One state for the whole document, never per locale: something is Published only once it is complete in both Dutch and English.
+_Avoid_: Live, Active, Visible, Released
+
 ### Ordering
 
 **Enquiry**:
