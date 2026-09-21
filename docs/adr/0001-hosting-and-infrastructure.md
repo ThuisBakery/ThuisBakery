@@ -3,13 +3,19 @@
 Status: accepted (2026-09-19)
 
 The ThuisBakery site runs on **Vercel Pro**, with **Neon Postgres** (Free plan, Frankfurt) as the
-database, **Cloudflare R2** for uploaded media, and **Cloudflare Images** for responsive transforms.
+database, and **Vercel Blob** for uploaded media, optimized by **Vercel's own image optimization**.
 Vercel functions are pinned to the **`fra1`** region so they sit next to the database. Everything is
 a managed service; nothing is self-hosted, in production or locally.
 
 Total running cost is roughly **$20/month** — the Vercel Pro platform fee, which includes one seat
-and $20 of usage credit. Neon Free, R2 at this volume, and Cloudflare Images under 5,000
-transforms/month are all $0.
+and $20 of usage credit. Neon Free is $0, and Blob storage plus image transformations at this
+volume are cents, drawn from that credit.
+
+> **Amended 2026-09-21 (issue #15).** The media leg originally read *Cloudflare R2 for uploaded
+> media, Cloudflare Images for responsive transforms*. It was wrong: Vercel optimizes remote images
+> natively, so Cloudflare Images was paying an extra vendor for a job the host already does. See
+> [Media: why not Cloudflare](#media-why-not-cloudflare) below. Issues #4 and #8 recorded the
+> superseded choice.
 
 ## Why
 
@@ -55,7 +61,9 @@ be re-proposed.
   next tier is $25/month with nothing between — and 512 MB is not generous for Payload's admin.
 - **Fly.io** (~$6/month, 1 GB, Frankfurt). More memory for less money than Render, but a
   machines-and-`fly.toml` workflow with more operational surface than this project has appetite for.
-- **Cloudflare Workers.** Attractive on paper — $5/month, one vendor alongside R2 and Images, and
+- **Cloudflare Workers.** Attractive on paper at the time — $5/month, one vendor alongside the R2
+  and Images the media leg then assumed (that leg has since moved to Vercel Blob, so the
+  one-vendor argument is now weaker still), and
   Hyperdrive is included free so Neon survives. Rejected on timing: Cloudflare's Next.js guide now
   recommends **vinext**, which is in beta, demoting OpenNext to a legacy path, and Payload's own
   Workers template uses **D1**, whose adapter Payload marks beta. Two beta layers under a live
@@ -85,6 +93,29 @@ Two things make that acceptable rather than reckless:
    migration is the cheap habit that covers the realistic failure case.
 2. **An explicit revisit trigger**, below.
 
+## Media: why not Cloudflare
+
+Vercel's image optimization handles remote images natively, via `next/image` plus
+`images.remotePatterns`. That is precisely what Cloudflare Images was in the stack to do, so once
+the host is Vercel, Cloudflare Images is redundant.
+
+Its pricing is also no longer per source image — that is the legacy plan. It is now billed **per
+transformation, only on cache MISS or STALE**: 5,000 transformations/month included on Hobby, then
+$0.05–$0.0812 per 1,000, alongside image cache reads (300K/month included) and writes (100K/month).
+A catalogue of a few dozen Items at five widths each is a few hundred transformations, cached
+thereafter. It does not register against Pro's $20 credit.
+
+With transforms settled, storage was the only remaining question, and **both candidates are free at
+this volume** — R2 gives 10 GB and zero egress; Blob is $0.023/GB-month against the same credit. So
+the choice is operational, not financial, and **Vercel Blob wins on setup cost**: no second vendor,
+no API tokens, no public custom domain, one `vercel blob create-store`, and Payload ships a
+first-party `@payloadcms/storage-vercel-blob` adapter. R2 would need `@payloadcms/storage-s3` —
+Payload's `storage-r2` adapter is Workers-only, per issue #4 — plus the account and domain setup.
+
+The lock-in this accepts is small and deliberate: R2's advantages are zero egress and portable S3,
+neither of which bites at a bakery's photo volume, and either way the difference is one adapter
+line if it ever does.
+
 ## Revisit triggers
 
 - **Upgrade Neon to Launch** as soon as the owner has entered real content she would be upset to
@@ -92,13 +123,18 @@ Two things make that acceptable rather than reckless:
 - **Reconsider Cloudflare Workers** once vinext is out of beta *and* Payload documents a
   Postgres-over-Hyperdrive path. At that point the one-vendor story becomes genuinely attractive.
 - **Reconsider Render or Fly** if Payload's admin cold-start latency on Vercel proves intolerable in
-  practice. This is the risk knowingly accepted above, and issue #15 measures it.
+  practice. This is the risk knowingly accepted above. Issue #15 was written to measure it up front
+  and was closed on 2026-09-21 without doing so: the number is unpublished and only a real deploy
+  would produce it, and the first build session produces that deploy anyway. **The first editing
+  session in the real admin is the measurement.** If Jana waits long enough to notice, this trigger
+  fires.
 
 ## Assumptions this costing depends on
 
 - Public pages are statically generated and never read the database at request time. Issue #3's
   Neon choice already depends on this; so does the claim that customers never feel a cold start.
-- Image transforms stay on Cloudflare (free under 5,000/month) rather than being metered against
-  Vercel's included usage.
+- Image transformations stay in the low hundreds per month, which holds only while public pages are
+  statically generated and the optimized derivatives stay cached. A cache-busting change to
+  `minimumCacheTTL`, image sizes or quality settings re-bills every image.
 - Usage stays within Vercel Pro's included $20 credit. Beyond that, usage bills on top of the
   platform fee.
