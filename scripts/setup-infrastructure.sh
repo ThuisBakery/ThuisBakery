@@ -249,8 +249,15 @@ pause "Branching on, and no hand-set DATABASE_URL?"
 # ── 5 ─────────────────────────────────────────────────────────────────────
 stage "PAYLOAD_SECRET"
 say "Payload's signing secret. Unlike DATABASE_URL, this one is ours to set."
-PAYLOAD_SECRET_VALUE="$(openssl rand -hex 32)"
-say "Generated a fresh 32-byte secret."
+PAYLOAD_SECRET_VALUE="$(_existing PAYLOAD_SECRET || true)"
+if [[ -n "$PAYLOAD_SECRET_VALUE" ]]; then
+  say "Reusing the secret already in $ENV_FILE."
+  note "Re-running this wizard must not mint a new one: that would invalidate"
+  note "every existing login session, including Jana's."
+else
+  PAYLOAD_SECRET_VALUE="$(openssl rand -hex 32)"
+  say "Generated a fresh 32-byte secret."
+fi
 write_env PAYLOAD_SECRET "$PAYLOAD_SECRET_VALUE"
 step "Add the same value to Vercel, for all three environments:"
 note "  vercel env add PAYLOAD_SECRET production"
