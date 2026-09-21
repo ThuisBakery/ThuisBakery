@@ -10,6 +10,10 @@ Issues live as GitHub issues in `ThuisBakeryTech/ThuisBakery`, managed via the `
 
 Default label vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
 
+### Build conventions
+
+Package manager, TypeScript strictness, lint, testing, CI and environment variables. See `docs/agents/build-conventions.md`.
+
 ### Domain docs
 
 Single-context layout: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
