@@ -33,6 +33,20 @@ generated code does not answer to our standards.
 The ESLint and Prettier setups that Next and Payload ship, unmodified. **No pre-commit hook** — this
 is a solo repo, and the Vercel preview build already fails on lint and type errors.
 
+Two carve-outs, both recorded when the scaffold landed (issue #29):
+
+- **Prettier does not touch Markdown.** `CONTEXT.md`, the ADRs and these docs are hand-wrapped
+  prose; reflowing them would bury their history in a formatting diff, and prose is not what
+  Prettier is here for. `.prettierignore` holds `*.md` and `docs/`.
+- **Payload's template wraps Next's ESLint config in `FlatCompat`**, which crashes on
+  `eslint-config-next` 16's native flat config. `eslint.config.mjs` imports Next's flat config
+  directly instead. The rule sets themselves — Next's, and Payload's softening of them — are
+  untouched.
+
+The ignore lists for generated code appear in three places (`.prettierignore`, `eslint.config.mjs`,
+`vitest.config.mts` coverage). They have to be kept in step by hand; a new generated file means three
+edits.
+
 ## Testing
 
 **Vitest.** Behaviour only, never styles. No snapshot tests.
@@ -63,6 +77,10 @@ threshold), `tsc --noEmit`.
 
 Lint and migrations are deliberately **not** in CI — the Vercel preview build runs both already, and
 running them twice buys nothing.
+
+One step beyond that list is unavoidable: `next typegen` runs before `tsc`, because `tsconfig.json`
+includes `next-env.d.ts` and `.next/types`, which only a Next build or typegen produces. Without it
+the typecheck fails on missing files rather than on real type errors.
 
 ## Environment variables
 

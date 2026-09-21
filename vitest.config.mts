@@ -13,7 +13,14 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html'],
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/payload-types.ts', 'src/migrations/**'],
+      // Generated or Payload-shipped code. Kept in step with the same list in
+      // eslint.config.mjs and .prettierignore.
+      exclude: [
+        'src/payload-types.ts',
+        'src/payload-generated-schema.ts',
+        'src/migrations/**',
+        'src/app/\\(payload\\)/**',
+      ],
     },
   },
 })

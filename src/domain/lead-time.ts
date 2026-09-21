@@ -49,23 +49,26 @@ const addDays = (date: CalendarDate, days: number): CalendarDate => {
  * counts as having arrived the next day — that is the half of Lead time the day count
  * alone does not express.
  */
-export const earliestPickupDate = (arrival: ArrivalMoment, leadTime: LeadTime): CalendarDate => {
+export const earliestRequestedPickupDate = (
+  arrival: ArrivalMoment,
+  leadTime: LeadTime,
+): CalendarDate => {
   const missedTodaysCutoff =
     minutesSinceMidnight(arrival.time) >= minutesSinceMidnight(leadTime.cutoff)
 
   return addDays(arrival.date, leadTime.days + (missedTodaysCutoff ? 1 : 0))
 }
 
-/** Whether `requested` is far enough ahead of `arrival` to satisfy `leadTime`. */
-export const isPickupDateAllowed = (
-  requested: CalendarDate,
+/** Whether `requestedPickupDate` is far enough ahead of `arrival` to satisfy `leadTime`. */
+export const isRequestedPickupDateAllowed = (
+  requestedPickupDate: CalendarDate,
   arrival: ArrivalMoment,
   leadTime: LeadTime,
 ): boolean => {
-  const earliest = earliestPickupDate(arrival, leadTime)
+  const earliest = earliestRequestedPickupDate(arrival, leadTime)
 
   return (
-    Date.UTC(requested.year, requested.month - 1, requested.day) >=
+    Date.UTC(requestedPickupDate.year, requestedPickupDate.month - 1, requestedPickupDate.day) >=
     Date.UTC(earliest.year, earliest.month - 1, earliest.day)
   )
 }

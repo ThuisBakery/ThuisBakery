@@ -1,5 +1,3 @@
-import './styles.css'
-
 /**
  * A placeholder while the real routes are built. Deliberately reads nothing: public
  * pages are statically generated and never touch the database at request time (ADR-0001).
