@@ -187,7 +187,7 @@ finish() {
 # working admin panel. Follows ADR-0001 (hosting) and ADR-0005 (migrations).
 # ──────────────────────────────────────────────────────────────────────────
 
-TOTAL_STAGES=8
+TOTAL_STAGES=9
 ENV_FILE=".env.local"
 
 # Every prompt here is a `read`. Without an interactive stdin they all return
@@ -218,6 +218,32 @@ note "The team to deploy under is 'dparfitt's projects'."
 pause "Logged in?"
 
 # ── 2 ─────────────────────────────────────────────────────────────────────
+stage "Turn ThuisBakeryTech into a GitHub organization"
+say "Vercel will not let a repo COLLABORATOR create a project from a repo owned"
+say "by a personal account — only its Owner. DParfitt has push, not ownership."
+say "An organization has no such rule: any member with repo access can import."
+warn "This is effectively permanent. An organization cannot be turned back into"
+warn "a user, and you will never sign in as ThuisBakeryTech again — which is why"
+warn "DParfitt becomes the owner."
+step "Sign in as ThuisBakeryTech (use a private window, to keep DParfitt's"
+note "session alive in your main one)."
+open_url "https://github.com/settings/organizations"
+step "Settings → Access → Organizations → 'Transform account'."
+step "Click 'Turn ThuisBakeryTech into an organization'; read the warning."
+step "Choose DParfitt as the organization owner. Pick the Free plan."
+note "The repo path, all issues and the wayfinder map are preserved: the repo"
+note "stays at ThuisBakeryTech/ThuisBakery, so no committed doc changes."
+warn "GitHub Actions is NOT automatically enabled on a converted account. Our CI"
+warn "workflow lives at .github/workflows/pull-request.yml — stage 9 checks that"
+warn "it actually runs on the pull request, and re-enables it if not."
+pause "Converted, with DParfitt as owner?"
+say ""
+step "Back as DParfitt, confirm you can see the repo:"
+note "  gh api repos/ThuisBakeryTech/ThuisBakery --jq .permissions"
+note "You want admin: true, or at least push with org membership."
+pause "Access confirmed?"
+
+# ── 3 ─────────────────────────────────────────────────────────────────────
 stage "Create the Vercel project"
 say "Import the GitHub repo so pushes deploy themselves."
 open_url "https://vercel.com/new"
@@ -232,7 +258,7 @@ say "Linking this checkout to it:"
 step "Run: vercel link"
 pause "Project created and linked?"
 
-# ── 3 ─────────────────────────────────────────────────────────────────────
+# ── 4 ─────────────────────────────────────────────────────────────────────
 stage "Provision Neon: Frankfurt, Free"
 say "Provisioning through Vercel's native Neon integration is what makes"
 say "DATABASE_URL an injected, per-deployment value rather than a pasted one."
@@ -246,7 +272,7 @@ say "creating any data — the region cannot be changed afterwards."
 ask NEON_PROJECT_NAME "Neon resource name as you named it:"
 pause "Neon provisioned and connected?"
 
-# ── 4 ─────────────────────────────────────────────────────────────────────
+# ── 5 ─────────────────────────────────────────────────────────────────────
 stage "Confirm per-preview branching and hands-off DATABASE_URL"
 say "Two things to verify, both load-bearing for ADR-0005's 'the preview"
 say "deployment is the rehearsal'."
@@ -260,7 +286,7 @@ step "Confirm DATABASE_URL and DATABASE_URL_UNPOOLED appear as integration-owned
 warn "Never add either by hand here. A hand-set value shadows the per-branch one."
 pause "Branching on, and no hand-set DATABASE_URL?"
 
-# ── 5 ─────────────────────────────────────────────────────────────────────
+# ── 6 ─────────────────────────────────────────────────────────────────────
 stage "PAYLOAD_SECRET"
 say "Payload's signing secret. Unlike DATABASE_URL, this one is ours to set."
 PAYLOAD_SECRET_VALUE="$(_existing PAYLOAD_SECRET || true)"
@@ -282,7 +308,7 @@ printf '  %s%s%s\n' "$BOLD" "$PAYLOAD_SECRET_VALUE" "$RESET"
 warn "Changing this later invalidates every existing login session."
 pause "Set in all three Vercel environments?"
 
-# ── 6 ─────────────────────────────────────────────────────────────────────
+# ── 7 ─────────────────────────────────────────────────────────────────────
 stage "The long-lived Neon 'dev' branch"
 say "ADR-0001: no database ever runs locally. Local points at one persistent"
 say "Neon branch instead. This is the only connection string pasted by hand."
@@ -298,7 +324,7 @@ write_env DATABASE_URL_UNPOOLED "$DATABASE_URL_UNPOOLED"
 note "$ENV_FILE is gitignored. These never go into Vercel by hand."
 pause "Both strings saved?"
 
-# ── 7 ─────────────────────────────────────────────────────────────────────
+# ── 8 ─────────────────────────────────────────────────────────────────────
 stage "The first migration"
 say "Payload's Users collection needs a migration before any deploy can run"
 say "'payload migrate'. Generated locally, read, then committed (ADR-0005)."
@@ -319,7 +345,7 @@ else
 fi
 pause "Migration generated and committed?"
 
-# ── 8 ─────────────────────────────────────────────────────────────────────
+# ── 9 ─────────────────────────────────────────────────────────────────────
 stage "Preview deploy and the admin panel"
 say "The last acceptance criterion: the admin panel loads on a deployed"
 say "preview URL. This is also ADR-0001's cold-start measurement."
@@ -327,6 +353,11 @@ step "Run: git push -u origin first-migration"
 step "Open a pull request against main. The PR gets a Vercel preview, and the"
 note "Neon integration gives that preview its own branch of the database."
 step "Wait for the preview to build."
+step "Check CI ran too — the org conversion in stage 2 disables Actions:"
+note "  gh pr checks"
+note "If no 'Pull request' workflow run appears, enable Actions at"
+note "  Settings → Actions → General → Allow all actions"
+note "on the ThuisBakeryTech organization, then push an empty commit."
 step "In the build log, confirm the first line of the build is 'payload migrate'"
 note "and that it reports the migration applied. That is the rehearsal working."
 step "Open <preview-url>/admin and create the first admin user."
