@@ -71,8 +71,16 @@ Free text on an Enquiry for anything the form does not model — a written messa
 _Avoid_: Notes, Comments, Customisation, Wensen
 
 **Inspiration photo**:
-One image a customer may attach to an Enquiry to show what they have in mind.
+One image a customer may attach to an Enquiry to show what they have in mind. Downscaled in the customer's own browser before it is sent, and kept apart from the photographs Jana publishes.
 _Avoid_: Attachment, Reference image, Upload
+
+**Submission**:
+The stored record of an Enquiry. The Enquiry is what the customer sends; the Submission is what the site keeps, and it outlives both emails. Anonymised when old rather than deleted.
+_Avoid_: Entry, Form response, Lead, Record
+
+**Delivery status**:
+Whether the emails about a Submission reached anyone. A property of the notification, never of the Enquiry itself — an Enquiry is no less real for having failed to send.
+_Avoid_: Sent, Email status, State
 
 **Requested pickup date**:
 The date a customer asks to collect on. Requested, never confirmed: only Jana's reply confirms a date.
