@@ -10,19 +10,21 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CaretLeft, CaretRight, MoonStars, Sun } from "@phosphor-icons/react";
 
-/* B ("The Table", the photography-led editorial one) was rejected in
-   review as a cliche and is no longer in the rotation. It stays on this
-   branch in git history rather than in the switcher. */
+/* Superseded but still reachable by URL, kept on this branch for the
+   record rather than in the rotation:
+     ?variant=B  "The Table", rejected as a cliche.
+     ?variant=C  "The Conversation", the Estimate demo. The component is
+                 still worth looking at; putting it on the homepage is not.
+     ?variant=D  the first merge, also builder-on-homepage. */
 export const VARIANTS = [
-  { key: "D", name: "Menu Card + conversation" },
+  { key: "E", name: "Menu Card + wall of cakes" },
   { key: "A", name: "Menu Card" },
-  { key: "C", name: "The Conversation" },
 ] as const;
 
 export function PrototypeSwitcher() {
   const router = useRouter();
   const params = useSearchParams();
-  const current = (params.get("variant") ?? "D").toUpperCase();
+  const current = (params.get("variant") ?? "E").toUpperCase();
   const index = Math.max(
     0,
     VARIANTS.findIndex((v) => v.key === current),

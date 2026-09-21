@@ -13,13 +13,14 @@ Then open `http://localhost:3000/prototype/design-direction?variant=A`
 Variants, switchable from the floating bar at the bottom (or the left and
 right arrow keys):
 
-- **D, Menu Card + conversation**: the merge, and the default. A's register
-  with a hero photograph, plus C's fact band, Estimate and FAQ.
-- **A, Menu Card**: type-led. Jana's printed menu becomes the site.
-- **C, The Conversation**: enquiry-first. The Estimate from #11 on the homepage.
+- **E, Menu Card + wall of cakes**: the current one, and the default. A's
+  register, a full-bleed gallery wall midway down, and no builder on the
+  homepage.
+- **A, Menu Card**: type-led, kept for comparison.
 
-**B, The Table** was rejected in review as a cliche. It is still in the code
-on this branch (`?variant=B`) but is out of the switcher rotation.
+Superseded, still reachable by URL: `?variant=B` (rejected as a cliche),
+`?variant=C` (the Estimate component, worth seeing, but not on a homepage),
+`?variant=D` (the first merge, also builder-on-homepage).
 
 The moon and sun button on that bar forces light or dark, so both modes can
 be compared. The real site would ship `prefers-color-scheme` alone.

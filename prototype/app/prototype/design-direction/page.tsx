@@ -12,6 +12,7 @@ import VariantA from "@/components/proto/VariantA";
 import VariantB from "@/components/proto/VariantB";
 import VariantC from "@/components/proto/VariantC";
 import VariantD from "@/components/proto/VariantD";
+import VariantE from "@/components/proto/VariantE";
 
 export default async function Page({
   searchParams,
@@ -19,7 +20,7 @@ export default async function Page({
   searchParams: Promise<{ variant?: string }>;
 }) {
   const { variant } = await searchParams;
-  const key = (variant ?? "D").toUpperCase();
+  const key = (variant ?? "E").toUpperCase();
 
   return (
     <>
@@ -29,8 +30,10 @@ export default async function Page({
         <VariantB />
       ) : key === "C" ? (
         <VariantC />
-      ) : (
+      ) : key === "D" ? (
         <VariantD />
+      ) : (
+        <VariantE />
       )}
       <Suspense fallback={null}>
         <PrototypeSwitcher />
