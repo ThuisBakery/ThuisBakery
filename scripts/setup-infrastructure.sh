@@ -193,15 +193,16 @@ ENV_FILE=".env.local"
 banner "ThuisBakery infrastructure (issue #29)"
 
 # ── 1 ─────────────────────────────────────────────────────────────────────
-stage "Vercel CLI and the Pro plan"
-say "ADR-0001 chose Vercel Pro. Hobby forbids commercial use, so the plan is"
-say "not a detail we can defer."
+stage "Vercel CLI and login"
+say "Hobby is fine for building. ADR-0001's Pro requirement is about commercial"
+say "use, which starts at launch, not now — so the upgrade is a launch-blocker"
+say "on docs/launch-checklist.md rather than a step here."
+note "Checked against Vercel's docs: Hobby allows a single Function region, and"
+note "vercel.json pins exactly one (fra1). Nothing in issue #29 needs Pro."
 step "Install the CLI if you haven't: pnpm add -g vercel"
 step "Log in: vercel login"
-open_url "https://vercel.com/account/plans"
-step "Confirm the team you'll deploy under is on Pro. Upgrade it if not."
-note "Today that team is 'dparfitt's projects', which has no ThuisBakery project yet."
-pause "On Pro and logged in?"
+note "The team to deploy under is 'dparfitt's projects'."
+pause "Logged in?"
 
 # ── 2 ─────────────────────────────────────────────────────────────────────
 stage "Create the Vercel project"

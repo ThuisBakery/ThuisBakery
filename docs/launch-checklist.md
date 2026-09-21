@@ -47,6 +47,16 @@ is moving.
 
 Nothing here is optional. The site does not go live with any of it outstanding.
 
+### Hosting
+
+- [ ] **Upgrade the Vercel team to Pro before the site is reachable at thuisbakery.com.**
+      The build runs on Hobby deliberately — ADR-0001 chose Pro for its *commercial use* terms, and
+      commercial use begins at launch, not during development. Hobby costs the build nothing:
+      it allows a single Function region and `vercel.json` pins exactly one (`fra1`).
+      Do this **before** the DNS flip below, not after. A live business site on Hobby is a terms
+      breach, and the enforcement is account suspension — which would take the site down at the
+      worst possible moment.
+
 ### DNS and serving
 
 - [ ] Drop the TTL on the apex `A` and `www` records at Squarespace **a day ahead** of the flip.
