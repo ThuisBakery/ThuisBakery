@@ -13,14 +13,14 @@ Then open `http://localhost:3000/prototype/design-direction?variant=A`
 Variants, switchable from the floating bar at the bottom (or the left and
 right arrow keys):
 
-- **E, Menu Card + wall of cakes**: the current one, and the default. A's
-  register, a full-bleed gallery wall midway down, and no builder on the
-  homepage.
+- **F, Illustrated menu**: the current one, and the default. Each Category
+  is a photograph with its name, line and price. No separate gallery.
 - **A, Menu Card**: type-led, kept for comparison.
 
 Superseded, still reachable by URL: `?variant=B` (rejected as a cliche),
-`?variant=C` (the Estimate component, worth seeing, but not on a homepage),
-`?variant=D` (the first merge, also builder-on-homepage).
+`?variant=C` (the Estimate component, not for a homepage), `?variant=D`
+(first merge, builder-on-homepage), `?variant=E` (menu and photo wall as
+separate sections, rejected).
 
 The moon and sun button on that bar forces light or dark, so both modes can
 be compared. The real site would ship `prefers-color-scheme` alone.

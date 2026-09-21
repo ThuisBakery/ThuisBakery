@@ -15,16 +15,18 @@ import { CaretLeft, CaretRight, MoonStars, Sun } from "@phosphor-icons/react";
      ?variant=B  "The Table", rejected as a cliche.
      ?variant=C  "The Conversation", the Estimate demo. The component is
                  still worth looking at; putting it on the homepage is not.
-     ?variant=D  the first merge, also builder-on-homepage. */
+     ?variant=D  the first merge, also builder-on-homepage.
+     ?variant=E  menu and photo wall as separate sections. Rejected: the
+                 menu and the images want to be one thing. */
 export const VARIANTS = [
-  { key: "E", name: "Menu Card + wall of cakes" },
+  { key: "F", name: "Illustrated menu" },
   { key: "A", name: "Menu Card" },
 ] as const;
 
 export function PrototypeSwitcher() {
   const router = useRouter();
   const params = useSearchParams();
-  const current = (params.get("variant") ?? "E").toUpperCase();
+  const current = (params.get("variant") ?? "F").toUpperCase();
   const index = Math.max(
     0,
     VARIANTS.findIndex((v) => v.key === current),
