@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+/*
+  PROTOTYPE ONLY. Throwaway design-direction spike for issue #13.
+  Tokens extracted from Jana's own printed menu card, then expanded.
+
+  Strategy: CSS custom properties swapped under prefers-color-scheme,
+  surfaced to Tailwind via @theme. There are no `dark:` utilities anywhere
+  in this prototype. One strategy, per the skill's token rule.
+*/
+
+:root {
+  /* Jana's two colours, straight off the menu card */
+  --ground: #eae3d9; /* warm cream */
+  --raised: #f4efe6; /* lifted surface, same family */
+  --ink: #3e2e26; /* espresso */
+  --ink-muted: #63544a; /* 5.69:1 on ground */
+  --accent: #4f5a31; /* deep olive, the one expansion */
+  --accent-ink: #f4efe6; /* 6.46:1 on accent */
+  --rule: #cfc4b5; /* hairline */
+  --shadow: 62 46 38; /* tinted to the ink hue, never pure black */
+}
+
+/* Dark values, defined once and applied from two places: the system
+   preference, and an explicit data-theme so both modes can be inspected
+   during review. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #2a1f19; /* her espresso, deepened */
+    --raised: #362a22;
+    --ink: #f4efe6; /* her cream, inverted in */
+    --ink-muted: #b9aa9c; /* 7.10:1 on ground */
+    --accent: #93a06a; /* olive lifted for dark ground, 5.71:1 */
+    --accent-ink: #21261a;
+    --rule: #4a3b31;
+    --shadow: 12 8 6;
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground: #2a1f19;
+  --raised: #362a22;
+  --ink: #f4efe6;
+  --ink-muted: #b9aa9c;
+  --accent: #93a06a;
+  --accent-ink: #21261a;
+  --rule: #4a3b31;
+  --shadow: 12 8 6;
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-raised: var(--raised);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-rule: var(--rule);
+
+  --font-display: var(--font-cormorant), Georgia, serif;
+  --font-script: var(--font-parisienne), cursive;
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+
+  /* Shape Consistency Lock: this page is all-sharp. Print does not round. */
+  --radius-none: 0px;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Focus ring, visible against both grounds */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Every animation in this prototype collapses under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.hairline {
+  border-top: 1px solid var(--rule);
+}
+
+/* Variant B marquee. Transform-only, so it stays on the compositor.
+   Collapses to static under the reduced-motion block above. */
+@keyframes marquee-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+.marquee {
+  animation: marquee-drift 42s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee { animation: none; }
+}
