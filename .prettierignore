@@ -1,0 +1,17 @@
+# Generated code does not answer to our standards.
+# See docs/agents/build-conventions.md.
+src/payload-types.ts
+src/payload-generated-schema.ts
+src/app/(payload)/admin/importMap.js
+src/migrations/
+
+.next/
+coverage/
+pnpm-lock.yaml
+prototype/
+
+# Hand-wrapped prose that predates Prettier. Reflowing it would bury the ADRs' history
+# in a formatting diff, and prose is not what Prettier is here for.
+*.md
+docs/
+

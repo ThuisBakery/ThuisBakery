@@ -1,0 +1,30 @@
+# Install, test, typecheck. Lint and migrations are deliberately absent: the Vercel
+# preview build runs both already. See docs/agents/build-conventions.md.
+name: Pull request
+
+on:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Coverage is reported, never gated.
+      - run: pnpm exec vitest run --coverage
+
+      # Writes `next-env.d.ts` and `.next/types`, which `tsconfig.json` includes and
+      # which only a Next build or typegen produces.
+      - run: pnpm exec next typegen
+
+      - run: pnpm exec tsc --noEmit

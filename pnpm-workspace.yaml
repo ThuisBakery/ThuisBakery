@@ -1,0 +1,10 @@
+# This is NOT a monorepo. There is deliberately no `packages:` key here: one package.json,
+# one lockfile, at the repo root (build-conventions.md).
+#
+# The file exists only because pnpm 12 reads settings from here rather than from
+# package.json's `pnpm` field. `allowBuilds` is the successor to `onlyBuiltDependencies`,
+# and without it `pnpm install` exits non-zero on these three native postinstalls.
+allowBuilds:
+  sharp: true
+  esbuild: true
+  unrs-resolver: true
