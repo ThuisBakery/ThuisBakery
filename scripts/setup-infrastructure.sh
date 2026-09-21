@@ -190,6 +190,19 @@ finish() {
 TOTAL_STAGES=8
 ENV_FILE=".env.local"
 
+# Every prompt here is a `read`. Without an interactive stdin they all return
+# EOF immediately, and the wizard runs start to finish answering nothing —
+# writing an empty DATABASE_URL and a throwaway PAYLOAD_SECRET on its way past.
+# That happened once. Refuse instead.
+if [[ ! -t 0 ]]; then
+  printf '\n%s  This wizard needs an interactive terminal.%s\n\n' "$RED" "$RESET"
+  printf '  stdin is not a TTY, so every prompt would read EOF and be skipped.\n'
+  printf '  Run it directly in your own terminal:\n\n'
+  printf '      %sbash scripts/setup-infrastructure.sh%s\n\n' "$BOLD" "$RESET"
+  printf '  Not through a pipe, and not from inside an agent or CI session.\n\n'
+  exit 1
+fi
+
 banner "ThuisBakery infrastructure (issue #29)"
 
 # ── 1 ─────────────────────────────────────────────────────────────────────
