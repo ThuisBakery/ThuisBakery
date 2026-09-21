@@ -72,6 +72,25 @@ export const ITEMS = [
   { name: "Salted Caramel Brownies", price: "€18", seed: "thuisbakery-brownies" },
 ];
 
+export const FAQ = [
+  {
+    q: "How far ahead do I need to ask?",
+    a: "Four days as a minimum, and by 18:00 on the day you send it. Saturdays and December go much faster than that, so earlier is safer.",
+  },
+  {
+    q: "Where do I collect it?",
+    a: "From Jana's home in Uithoorn. The exact address is sent once the day and time are agreed, so there is nothing to turn up to before then.",
+  },
+  {
+    q: "Can I have a photo of what I want copied?",
+    a: "Attach it to the enquiry. Jana will say what she can do with it and what it would cost, which is usually the quickest way to get to a real answer.",
+  },
+  {
+    q: "Is the estimate the price?",
+    a: "No. It covers size, quantity and fillings. Anything written, coloured or themed is priced by Jana when she replies.",
+  },
+];
+
 export const NAV = [
   { href: "#cakes", label: "Cakes" },
   { href: "#nibbles", label: "Nibbles" },
@@ -83,8 +102,29 @@ export const NAV = [
    the hero and the closing band. One label per intent, everywhere. */
 export const CTA = "Start an enquiry";
 
-export function img(seed: string, w: number, h: number) {
-  return `https://picsum.photos/seed/${seed}/${w}/${h}`;
+/* Placeholder photography.
+
+   Picsum returns random landscapes, which made it impossible to judge the
+   design: every variant looked like a travel site. loremflickr takes tags,
+   so the stand-ins are at least cakes, and `lock` makes each one stable
+   across reloads. Still placeholders. Jana's real photographs replace them. */
+function lockFrom(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) % 9973;
+  return h;
+}
+
+export function img(seed: string, w: number, h: number, tags = "cake") {
+  /* loremflickr silently falls back to a default "no result" image (a cat
+     statue on red) for most requested sizes above 640x480, and for high
+     lock values. Both were found the hard way. So: always request 640x480
+     and let object-cover crop and scale. Large surfaces look soft, which
+     is the cost of a stand-in and goes away with Jana's real photographs.
+
+     Width and height are still taken as arguments because they drive the
+     layout box that next/image reserves. Only the source size is pinned. */
+  const lock = (lockFrom(seed) % 120) + 1;
+  return `https://loremflickr.com/640/480/${tags}?lock=${lock}`;
 }
 
 /* ------------------------------------------------------------- wordmark --
@@ -219,6 +259,7 @@ export function Photo({
   priority = false,
   className = "",
   sizes = "100vw",
+  tags,
 }: {
   seed: string;
   alt: string;
@@ -227,10 +268,11 @@ export function Photo({
   priority?: boolean;
   className?: string;
   sizes?: string;
+  tags?: string;
 }) {
   return (
     <Image
-      src={img(seed, width, height)}
+      src={img(seed, width, height, tags)}
       alt={alt}
       width={width}
       height={height}

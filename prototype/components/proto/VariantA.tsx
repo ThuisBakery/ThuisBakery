@@ -27,9 +27,12 @@ export default function VariantA() {
     <div id="top" className="bg-ground text-ink">
       <Header />
 
-      {/* 1. Centered manifesto hero. No photograph: her card has none, and
-          the restraint is the differentiator against two carousel sites. */}
-      <section className="flex min-h-[100dvh] flex-col items-center justify-center px-5 pt-16 pb-20 text-center md:pt-24">
+      {/* 1. Editorial hero: centered type in the upper half, one photograph
+          bleeding across the lower edge of the viewport. The photograph
+          carries the weight her card leaves to paper, without becoming the
+          full-bleed photo hero that reads as every other bakery site. */}
+      <section className="flex min-h-[100dvh] flex-col">
+        <div className="flex flex-1 flex-col items-center justify-center px-5 pt-10 pb-12 text-center md:pt-16">
         <p className="text-6xl leading-[1.1] md:text-8xl">
           <Wordmark />
         </p>
@@ -54,6 +57,16 @@ export default function VariantA() {
             See the menu
           </a>
         </div>
+        </div>
+        <Photo
+          seed="thuisbakery-hero-strip"
+          alt="A finished cake on the kitchen table, placeholder photography"
+          width={2400}
+          height={800}
+          priority
+          sizes="100vw"
+          className="h-[30vh] w-full shrink-0 object-cover md:h-[34vh]"
+        />
       </section>
 
       {/* 2. The menu as a typographic list. Her card, rebuilt for scroll. */}

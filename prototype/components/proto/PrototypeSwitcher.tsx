@@ -10,16 +10,19 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CaretLeft, CaretRight, MoonStars, Sun } from "@phosphor-icons/react";
 
+/* B ("The Table", the photography-led editorial one) was rejected in
+   review as a cliche and is no longer in the rotation. It stays on this
+   branch in git history rather than in the switcher. */
 export const VARIANTS = [
+  { key: "D", name: "Menu Card + conversation" },
   { key: "A", name: "Menu Card" },
-  { key: "B", name: "The Table" },
   { key: "C", name: "The Conversation" },
 ] as const;
 
 export function PrototypeSwitcher() {
   const router = useRouter();
   const params = useSearchParams();
-  const current = (params.get("variant") ?? "A").toUpperCase();
+  const current = (params.get("variant") ?? "D").toUpperCase();
   const index = Math.max(
     0,
     VARIANTS.findIndex((v) => v.key === current),

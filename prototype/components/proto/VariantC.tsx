@@ -16,6 +16,7 @@ import {
   CATEGORIES,
   CTA,
   CakeStand,
+  FAQ,
   Footer,
   Header,
   Photo,
@@ -23,25 +24,6 @@ import {
 } from "./shared";
 import { Reveal } from "./Reveal";
 import { EnquiryForm } from "./EnquiryForm";
-
-const FAQ = [
-  {
-    q: "How far ahead do I need to ask?",
-    a: "Four days as a minimum, and by 18:00 on the day you send it. Saturdays and December go much faster than that, so earlier is safer.",
-  },
-  {
-    q: "Where do I collect it?",
-    a: "From Jana's home in Uithoorn. The exact address is sent once the day and time are agreed, so there is nothing to turn up to before then.",
-  },
-  {
-    q: "Can I have a photo of what I want copied?",
-    a: "Attach it to the enquiry. Jana will say what she can do with it and what it would cost, which is usually the quickest way to get to a real answer.",
-  },
-  {
-    q: "Is the estimate the price?",
-    a: "No. It covers size, quantity and fillings. Anything written, coloured or themed is priced by Jana when she replies.",
-  },
-];
 
 export default function VariantC() {
   return (
