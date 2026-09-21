@@ -46,10 +46,16 @@ _Avoid_: Dietary info, Intolerance, Ingredient
 The single site-wide notice that Jana bakes in a home kitchen and cannot exclude traces. Sits alongside every Allergen list and is never written per Item.
 _Avoid_: Disclaimer, Allergy warning
 
+### The site
+
+**Marketing page**:
+A page Jana assembles herself out of blocks, living at the bare root. Everything the catalogue and the conversation path do not cover — seasonal pages, Occasion pages, anything not yet imagined. Distinguished from the nine coded routes, whose sections Jana can fill but cannot rearrange.
+_Avoid_: Landing page, Content page, Custom page, CMS page
+
 ### Ordering
 
 **Enquiry**:
-A customer's request for a specific Item, sent from that Item's page. It is not an order and never becomes one on the website; Jana's reply is what makes it real.
+A customer's request, sent from an Item's page with an Estimate, or from Custom order or Contact without one. It is not an order and never becomes one on the website; Jana's reply is what makes it real.
 _Avoid_: Order, Booking, Request, Quote, Aanvraag
 
 **Estimate**:
