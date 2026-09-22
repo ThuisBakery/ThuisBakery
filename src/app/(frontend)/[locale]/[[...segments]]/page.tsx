@@ -2,8 +2,9 @@ import configPromise from '@payload-config'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { locale } from 'next/root-params'
-import { getPayload } from 'payload'
+import { getPayload, type Payload } from 'payload'
 
+import { CataloguePage } from '@/components/menu/CataloguePage'
 import { PageShell } from '@/components/site/PageShell'
 import { Placeholder } from '@/components/site/Placeholder'
 import { alternates } from '@/domain/alternates'
@@ -11,10 +12,12 @@ import { DICTIONARY, documentTitle } from '@/domain/dictionary'
 import {
   LOCALES,
   CODED_PAGES,
+  isCatalogue,
   isLocale,
   pagePath,
   pageSegments,
   resolvePage,
+  type Catalogue,
   type Locale,
   type CodedPage,
 } from '@/domain/routes'
@@ -82,7 +85,47 @@ export default async function Page(props: Props) {
 
   return (
     <PageShell locale={current} page={page} header={header} footer={footer}>
-      <Placeholder title={DICTIONARY[current].pageTitles[page]} />
+      {isCatalogue(page) ? (
+        <CataloguePage
+          locale={current}
+          catalogue={page}
+          {...await catalogue(payload, page, current)}
+        />
+      ) : (
+        <Placeholder title={DICTIONARY[current].pageTitles[page]} />
+      )}
     </PageShell>
   )
+}
+
+/**
+ * A catalogue page's Categories, with their photographs, and the Published Items filed
+ * under them. Items are read without locale fallback: one untranslated in this locale has
+ * no URL here (ADR-0002), so it is left off rather than listed with a link to a 404.
+ */
+const catalogue = async (payload: Payload, page: Catalogue, current: Locale) => {
+  const { docs: categories } = await payload.find({
+    collection: 'categories',
+    where: { catalogue: { equals: page } },
+    sort: 'order',
+    depth: 1,
+    limit: 100,
+    locale: current,
+    pagination: false,
+  })
+
+  const { docs: items } = await payload.find({
+    collection: 'items',
+    where: {
+      _status: { equals: 'published' },
+      category: { in: categories.map((category) => category.id) },
+    },
+    sort: 'title',
+    depth: 0,
+    locale: current,
+    fallbackLocale: false,
+    pagination: false,
+  })
+
+  return { categories, items: items.filter((item) => item.title && item.slug) }
 }

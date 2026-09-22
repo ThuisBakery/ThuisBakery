@@ -251,9 +251,37 @@ export interface Item {
 export interface Category {
   id: number;
   /**
-   * Jana’s own name for the tier — Proefhapjes, Bento, Indulgent, Specialty, Nibbles.
+   * Jana’s own name for the tier — Proefhapjes, Cheeky Bento Cakes, Indulgent Cakes, Specialty Cakes, Nibbles.
    */
   name: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  /**
+   * Where the catalogue page scrolls to for this tier — /cakes#bento. Changing it breaks links people have shared.
+   */
+  slug: string;
+  /**
+   * The line under the name on the card — “Mini Cakes for Big Moments”.
+   */
+  tagline: string;
+  /**
+   * Optional. The italic line beneath, where the card has one — “personalisation available on request”.
+   */
+  note?: string | null;
+  /**
+   * The photograph this tier is shown as. Set its focal point on the photograph itself, so the cake stays in frame when the menu crops it.
+   */
+  photograph: number | Media;
+  /**
+   * Euros, as on the card — 29. Leave empty for a tier priced Item by Item, like Specialty or Nibbles.
+   */
+  price?: number | null;
+  /**
+   * Shows “from €25” rather than “€25”.
+   */
+  priceFrom?: boolean | null;
   /**
    * Which catalogue page this tier appears on. Cakes are Configurable and are bought as a conversation; Nibbles are fixed and are bought as a quantity.
    */
@@ -262,16 +290,6 @@ export interface Category {
    * Where this tier sits on the catalogue page. Lowest first.
    */
   order: number;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "occasions".
- */
-export interface Occasion {
-  id: number;
-  name: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -297,6 +315,8 @@ export interface Media {
     };
     [k: string]: unknown;
   } | null;
+  prefix?: string | null;
+  _objectKey?: string | null;
   folder?: (number | null) | FolderInterface;
   updatedAt: string;
   createdAt: string;
@@ -391,6 +411,16 @@ export interface FolderInterface {
     totalDocs?: number;
   };
   folderType?: 'media'[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "occasions".
+ */
+export interface Occasion {
+  id: number;
+  name: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -598,6 +628,13 @@ export interface ItemsSelect<T extends boolean = true> {
  */
 export interface CategoriesSelect<T extends boolean = true> {
   name?: T;
+  generateSlug?: T;
+  slug?: T;
+  tagline?: T;
+  note?: T;
+  photograph?: T;
+  price?: T;
+  priceFrom?: T;
   catalogue?: T;
   order?: T;
   updatedAt?: T;
@@ -648,6 +685,8 @@ export interface AllergensSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   caption?: T;
+  prefix?: T;
+  _objectKey?: T;
   folder?: T;
   updatedAt?: T;
   createdAt?: T;
