@@ -22,6 +22,16 @@ file from a compiler flag — `skipLibCheck` covers declaration files only, and 
 is wiped by the next `generate:types`. So if the generated file does not pass, **drop that one flag
 repo-wide** rather than weakening anything else. It is the least valuable flag in the set.
 
+`src/migrations` is **excluded from the typecheck**, decided when the first migration failed the
+build (issue #29). `payload migrate:create` emits `{ db, payload, req }` on every migration and most
+bodies use only `db`, so `noUnusedParameters` rejects generated code that is not ours to edit — and
+unlike lint and format, a compiler flag cannot be waived for one file. Excluding the directory keeps
+the flag for code we write; dropping the flag repo-wide would have been the larger concession.
+
+What this costs: a migration is never typechecked. It is still checked where it matters — `payload
+migrate` runs it against a real database on every preview deployment (ADR-0005), which catches more
+than `tsc` would.
+
 Aliases: `@/*` for application code, `@payload-config` per Payload's template.
 
 `payload-types.ts` is **committed**, with a `generate:types` script. A dirty diff on that file is the
