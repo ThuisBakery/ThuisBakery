@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   earliestRequestedPickupDate,
+  isWholeLeadTimeOverride,
   isRequestedPickupDateAllowed,
+  parseTimeOfDay,
   type LeadTime,
 } from './lead-time'
 
@@ -75,5 +77,41 @@ describe('isRequestedPickupDateAllowed', () => {
     expect(
       isRequestedPickupDateAllowed({ year: 2026, month: 9, day: 23 }, arrival, threeDaysBy1700),
     ).toBe(false)
+  })
+})
+
+describe('parseTimeOfDay', () => {
+  it('reads a 24-hour HH:MM cutoff', () => {
+    expect(parseTimeOfDay('17:00')).toEqual({ hour: 17, minute: 0 })
+    expect(parseTimeOfDay('00:00')).toEqual({ hour: 0, minute: 0 })
+    expect(parseTimeOfDay('23:59')).toEqual({ hour: 23, minute: 59 })
+  })
+
+  it('tolerates surrounding whitespace, which is what a pasted value carries', () => {
+    expect(parseTimeOfDay(' 09:30 ')).toEqual({ hour: 9, minute: 30 })
+  })
+
+  it.each(['24:00', '17:60', '5:00', '17.00', '17:00:00', '5pm', '', 'half past five'])(
+    'rejects %s',
+    (value) => {
+      expect(parseTimeOfDay(value)).toBeNull()
+    },
+  )
+})
+
+describe('isWholeLeadTimeOverride', () => {
+  it('accepts both halves set', () => {
+    expect(isWholeLeadTimeOverride({ days: 5, timeOfDay: '12:00' })).toBe(true)
+  })
+
+  it('accepts neither half set, which is simply no override', () => {
+    expect(isWholeLeadTimeOverride({})).toBe(true)
+    expect(isWholeLeadTimeOverride({ days: null, timeOfDay: '' })).toBe(true)
+  })
+
+  it('rejects half an override in either direction', () => {
+    expect(isWholeLeadTimeOverride({ days: 5 })).toBe(false)
+    expect(isWholeLeadTimeOverride({ timeOfDay: '12:00' })).toBe(false)
+    expect(isWholeLeadTimeOverride({ days: 0, timeOfDay: '' })).toBe(false)
   })
 })

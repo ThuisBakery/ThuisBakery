@@ -67,16 +67,36 @@ export interface Config {
   };
   blocks: {};
   collections: {
+    items: Item;
+    categories: Category;
+    occasions: Occasion;
+    sponges: Sponge;
+    fillings: Filling;
+    allergens: Allergen;
+    media: Media;
     users: User;
     'payload-kv': PayloadKv;
+    'payload-folders': FolderInterface;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    'payload-folders': {
+      documentsAndFolders: 'payload-folders' | 'media';
+    };
+  };
   collectionsSelect: {
+    items: ItemsSelect<false> | ItemsSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    occasions: OccasionsSelect<false> | OccasionsSelect<true>;
+    sponges: SpongesSelect<false> | SpongesSelect<true>;
+    fillings: FillingsSelect<false> | FillingsSelect<true>;
+    allergens: AllergensSelect<false> | AllergensSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -84,10 +104,18 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
-  locale: null;
+  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('en' | 'nl') | ('en' | 'nl')[];
+  globals: {
+    'cross-contamination': CrossContamination;
+    'lead-time': LeadTime;
+    'closed-until': ClosedUntil;
+  };
+  globalsSelect: {
+    'cross-contamination': CrossContaminationSelect<false> | CrossContaminationSelect<true>;
+    'lead-time': LeadTimeSelect<false> | LeadTimeSelect<true>;
+    'closed-until': ClosedUntilSelect<false> | ClosedUntilSelect<true>;
+  };
+  locale: 'en' | 'nl';
   widgets: {
     collections: CollectionsWidget;
   };
@@ -114,6 +142,288 @@ export interface UserAuthOperations {
     email: string;
     password: string;
   };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "items".
+ */
+export interface Item {
+  id: number;
+  title: string;
+  /**
+   * The last part of this Item’s URL, in this locale’s own words — apple-pie, appeltaart.
+   */
+  slug: string;
+  /**
+   * Exactly one. The Category also decides which catalogue page this Item lives under.
+   */
+  category: number | Category;
+  /**
+   * Optional. Used to build landing pages — never to organise the menu.
+   */
+  occasions?: (number | Occasion)[] | null;
+  /**
+   * The first photograph is the one the catalogue page shows.
+   */
+  photographs?: (number | Media)[] | null;
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * On: the customer chooses a Sponge and a Filling from the shared lists. Off: this Item is sold exactly as described.
+   */
+  configurable?: boolean | null;
+  /**
+   * Which of the shared Sponges a customer may choose for this Item. Leave empty to offer every Sponge.
+   */
+  sponges?: (number | Sponge)[] | null;
+  /**
+   * Which of the shared Fillings a customer may choose. Leave empty to offer every Filling. A Filling’s Surcharge is set on the Filling, never here.
+   */
+  fillings?: (number | Filling)[] | null;
+  /**
+   * A priced variant of this Item. An Item that comes only one way has exactly one Size.
+   */
+  sizes: {
+    /**
+     * What a customer calls this Size — Small, 6 inch, Bento.
+     */
+    label: string;
+    /**
+     * Centimetres. Leave empty for an Item that is not round.
+     */
+    diameter?: number | null;
+    /**
+     * Layer count.
+     */
+    layers?: number | null;
+    /**
+     * Serving count.
+     */
+    servings?: number | null;
+    /**
+     * Euros. Shown on the page — the Estimate and the page must agree.
+     */
+    price: number;
+    id?: string | null;
+  }[];
+  /**
+   * What this Item contains. The cross-contamination statement is site-wide and is never written here.
+   */
+  allergens?: (number | Allergen)[] | null;
+  /**
+   * Only for an Item that needs more notice than the site-wide Lead time. Days and time of day are a pair — set both, or clear both.
+   */
+  leadTime?: {
+    /**
+     * Whole days of notice an Enquiry must give.
+     */
+    days?: number | null;
+    /**
+     * The time by which an Enquiry must arrive to count as arriving that day. The other half of the Lead time — an Enquiry sent after it has missed the day it was sent on.
+     */
+    timeOfDay?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  /**
+   * Jana’s own name for the tier — Proefhapjes, Bento, Indulgent, Specialty, Nibbles.
+   */
+  name: string;
+  /**
+   * Which catalogue page this tier appears on. Cakes are Configurable and are bought as a conversation; Nibbles are fixed and are bought as a quantity.
+   */
+  catalogue: 'cakes' | 'nibbles';
+  /**
+   * Where this tier sits on the catalogue page. Lowest first.
+   */
+  order: number;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "occasions".
+ */
+export interface Occasion {
+  id: number;
+  name: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  alt?: string | null;
+  caption?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  folder?: (number | null) | FolderInterface;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    square?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    small?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    medium?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    large?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    xlarge?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    og?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-folders".
+ */
+export interface FolderInterface {
+  id: number;
+  name: string;
+  folder?: (number | null) | FolderInterface;
+  documentsAndFolders?: {
+    docs?: (
+      | {
+          relationTo?: 'payload-folders';
+          value: number | FolderInterface;
+        }
+      | {
+          relationTo?: 'media';
+          value: number | Media;
+        }
+    )[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  folderType?: 'media'[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sponges".
+ */
+export interface Sponge {
+  id: number;
+  name: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fillings".
+ */
+export interface Filling {
+  id: number;
+  name: string;
+  /**
+   * Euros this Filling adds to an Item’s price. Leave empty for no Surcharge.
+   */
+  surcharge?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "allergens".
+ */
+export interface Allergen {
+  id: number;
+  name: string;
+  icon: number | Media;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -164,10 +474,43 @@ export interface PayloadKv {
  */
 export interface PayloadLockedDocument {
   id: number;
-  document?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
+  document?:
+    | ({
+        relationTo: 'items';
+        value: number | Item;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: number | Category;
+      } | null)
+    | ({
+        relationTo: 'occasions';
+        value: number | Occasion;
+      } | null)
+    | ({
+        relationTo: 'sponges';
+        value: number | Sponge;
+      } | null)
+    | ({
+        relationTo: 'fillings';
+        value: number | Filling;
+      } | null)
+    | ({
+        relationTo: 'allergens';
+        value: number | Allergen;
+      } | null)
+    | ({
+        relationTo: 'media';
+        value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'payload-folders';
+        value: number | FolderInterface;
+      } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
@@ -212,6 +555,184 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "items_select".
+ */
+export interface ItemsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  category?: T;
+  occasions?: T;
+  photographs?: T;
+  description?: T;
+  configurable?: T;
+  sponges?: T;
+  fillings?: T;
+  sizes?:
+    | T
+    | {
+        label?: T;
+        diameter?: T;
+        layers?: T;
+        servings?: T;
+        price?: T;
+        id?: T;
+      };
+  allergens?: T;
+  leadTime?:
+    | T
+    | {
+        days?: T;
+        timeOfDay?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  name?: T;
+  catalogue?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "occasions_select".
+ */
+export interface OccasionsSelect<T extends boolean = true> {
+  name?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sponges_select".
+ */
+export interface SpongesSelect<T extends boolean = true> {
+  name?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fillings_select".
+ */
+export interface FillingsSelect<T extends boolean = true> {
+  name?: T;
+  surcharge?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "allergens_select".
+ */
+export interface AllergensSelect<T extends boolean = true> {
+  name?: T;
+  icon?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media_select".
+ */
+export interface MediaSelect<T extends boolean = true> {
+  alt?: T;
+  caption?: T;
+  folder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        square?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        small?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        medium?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        large?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        xlarge?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        og?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
@@ -240,6 +761,18 @@ export interface UsersSelect<T extends boolean = true> {
 export interface PayloadKvSelect<T extends boolean = true> {
   key?: T;
   data?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-folders_select".
+ */
+export interface PayloadFoldersSelect<T extends boolean = true> {
+  name?: T;
+  folder?: T;
+  documentsAndFolders?: T;
+  folderType?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -272,6 +805,91 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cross-contamination".
+ */
+export interface CrossContamination {
+  id: number;
+  /**
+   * Shown alongside every Allergen list, on every Item.
+   */
+  statement: string;
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "lead-time".
+ */
+export interface LeadTime {
+  id: number;
+  /**
+   * Whole days of notice an Enquiry must give.
+   */
+  days: number;
+  /**
+   * The time by which an Enquiry must arrive to count as arriving that day. The other half of the Lead time — an Enquiry sent after it has missed the day it was sent on.
+   */
+  timeOfDay: string;
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "closed-until".
+ */
+export interface ClosedUntil {
+  id: number;
+  /**
+   * Leave empty when open. While set, a customer cannot ask to collect before this date, and the site says so.
+   */
+  date?: string | null;
+  /**
+   * What the site says while closed. Shown only when a date is set.
+   */
+  notice?: string | null;
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cross-contamination_select".
+ */
+export interface CrossContaminationSelect<T extends boolean = true> {
+  statement?: T;
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "lead-time_select".
+ */
+export interface LeadTimeSelect<T extends boolean = true> {
+  days?: T;
+  timeOfDay?: T;
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "closed-until_select".
+ */
+export interface ClosedUntilSelect<T extends boolean = true> {
+  date?: T;
+  notice?: T;
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
