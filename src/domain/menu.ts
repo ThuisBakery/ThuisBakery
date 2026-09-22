@@ -25,7 +25,7 @@ export type CategoryPrice = {
 }
 
 /**
- * The price line under a Category's name — `€29`, `from €25` — or `null` for a tier the
+ * The price line under a Category's name — `€29`, `from €25` — or `null` for a Category the
  * card prices Item by Item (Specialty, Nibbles).
  */
 export const categoryPrice = (
@@ -40,10 +40,10 @@ export const categoryPrice = (
 }
 
 /** A figure, prefixed `from` when it is a floor rather than the price. */
-const priced = (amount: number, floor: boolean, locale: Locale): string => {
+const priced = (amount: number, isFloor: boolean, locale: Locale): string => {
   const figure = formatEuros(amount, locale)
 
-  return floor ? `${DICTIONARY[locale].priceFrom} ${figure}` : figure
+  return isFloor ? `${DICTIONARY[locale].priceFrom} ${figure}` : figure
 }
 
 /** What a menu row needs of a Size. */

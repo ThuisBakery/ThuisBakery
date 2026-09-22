@@ -41,7 +41,6 @@ export const IllustratedMenu = ({
   sections,
   categoryHref,
   preloadFirst = false,
-  headingLevel = 2,
 }: {
   locale: Locale
   sections: readonly MenuSection[]
@@ -49,7 +48,6 @@ export const IllustratedMenu = ({
   categoryHref?: (category: Category) => string
   /** Preload the first photograph, when the menu is what the page opens on (its LCP). */
   preloadFirst?: boolean
-  headingLevel?: 2 | 3
 }) => {
   const spans = menuSpans(sections.length)
 
@@ -73,7 +71,6 @@ export const IllustratedMenu = ({
               span={span}
               href={categoryHref?.(category)}
               preload={preloadFirst && index === 0}
-              headingLevel={headingLevel}
             />
           </Reveal>
         )
@@ -89,7 +86,6 @@ const Entry = ({
   span,
   href,
   preload,
-  headingLevel,
 }: {
   locale: Locale
   category: Category
@@ -97,9 +93,7 @@ const Entry = ({
   span: MenuSpan
   href: string | undefined
   preload: boolean
-  headingLevel: 2 | 3
 }) => {
-  const Heading = headingLevel === 2 ? 'h2' : 'h3'
   const price = categoryPrice(category, locale)
   const band = span === 'band'
 
@@ -109,7 +103,7 @@ const Entry = ({
         media={category.photograph}
         sizes={SPAN_SIZES[span]}
         preload={preload}
-        className={`aspect-[4/3] w-full object-cover group-hover:scale-[1.03] motion-safe:transition-transform motion-safe:duration-700 ${
+        className={`aspect-[4/3] w-full object-cover motion-safe:group-hover:scale-[1.03] motion-safe:transition-transform motion-safe:duration-700 ${
           band ? 'md:aspect-auto md:h-[46vh]' : 'md:aspect-auto md:h-[54vh]'
         }`}
       />
@@ -118,12 +112,14 @@ const Entry = ({
 
   const words = (
     <div className={band ? '' : 'pt-5'}>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-        <Heading className="font-display text-[30px] leading-tight font-semibold md:text-[34px]">
+      <div className="flex items-baseline justify-between gap-x-4">
+        <h2 className="min-w-0 font-display text-[34px] leading-tight font-semibold">
           {category.name}
-        </Heading>
+        </h2>
         {price ? (
-          <p className="font-sans text-sm tracking-wide whitespace-nowrap tabular-nums">{price}</p>
+          <p className="shrink-0 font-sans text-sm tracking-wide whitespace-nowrap tabular-nums">
+            {price}
+          </p>
         ) : null}
       </div>
       <p className="mt-1.5 font-display text-lg leading-snug text-ink-muted">{category.tagline}</p>
@@ -159,7 +155,10 @@ const Entry = ({
   )
 
   return href ? (
-    <a href={href} className="group block transition-transform duration-200 active:translate-y-px">
+    <a
+      href={href}
+      className="group block transition-transform duration-200 motion-safe:active:translate-y-px"
+    >
       {content}
     </a>
   ) : (
@@ -168,7 +167,7 @@ const Entry = ({
 }
 
 /**
- * A tier's Items, typeset as the card sets Specialty and Nibbles: the name, and its price
+ * A Category's Items, typeset as the card sets Specialty and Nibbles: the name, and its price
  * on the same line. Each row is one link to the Item's page — the Item page is where an
  * Enquiry starts (ADR-0003).
  */
@@ -183,7 +182,7 @@ const ItemList = ({
 }) => (
   <ul className="mt-6 border-t border-rule">
     {items.map((item) => {
-      const price = itemPrice(item.sizes, locale)
+      const row = itemPrice(item.sizes, locale)
 
       return (
         <li key={item.id} className="border-b border-rule">
@@ -192,10 +191,10 @@ const ItemList = ({
             className="flex min-h-12 items-baseline justify-between gap-4 py-3 transition-colors duration-200 hover:text-accent active:bg-raised"
           >
             <span className="font-display text-xl leading-snug">{item.title}</span>
-            {price ? (
+            {row ? (
               <span className="shrink-0 text-right font-sans text-sm tracking-wide tabular-nums">
-                {price.price}
-                {price.size ? <span className="text-ink-muted"> · {price.size}</span> : null}
+                {row.price}
+                {row.size ? <span className="text-ink-muted"> · {row.size}</span> : null}
               </span>
             ) : null}
           </a>

@@ -113,7 +113,7 @@ describe('CataloguePage', () => {
     expect(within(bento!).getByText('vanaf €25')).toBeTruthy()
   })
 
-  it('lists a tier’s Items as links to their pages, in the page’s locale', () => {
+  it('lists a Category’s Items as links to their pages, in the page’s locale', () => {
     render(<CataloguePage locale="nl" catalogue="cakes" categories={categories} items={items} />)
 
     const link = screen.getByRole('link', { name: /Burnt Basque Cheesecake/ })

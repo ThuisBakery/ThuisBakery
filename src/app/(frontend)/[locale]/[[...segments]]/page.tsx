@@ -89,7 +89,7 @@ export default async function Page(props: Props) {
         <CataloguePage
           locale={current}
           catalogue={page}
-          {...await catalogue(payload, page, current)}
+          {...await fetchCatalogue(payload, page, current)}
         />
       ) : (
         <Placeholder title={DICTIONARY[current].pageTitles[page]} />
@@ -103,7 +103,7 @@ export default async function Page(props: Props) {
  * under them. Items are read without locale fallback: one untranslated in this locale has
  * no URL here (ADR-0002), so it is left off rather than listed with a link to a 404.
  */
-const catalogue = async (payload: Payload, page: Catalogue, current: Locale) => {
+const fetchCatalogue = async (payload: Payload, page: Catalogue, current: Locale) => {
   const { docs: categories } = await payload.find({
     collection: 'categories',
     where: { catalogue: { equals: page } },
@@ -119,6 +119,8 @@ const catalogue = async (payload: Payload, page: Catalogue, current: Locale) => 
     where: {
       _status: { equals: 'published' },
       category: { in: categories.map((category) => category.id) },
+      title: { exists: true },
+      slug: { exists: true },
     },
     sort: 'title',
     depth: 0,
@@ -127,5 +129,5 @@ const catalogue = async (payload: Payload, page: Catalogue, current: Locale) => 
     pagination: false,
   })
 
-  return { categories, items: items.filter((item) => item.title && item.slug) }
+  return { categories, items }
 }

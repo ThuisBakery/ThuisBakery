@@ -30,7 +30,7 @@ export const Categories: CollectionConfig = {
       localized: true,
       admin: {
         description:
-          'Jana’s own name for the tier — Proefhapjes, Cheeky Bento Cakes, Indulgent Cakes, Specialty Cakes, Nibbles.',
+          'Jana’s own name for this Category — Proefhapjes, Cheeky Bento Cakes, Indulgent Cakes, Specialty Cakes, Nibbles.',
       },
     },
     // The section anchor on the catalogue page — /cakes#bento. Not localized: one anchor
@@ -45,7 +45,7 @@ export const Categories: CollectionConfig = {
           slug.admin = {
             ...slug.admin,
             description:
-              'Where the catalogue page scrolls to for this tier — /cakes#bento. Changing it breaks links people have shared.',
+              'Where the catalogue page scrolls to for this Category — /cakes#bento. Changing it breaks links people have shared.',
           }
         }
 
@@ -77,7 +77,7 @@ export const Categories: CollectionConfig = {
       required: true,
       admin: {
         description:
-          'The photograph this tier is shown as. Set its focal point on the photograph itself, so the cake stays in frame when the menu crops it.',
+          'The photograph this Category is shown as. Set its focal point on the photograph itself, so the cake stays in frame when the menu crops it.',
       },
     },
     {
@@ -89,7 +89,7 @@ export const Categories: CollectionConfig = {
           min: 0,
           admin: {
             description:
-              'Euros, as on the card — 29. Leave empty for a tier priced Item by Item, like Specialty or Nibbles.',
+              'Euros, as on the card — 29. Leave empty for a Category priced Item by Item, like Specialty or Nibbles.',
             step: 0.5,
             width: '50%',
           },

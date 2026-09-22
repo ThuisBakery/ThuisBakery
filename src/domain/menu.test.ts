@@ -15,7 +15,7 @@ describe('formatEuros', () => {
 })
 
 describe('categoryPrice', () => {
-  it('is the plain figure for a tier with one price', () => {
+  it('is the plain figure for a Category with one price', () => {
     expect(categoryPrice({ price: 29, priceFrom: false }, 'en')).toBe('€29')
   })
 
@@ -24,7 +24,7 @@ describe('categoryPrice', () => {
     expect(categoryPrice({ price: 25, priceFrom: true }, 'nl')).toBe('vanaf €25')
   })
 
-  it('is absent for a tier the card prices per Item', () => {
+  it('is absent for a Category the card prices per Item', () => {
     expect(categoryPrice({ price: null, priceFrom: true }, 'en')).toBeNull()
     expect(categoryPrice({}, 'en')).toBeNull()
   })

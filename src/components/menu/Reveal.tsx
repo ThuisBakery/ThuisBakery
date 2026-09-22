@@ -18,7 +18,7 @@ export const Reveal = ({
   className,
   children,
 }: {
-  as?: 'div' | 'li' | 'section'
+  as?: 'div' | 'li'
   /** Milliseconds, to stagger neighbours. */
   delay?: number
   id?: string
