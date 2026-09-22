@@ -1,6 +1,6 @@
 # Can Payload CMS run on Netlify's free tier?
 
-Research for [#2](https://github.com/ThuisBakeryTech/ThuisBakery/issues/2). Researched 2026-09-19. All vendor facts checked on that date; tiers move.
+Research for [#2](https://github.com/ThuisBakery/ThuisBakery/issues/2). Researched 2026-09-19. All vendor facts checked on that date; tiers move.
 
 ## Short answer
 

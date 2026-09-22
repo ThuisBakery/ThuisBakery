@@ -4,7 +4,7 @@
 
 ### Issue tracker
 
-Issues live as GitHub issues in `ThuisBakeryTech/ThuisBakery`, managed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues live as GitHub issues in `ThuisBakery/ThuisBakery`, managed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

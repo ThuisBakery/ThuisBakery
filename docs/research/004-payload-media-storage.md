@@ -1,6 +1,6 @@
 # Where do Payload's uploaded images live?
 
-Research for [issue #4](https://github.com/ThuisBakeryTech/ThuisBakery/issues/4). Researched 2026-09-19. All sources dated; primary sources only (official docs, npm registry).
+Research for [issue #4](https://github.com/ThuisBakery/ThuisBakery/issues/4). Researched 2026-09-19. All sources dated; primary sources only (official docs, npm registry).
 
 ## 1. Why local disk is not an option
 

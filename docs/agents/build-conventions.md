@@ -1,6 +1,6 @@
 # Build conventions
 
-Settled in [issue #16](https://github.com/ThuisBakeryTech/ThuisBakery/issues/16). Migrations and
+Settled in [issue #16](https://github.com/ThuisBakery/ThuisBakery/issues/16). Migrations and
 environment variables have their own decision record: see
 [ADR-0005](../adr/0005-database-migration-workflow.md).
 
