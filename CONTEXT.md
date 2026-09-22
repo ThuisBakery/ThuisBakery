@@ -14,6 +14,10 @@ _Avoid_: Product, Cake (as the general term), Menu item
 A tier of the menu, in Jana's own ladder: Proefhapjes, Bento, Indulgent, Specialty, Nibbles. Every Item belongs to exactly one, and it is what the menu page is organised by.
 _Avoid_: Tier, Collection, Type, Range
 
+**Catalogue**:
+One of the two halves the menu splits into — Cakes and Nibbles — each with its own page and its own URL prefix. A cake is a conversation and a box of brownies is a quantity, so they are bought differently. A property of a Category rather than a thing an Item carries: which Catalogue an Item appears under follows from its Category, so a sixth Category is a content change rather than a code change (ADR-0003).
+_Avoid_: Section, Group, Shop, Store
+
 **Occasion**:
 What an Item is bought for — birthday, wedding, baby shower. An optional tag on an Item, used to build landing pages, never to organise the menu.
 _Avoid_: Category, Event, Use case
