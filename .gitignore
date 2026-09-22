@@ -46,3 +46,7 @@ node_modules/
 
 # Throwaway prototypes (the `prototype` skill's scratch space)
 /prototype/
+
+.env*
+# …except the committed template, which documents variable names only.
+!.env.example
