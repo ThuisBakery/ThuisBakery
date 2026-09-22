@@ -1,5 +1,6 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { en } from '@payloadcms/translations/languages/en'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -102,5 +103,26 @@ export default buildConfig({
     migrationDir: path.resolve(dirname, 'migrations'),
   }),
   sharp,
-  plugins: [],
+  plugins: [
+    /**
+     * Uploaded photographs live in Vercel Blob (ADR-0001), because a Vercel function's disk
+     * does not survive the request. `BLOB_READ_WRITE_TOKEN` is injected by the Blob store
+     * connected to the project; without it the adapter falls back to local disk.
+     *
+     * - `clientUploads`: the browser uploads straight to Blob. Payload's docs cap a server
+     *   upload on Vercel at 4.5MB, and a photograph from a phone is larger than that.
+     * - `disablePayloadAccessControl`: Media is publicly readable anyway, so pages load
+     *   images from Blob directly rather than through a Payload function on every request.
+     *   `next.config.ts` lets `next/image` optimize from that host.
+     * - `alwaysInsertFields`: the adapter adds a `prefix` field to Media. Without this it
+     *   does so only when the token is set, so a migration generated without the token
+     *   would lack a column production needs.
+     */
+    vercelBlobStorage({
+      collections: { media: { disablePayloadAccessControl: true } },
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+      clientUploads: true,
+      alwaysInsertFields: true,
+    }),
+  ],
 })

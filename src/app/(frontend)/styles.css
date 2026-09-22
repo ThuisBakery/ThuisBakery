@@ -75,6 +75,22 @@ body {
   outline-offset: 2px;
 }
 
+/* Entry reveal, set by `Reveal` on content that mounts below the fold. Only when motion is
+   welcome: under reduced motion `Reveal` never marks anything, and nothing is hidden. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-reveal='pending'] {
+    opacity: 0;
+    translate: 0 18px;
+  }
+
+  [data-reveal='shown'] {
+    transition:
+      opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+      translate 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+}
+
 /* The motion budget is small (ADR-0004), and all of it collapses under reduced motion. */
 @media (prefers-reduced-motion: reduce) {
   *,

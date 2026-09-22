@@ -18,6 +18,10 @@ export type Dictionary = {
   footerNav: string
   menu: string
   close: string
+  /** Before a starting price, lower case: `from €25`. */
+  priceFrom: string
+  /** The accessible name of a catalogue page's in-page index of its Categories. */
+  categoryIndex: string
   /** Placeholder page headings until each page's real content lands. */
   pageTitles: Record<CodedPage, string>
 }
@@ -30,6 +34,8 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
     footerNav: 'All pages',
     menu: 'Menu',
     close: 'Close',
+    priceFrom: 'from',
+    categoryIndex: 'Jump to',
     pageTitles: {
       home: 'Baked at home in Uithoorn',
       cakes: 'Cakes',
@@ -47,6 +53,8 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
     footerNav: 'Alle pagina’s',
     menu: 'Menu',
     close: 'Sluiten',
+    priceFrom: 'vanaf',
+    categoryIndex: 'Ga naar',
     pageTitles: {
       home: 'Thuis gebakken in Uithoorn',
       cakes: 'Taarten',
