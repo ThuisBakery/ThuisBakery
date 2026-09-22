@@ -1,20 +1,87 @@
-/* Placeholder only. The design direction lives in ADR-0004 and is not implemented yet. */
+@import 'tailwindcss';
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/*
+ * Jana's identity, from ADR-0004. The values were extracted from her printed menu card,
+ * not invented; the rows marked "derived" or "added" are the minimum that turns a
+ * two-colour poster into a system with a form, an error, a price and a dark mode.
+ *
+ * One strategy: custom properties swapped under `prefers-color-scheme`, surfaced to
+ * Tailwind through `@theme`. There are no `dark:` utilities anywhere.
+ *
+ * Espresso ink never sits on olive: #3E2E26 on #4F5A31 is 1.75:1 and is excluded. Text on
+ * the accent is always `accent-ink`.
+ */
+
+:root {
+  --ground: #eae3d9; /* warm cream — her card */
+  --raised: #f4efe6; /* derived */
+  --ink: #3e2e26; /* espresso — her card */
+  --ink-muted: #63544a; /* derived, 5.69:1 on ground */
+  --accent: #4f5a31; /* deep olive — added */
+  --accent-ink: #f4efe6; /* 6.46:1 on accent */
+  --rule: #cfc4b5; /* hairline */
+}
+
+/* Dark mode inverts her own pair rather than inventing a second palette. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #2a1f19;
+    --raised: #362a22;
+    --ink: #f4efe6;
+    --ink-muted: #b9aa9c; /* 7.10:1 on ground */
+    --accent: #93a06a; /* olive lifted for a dark ground */
+    --accent-ink: #21261a; /* 5.51:1 on accent, the lowest pair in the system */
+    --rule: #4a3b31;
+  }
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-raised: var(--raised);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-rule: var(--rule);
+
+  --font-display: var(--font-cormorant), Georgia, serif;
+  --font-script: var(--font-parisienne), cursive;
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+
+  /* Corner radius is 0 everywhere. Print does not round. Every radius utility resolves to
+     zero, so a stray `rounded-*` cannot soften a corner. */
+  --radius-*: initial;
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-4xl: 0;
+}
+
+html {
+  color-scheme: light dark;
 }
 
 body {
-  font-family: system-ui, sans-serif;
-  min-height: 100vh;
+  background: var(--ground);
+  color: var(--ink);
 }
 
-.placeholder {
-  display: grid;
-  place-content: center;
-  gap: 0.5rem;
-  min-height: 100vh;
-  text-align: center;
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The motion budget is small (ADR-0004), and all of it collapses under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

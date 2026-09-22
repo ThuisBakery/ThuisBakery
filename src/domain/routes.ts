@@ -32,27 +32,64 @@ export const CATALOGUE_LABELS: Record<Catalogue, string> = {
   nibbles: 'Nibbles',
 }
 
-/** The localized first segment of each catalogue's index page. */
-const CATALOGUE_SEGMENTS: Record<Catalogue, Record<Locale, string>> = {
+/**
+ * The coded pages from ADR-0003, and the key the CMS uses to link to one. Item pages and
+ * marketing pages are not here: they are generated from content, not coded.
+ */
+export const CODED_PAGES = [
+  'home',
+  'cakes',
+  'nibbles',
+  'customOrder',
+  'about',
+  'contact',
+  'privacy',
+] as const
+
+export type CodedPage = (typeof CODED_PAGES)[number]
+
+/** What each coded page is called in the admin, where Jana picks a link's target. */
+export const CODED_PAGE_LABELS: Record<CodedPage, string> = {
+  home: 'Home',
+  cakes: 'Cakes',
+  nibbles: 'Nibbles',
+  customOrder: 'Custom order',
+  about: 'About',
+  contact: 'Contact',
+  privacy: 'Privacy',
+}
+
+/**
+ * The localized route map: every coded page's static segment, per locale. ADR-0002 keeps
+ * these in a dictionary rather than as route folders, so one `[locale]/[[...segments]]`
+ * tree serves them all. Home is the empty segment.
+ *
+ * `lekkernijen` and `over-jana` are provisional Dutch wording per ADR-0003; changing them
+ * here is the whole change.
+ */
+const ROUTE_MAP: Record<CodedPage, Record<Locale, string>> = {
+  home: { en: '', nl: '' },
   cakes: { en: 'cakes', nl: 'taarten' },
   nibbles: { en: 'nibbles', nl: 'lekkernijen' },
+  customOrder: { en: 'custom-order', nl: 'maatwerk' },
+  about: { en: 'about', nl: 'over-jana' },
+  contact: { en: 'contact', nl: 'contact' },
+  privacy: { en: 'privacy', nl: 'privacy' },
 }
 
-/**
- * Every coded route segment, both locales. `lekkernijen` and `over-jana` are provisional
- * Dutch wording per ADR-0003; changing them here is the whole change.
- */
-const CODED_SEGMENTS: Record<Locale, readonly string[]> = {
-  en: ['cakes', 'nibbles', 'custom-order', 'about', 'contact', 'privacy'],
-  nl: ['taarten', 'lekkernijen', 'maatwerk', 'over-jana', 'contact', 'privacy'],
-}
+/** Every coded route segment in one locale, home excluded. */
+const codedSegments = (locale: Locale): string[] =>
+  CODED_PAGES.map((page) => ROUTE_MAP[page][locale]).filter((segment) => segment !== '')
 
 /**
- * Segments that belong to the framework rather than to a page: the Dutch locale prefix
- * itself, Payload's admin and REST/GraphQL trees, and Next's own reserved `next` segment
- * where the draft-mode preview route lives.
+ * Segments that belong to the framework rather than to a page: Payload's admin and
+ * REST/GraphQL trees, the `next` segment where the draft-mode preview route lives, and the
+ * paths Next and Vercel serve their own assets from. `proxy.ts` leaves these alone.
  */
-const INFRASTRUCTURE_SEGMENTS = ['nl', 'admin', 'api', 'next'] as const
+export const FRAMEWORK_SEGMENTS: readonly string[] = ['admin', 'api', 'next', '_next', '_vercel']
+
+/** Framework segments plus the Dutch locale prefix itself. */
+const INFRASTRUCTURE_SEGMENTS = ['nl', ...FRAMEWORK_SEGMENTS]
 
 /**
  * Slugs an Item or a marketing page may not take. Both locales' segments are reserved in
@@ -60,7 +97,7 @@ const INFRASTRUCTURE_SEGMENTS = ['nl', 'admin', 'api', 'next'] as const
  * permanent tell in a URL, and keeping one set is simpler than keeping two.
  */
 export const RESERVED_SLUGS: readonly string[] = [
-  ...new Set([...CODED_SEGMENTS.en, ...CODED_SEGMENTS.nl, ...INFRASTRUCTURE_SEGMENTS]),
+  ...new Set([...codedSegments('en'), ...codedSegments('nl'), ...INFRASTRUCTURE_SEGMENTS]),
 ].sort()
 
 const reserved = new Set(RESERVED_SLUGS)
@@ -68,12 +105,44 @@ const reserved = new Set(RESERVED_SLUGS)
 /** Case- and whitespace-insensitive: `Cakes ` is the same claim on the URL as `cakes`. */
 export const isReservedSlug = (slug: string): boolean => reserved.has(slug.trim().toLowerCase())
 
-/** The public path of a catalogue index page — `/cakes`, `/nl/taarten`. */
-export const cataloguePath = (catalogue: Catalogue, locale: Locale): string => {
-  const segment = CATALOGUE_SEGMENTS[catalogue][locale]
+/** The public path of a coded page — `/`, `/nl`, `/custom-order`, `/nl/maatwerk`. */
+export const pagePath = (page: CodedPage, locale: Locale): string => {
+  const segment = ROUTE_MAP[page][locale]
+  const prefix = locale === DEFAULT_LOCALE ? '' : `/${locale}`
 
-  return locale === DEFAULT_LOCALE ? `/${segment}` : `/${locale}/${segment}`
+  return segment === '' ? prefix || '/' : `${prefix}/${segment}`
 }
+
+/**
+ * A coded page's segments after the locale prefix — the `[[...segments]]` value that
+ * `generateStaticParams` returns for it. Home has none.
+ */
+export const pageSegments = (page: CodedPage, locale: Locale): string[] => {
+  const segment = ROUTE_MAP[page][locale]
+
+  return segment === '' ? [] : [segment]
+}
+
+/**
+ * The coded page a path's segments name in a locale, or `null` when they name none — an
+ * Item, a marketing page, or nothing. The segments are those after the locale prefix.
+ */
+export const resolvePage = (locale: Locale, segments: readonly string[]): CodedPage | null => {
+  if (segments.length > 1) {
+    return null
+  }
+
+  const segment = segments[0] ?? ''
+
+  return CODED_PAGES.find((page) => ROUTE_MAP[page][locale] === segment) ?? null
+}
+
+/** The locale the language switcher leads to. Two locales, so always the other one. */
+export const otherLocale = (locale: Locale): Locale => (locale === 'en' ? 'nl' : 'en')
+
+/** The public path of a catalogue index page — `/cakes`, `/nl/taarten`. */
+export const cataloguePath = (catalogue: Catalogue, locale: Locale): string =>
+  pagePath(catalogue, locale)
 
 /** The public path of an Item — `/cakes/apple-pie`, `/nl/taarten/appeltaart`. */
 export const itemPath = (catalogue: Catalogue, locale: Locale, slug: string): string =>

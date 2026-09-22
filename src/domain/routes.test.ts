@@ -9,6 +9,10 @@ import {
   isLocale,
   isReservedSlug,
   itemPath,
+  otherLocale,
+  pagePath,
+  pageSegments,
+  resolvePage,
 } from './routes'
 
 describe('cataloguePath', () => {
@@ -28,6 +32,59 @@ describe('itemPath', () => {
     expect(itemPath('cakes', 'en', 'apple-pie')).toBe('/cakes/apple-pie')
     expect(itemPath('cakes', 'nl', 'appeltaart')).toBe('/nl/taarten/appeltaart')
     expect(itemPath('nibbles', 'nl', 'brownies')).toBe('/nl/lekkernijen/brownies')
+  })
+})
+
+describe('pagePath', () => {
+  it('puts each locale’s home at its root', () => {
+    expect(pagePath('home', 'en')).toBe('/')
+    expect(pagePath('home', 'nl')).toBe('/nl')
+  })
+
+  it('localizes the static segment, not just the prefix', () => {
+    expect(pagePath('customOrder', 'en')).toBe('/custom-order')
+    expect(pagePath('customOrder', 'nl')).toBe('/nl/maatwerk')
+    expect(pagePath('about', 'nl')).toBe('/nl/over-jana')
+    expect(pagePath('privacy', 'nl')).toBe('/nl/privacy')
+  })
+})
+
+describe('resolvePage', () => {
+  it('finds each locale’s home from no segments at all', () => {
+    expect(resolvePage('en', [])).toBe('home')
+    expect(resolvePage('nl', [])).toBe('home')
+  })
+
+  it('finds a coded page from its localized segment', () => {
+    expect(resolvePage('en', ['cakes'])).toBe('cakes')
+    expect(resolvePage('nl', ['taarten'])).toBe('cakes')
+    expect(resolvePage('nl', ['over-jana'])).toBe('about')
+  })
+
+  it('does not resolve one locale’s segment under the other', () => {
+    // `/taarten` is not a page, and neither is `/nl/cakes`: each has one URL per locale.
+    expect(resolvePage('en', ['taarten'])).toBeNull()
+    expect(resolvePage('nl', ['cakes'])).toBeNull()
+  })
+
+  it('leaves anything deeper or unknown to other resolvers', () => {
+    expect(resolvePage('en', ['cakes', 'apple-pie'])).toBeNull()
+    expect(resolvePage('en', ['summer'])).toBeNull()
+  })
+})
+
+describe('pageSegments', () => {
+  it('is what the catch-all receives after the locale, and round-trips through resolvePage', () => {
+    expect(pageSegments('home', 'nl')).toEqual([])
+    expect(pageSegments('about', 'nl')).toEqual(['over-jana'])
+    expect(resolvePage('nl', pageSegments('about', 'nl'))).toBe('about')
+  })
+})
+
+describe('otherLocale', () => {
+  it('is the locale the language switcher leads to', () => {
+    expect(otherLocale('en')).toBe('nl')
+    expect(otherLocale('nl')).toBe('en')
   })
 })
 

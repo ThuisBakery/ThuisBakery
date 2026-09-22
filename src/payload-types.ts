@@ -106,11 +106,15 @@ export interface Config {
   };
   fallbackLocale: ('false' | 'none' | 'null') | false | null | ('en' | 'nl') | ('en' | 'nl')[];
   globals: {
+    header: Header;
+    footer: Footer;
     'cross-contamination': CrossContamination;
     'lead-time': LeadTime;
     'closed-until': ClosedUntil;
   };
   globalsSelect: {
+    header: HeaderSelect<false> | HeaderSelect<true>;
+    footer: FooterSelect<false> | FooterSelect<true>;
     'cross-contamination': CrossContaminationSelect<false> | CrossContaminationSelect<true>;
     'lead-time': LeadTimeSelect<false> | LeadTimeSelect<true>;
     'closed-until': ClosedUntilSelect<false> | ClosedUntilSelect<true>;
@@ -808,6 +812,52 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header".
+ */
+export interface Header {
+  id: number;
+  /**
+   * The navigation links, in order. Keep it short: four is the design.
+   */
+  links: {
+    page: 'home' | 'cakes' | 'nibbles' | 'customOrder' | 'about' | 'contact' | 'privacy';
+    label: string;
+    id?: string | null;
+  }[];
+  /**
+   * The one link shown as a button. Custom order, by design.
+   */
+  callToAction: {
+    page: 'home' | 'cakes' | 'nibbles' | 'customOrder' | 'about' | 'contact' | 'privacy';
+    label: string;
+    id?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer".
+ */
+export interface Footer {
+  id: number;
+  /**
+   * The short line under the name.
+   */
+  tagline: string;
+  /**
+   * Every page on the site, in order.
+   */
+  links: {
+    page: 'home' | 'cakes' | 'nibbles' | 'customOrder' | 'about' | 'contact' | 'privacy';
+    label: string;
+    id?: string | null;
+  }[];
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "cross-contamination".
  */
 export interface CrossContamination {
@@ -855,6 +905,46 @@ export interface ClosedUntil {
   _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header_select".
+ */
+export interface HeaderSelect<T extends boolean = true> {
+  links?:
+    | T
+    | {
+        page?: T;
+        label?: T;
+        id?: T;
+      };
+  callToAction?:
+    | T
+    | {
+        page?: T;
+        label?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer_select".
+ */
+export interface FooterSelect<T extends boolean = true> {
+  tagline?: T;
+  links?:
+    | T
+    | {
+        page?: T;
+        label?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
