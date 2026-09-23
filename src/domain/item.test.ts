@@ -10,7 +10,6 @@ import {
   occasionLinks,
   plainText,
   siblingItems,
-  surcharge,
 } from './item'
 
 /** A Lexical document as Payload stores a description: paragraphs of text nodes. */
@@ -228,20 +227,6 @@ describe('occasionLinks', () => {
 
   it('skips Occasions that were not populated', () => {
     expect(occasionLinks([1, wedding], new Map([[1, '/birthday-cakes']]))).toEqual([])
-  })
-})
-
-describe('surcharge', () => {
-  it('says what a Filling adds to the price', () => {
-    expect(surcharge(2.5, 'en')).toBe('+€2.50')
-    expect(surcharge(3, 'nl')).toBe('+€3')
-    expect(surcharge(2.5, 'nl')).toBe('+€2,50')
-  })
-
-  it('says nothing for a Filling that adds nothing', () => {
-    expect(surcharge(0, 'en')).toBeNull()
-    expect(surcharge(null, 'en')).toBeNull()
-    expect(surcharge(undefined, 'en')).toBeNull()
   })
 })
 

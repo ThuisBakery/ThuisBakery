@@ -1,5 +1,4 @@
 import type { StoredLeadTime } from './lead-time'
-import { formatEuros } from './menu'
 import { LOCALES, itemPath, type Catalogue, type Locale } from './routes'
 
 /**
@@ -193,7 +192,3 @@ export const occasionLinks = (
 
     return href === undefined ? [] : [{ name: occasion.name, href }]
   })
-
-/** What a Filling adds to an Item's price — `+€2.50` — or `null` when it adds nothing. */
-export const surcharge = (amount: number | null | undefined, locale: Locale): string | null =>
-  typeof amount === 'number' && amount > 0 ? `+${formatEuros(amount, locale)}` : null

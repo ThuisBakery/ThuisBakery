@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import type { Allergen, Category, Filling, Item, LeadTime, Media, Sponge } from '@/payload-types'
@@ -132,6 +132,16 @@ const renderPage = (overrides: Partial<Parameters<typeof ItemPage>[0]> = {}) =>
     />,
   )
 
+/** A named radio group's options, as the values they send. */
+const optionsIn = (group: string) =>
+  within(screen.getByRole('group', { name: group }))
+    .getAllByRole('radio')
+    .map((radio) => radio.getAttribute('value'))
+
+/** Whether `first` comes before `second` in the page. */
+const precedes = (first: Element, second: Element) =>
+  Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING)
+
 /** Every JSON-LD block on the page, parsed. */
 const structuredData = (container: HTMLElement): Record<string, unknown>[] =>
   [...container.querySelectorAll('script[type="application/ld+json"]')].map(
@@ -148,43 +158,91 @@ describe('ItemPage', () => {
     expect(screen.getByAltText('The cheesecake, whole')).toBeTruthy()
   })
 
-  it('prints every Size with what it is and its price', () => {
+  it('offers every Size to choose, with what it is and its price', () => {
     renderPage()
 
-    const sizes = screen.getByRole('list', { name: 'Sizes' })
-    const rows = within(sizes)
-      .getAllByRole('listitem')
-      .map((row) => row.textContent)
+    // The fixture's Sizes carry no row ids, so they are keyed by position.
+    expect(optionsIn('Size')).toEqual(['0', '1'])
 
-    expect(rows).toEqual([
-      'Small15 cm · 1 layer · serves 8€45',
-      'Large20 cm · 2 layers · serves 14€62.50',
-    ])
+    const sizes = within(screen.getByRole('group', { name: 'Size' }))
+    expect(sizes.getByLabelText('Small')).toBeTruthy()
+    expect(sizes.getByText('15 cm · 1 layer · serves 8')).toBeTruthy()
+    expect(sizes.getByText('€45')).toBeTruthy()
+    expect(sizes.getByLabelText('Large')).toBeTruthy()
+    expect(sizes.getByText('20 cm · 2 layers · serves 14')).toBeTruthy()
+    expect(sizes.getByText('€62.50')).toBeTruthy()
+  })
+
+  it('shows a single Size as already chosen, with its price', () => {
+    renderPage({ item: { ...cheesecake, sizes: [{ id: 'whole', label: 'Whole', price: 40 }] } })
+
+    const whole = screen.getByLabelText('Whole') as HTMLInputElement
+
+    expect(optionsIn('Size')).toEqual(['whole'])
+    expect(whole.checked).toBe(true)
+    expect(within(screen.getByRole('group', { name: 'Size' })).getByText('€40')).toBeTruthy()
   })
 
   it('offers the Item’s own Sponges, and every Filling when it names none, with Surcharges', () => {
     renderPage()
 
-    const spongeList = screen.getByRole('list', { name: 'Sponge' })
+    expect(optionsIn('Sponge')).toEqual(['1', '3'])
     expect(
-      within(spongeList)
-        .getAllByRole('listitem')
-        .map((row) => row.textContent),
+      within(screen.getByRole('group', { name: 'Sponge' }))
+        .getAllByRole('radio')
+        .map((radio) => (radio as HTMLInputElement).labels?.[0]?.textContent),
     ).toEqual(['Chocolate', 'Red Velvet'])
 
-    const fillingList = screen.getByRole('list', { name: 'Filling' })
+    const fillingGroup = within(screen.getByRole('group', { name: 'Filling' }))
+    expect(optionsIn('Filling')).toEqual(['1', '2', '3'])
+    expect(fillingGroup.getByLabelText('Cream Cheese')).toBeTruthy()
+    expect(fillingGroup.getByText('+€2.50')).toBeTruthy()
+    expect(fillingGroup.getByText('+€3')).toBeTruthy()
+  })
+
+  it('starts on the first of each choice, with an Estimate already showing', () => {
+    renderPage()
+
+    expect((screen.getByLabelText('Small') as HTMLInputElement).checked).toBe(true)
+    expect((screen.getByLabelText('Chocolate') as HTMLInputElement).checked).toBe(true)
+    expect((screen.getByLabelText('Cream Cheese') as HTMLInputElement).checked).toBe(true)
     expect(
-      within(fillingList)
-        .getAllByRole('listitem')
-        .map((row) => row.textContent),
-    ).toEqual(['Cream Cheese', 'Salted Caramel+€2.50', 'Ganache+€3'])
+      within(screen.getByRole('region', { name: /Estimate/ })).getByText('Small × 1'),
+    ).toBeTruthy()
+  })
+
+  it('changes the Estimate when a Filling with a Surcharge is chosen', () => {
+    renderPage()
+
+    fireEvent.click(screen.getByLabelText('Ganache'))
+
+    const estimate = within(screen.getByRole('region', { name: /Estimate/ }))
+    expect(estimate.getByText('Ganache × 1')).toBeTruthy()
+    expect(estimate.getByText('€48')).toBeTruthy()
   })
 
   it('offers no choices on an Item sold exactly as described', () => {
     renderPage({ item: { ...cheesecake, configurable: false } })
 
-    expect(screen.queryByRole('list', { name: 'Sponge' })).toBeNull()
-    expect(screen.queryByRole('list', { name: 'Filling' })).toBeNull()
+    expect(screen.queryByRole('group', { name: 'Sponge' })).toBeNull()
+    expect(screen.queryByRole('group', { name: 'Filling' })).toBeNull()
+  })
+
+  it('puts the Enquiry after the Allergens and before the Occasions', () => {
+    renderPage()
+
+    const allergens = screen.getByRole('list', { name: 'Allergens' })
+    const enquiry = screen.getByRole('region', { name: 'Send an enquiry' })
+    const occasions = screen.getByRole('link', { name: 'Wedding' })
+
+    expect(precedes(allergens, enquiry)).toBe(true)
+    expect(precedes(enquiry, occasions)).toBe(true)
+    expect(within(enquiry).getByRole('group', { name: 'Size' })).toBeTruthy()
+    // One copy of the offer: nothing else on the page lists the Sizes or the choices.
+    expect(screen.queryByRole('list', { name: 'Sizes' })).toBeNull()
+    expect(screen.getAllByRole('group', { name: 'Size' })).toHaveLength(1)
+    // It is part of the column, not a destination further down to jump to.
+    expect(screen.queryByRole('link', { name: 'Send an enquiry' })).toBeNull()
   })
 
   it('lists the Allergens with their icons, beside the cross-contamination statement', () => {
@@ -266,27 +324,6 @@ describe('ItemPage', () => {
         item: 'https://thuisbakery.nl/cakes/burnt-basque-cheesecake',
       },
     ])
-  })
-
-  it('ends at an Enquiry for this Item, scoped to its own Sizes and choices', () => {
-    renderPage()
-
-    const enquiry = screen.getByRole('region', { name: 'Send an enquiry' })
-
-    expect(
-      within(within(enquiry).getByRole('group', { name: 'Size' }))
-        .getAllByRole('radio')
-        .map((radio) => radio.getAttribute('value')),
-      // The fixture's Sizes carry no row ids, so they are keyed by position.
-    ).toEqual(['0', '1'])
-    expect(
-      within(within(enquiry).getByRole('group', { name: 'Sponge' }))
-        .getAllByRole('radio')
-        .map((radio) => radio.getAttribute('value')),
-    ).toEqual(['1', '3'])
-    expect(screen.getByRole('link', { name: 'Send an enquiry' }).getAttribute('href')).toBe(
-      '#enquire',
-    )
   })
 
   it('holds the Enquiry to Closed until, with Jana’s notice', () => {
