@@ -3,6 +3,7 @@ import { draftMode } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { globalPreviewPath } from '@/domain/preview'
 import { DEFAULT_LOCALE, isCatalogue, isLocale, itemPath, marketingPagePath } from '@/domain/routes'
 
 /**
@@ -35,9 +36,10 @@ export const GET = async (request: Request): Promise<Response> => {
     return new Response('You must be logged in to preview.', { status: 401 })
   }
 
-  // The globals — the cross-contamination statement, Lead time and Closed until — have no
-  // page of their own: they render site-wide, so their preview is the site's front page.
-  let path = locale === DEFAULT_LOCALE ? '/' : `/${locale}`
+  // A page's own global previews on that page. The site-wide ones — the cross-contamination
+  // statement, Lead time and Closed until — have no page of their own, so theirs is the
+  // site's front page.
+  let path = globalPreviewPath(kind === 'global' ? (slug ?? '') : '', locale)
 
   if (kind === 'collection' && slug === 'items') {
     const id = params.get('id')

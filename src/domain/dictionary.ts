@@ -23,7 +23,7 @@ export type Dictionary = {
   priceFrom: string
   /** The accessible name of a catalogue page's in-page index of its Categories. */
   categoryIndex: string
-  /** Placeholder page headings until each page's real content lands. */
+  /** Each coded page's name: its `<title>`, and the heading of a page with none of its own. */
   pageTitles: Record<CodedPage, string>
   /** The Item page's own labels. */
   item: {
@@ -80,6 +80,12 @@ export type Dictionary = {
     /** An Estimate line's label: `Large × 2`. */
     line: (label: string, quantity: number) => string
     send: string
+    /** The Estimate-free forms (ADR-0003): Custom order's bespoke brief, Contact's question. */
+    customOrderMessage: string
+    customOrderMessageHint: string
+    contactMessage: string
+    /** Contact's button: its Enquiry is a question, so it reads as sending a message. */
+    sendMessage: string
     sending: string
     /** Above the form when a submit is stopped by the customer's own mistakes. */
     checkFields: string
@@ -91,6 +97,28 @@ export type Dictionary = {
       tooSoon: (earliest: string | null) => string
       closed: (until: string | null) => string
     }
+  }
+  /** The Contact page's labels. Everything Jana writes there is on the Contact global. */
+  contact: {
+    email: string
+    phone: string
+    instagram: string
+    /** Where pickup is: never a street address (ADR-0002). */
+    pickup: string
+    pickupWhere: (area: string) => string
+    hours: string
+    prices: string
+    /** The line before the link to Custom order (ADR-0003: Contact → Custom order). */
+    somethingBespoke: string
+  }
+  /** The Custom order page's labels. */
+  customOrder: {
+    /** The line before the link to Contact, for a question rather than an order. */
+    justAQuestion: string
+  }
+  /** The privacy policy's labels. */
+  privacy: {
+    lastUpdated: (date: string) => string
   }
   /** The confirmation page: the customer's receipt. */
   sent: {
@@ -104,6 +132,7 @@ export type Dictionary = {
     item: string
     requestedPickupDate: string
     specialRequests: string
+    message: string
   }
   /**
    * The acknowledgement email: fixed words in the customer's language, never machine
@@ -182,6 +211,11 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
         'Size, quantity and Filling only. Jana confirms the figure in her reply, with anything personal.',
       line: (label, quantity) => `${label} × ${quantity}`,
       send: 'Send enquiry',
+      customOrderMessage: 'What you’re imagining',
+      customOrderMessageHint:
+        'The occasion, how many people, flavours, colours, a theme — whatever you already know.',
+      contactMessage: 'Your question',
+      sendMessage: 'Send message',
       sending: 'Sending…',
       checkFields: 'A few details need another look.',
       failed:
@@ -204,6 +238,23 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
             : 'Jana is closed then.',
       },
     },
+    contact: {
+      email: 'Email',
+      phone: 'Phone',
+      instagram: 'Instagram',
+      pickup: 'Pickup',
+      pickupWhere: (area) =>
+        `In ${area}, by arrangement. The exact address is sent when your order is confirmed.`,
+      hours: 'Opening hours',
+      prices: 'Prices',
+      somethingBespoke: 'Imagining something made to order?',
+    },
+    customOrder: {
+      justAQuestion: 'Just a question?',
+    },
+    privacy: {
+      lastUpdated: (date) => `Last updated ${date}`,
+    },
     sent: {
       heading: 'Thank you. Jana has your enquiry.',
       whatNext:
@@ -216,6 +267,7 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       item: 'Item',
       requestedPickupDate: 'Pickup date you asked for',
       specialRequests: 'Special requests',
+      message: 'Your message',
     },
     acknowledgement: {
       subject: (reference) => `Your enquiry to ThuisBakery (${reference})`,
@@ -288,6 +340,11 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
         'Alleen maat, aantal en vulling. Jana bevestigt het bedrag in haar antwoord, met alles wat persoonlijk is.',
       line: (label, quantity) => `${label} × ${quantity}`,
       send: 'Verstuur je vraag',
+      customOrderMessage: 'Wat je in gedachten hebt',
+      customOrderMessageHint:
+        'De gelegenheid, voor hoeveel mensen, smaken, kleuren, een thema — wat je al weet.',
+      contactMessage: 'Je vraag',
+      sendMessage: 'Verstuur je bericht',
       sending: 'Versturen…',
       checkFields: 'Een paar gegevens kloppen nog niet.',
       failed:
@@ -308,6 +365,23 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
           until ? `Jana is gesloten tot ${until}. Kies die dag of later.` : 'Jana is dan gesloten.',
       },
     },
+    contact: {
+      email: 'E-mail',
+      phone: 'Telefoon',
+      instagram: 'Instagram',
+      pickup: 'Ophalen',
+      pickupWhere: (area) =>
+        `In ${area}, op afspraak. Het precieze adres volgt zodra je bestelling is bevestigd.`,
+      hours: 'Openingstijden',
+      prices: 'Prijzen',
+      somethingBespoke: 'Iets op maat in gedachten?',
+    },
+    customOrder: {
+      justAQuestion: 'Alleen een vraag?',
+    },
+    privacy: {
+      lastUpdated: (date) => `Laatst bijgewerkt op ${date}`,
+    },
     sent: {
       heading: 'Dank je wel. Jana heeft je vraag.',
       whatNext:
@@ -320,6 +394,7 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       item: 'Wat',
       requestedPickupDate: 'Gevraagde ophaaldatum',
       specialRequests: 'Bijzonderheden',
+      message: 'Je bericht',
     },
     acknowledgement: {
       subject: (reference) => `Je vraag aan ThuisBakery (${reference})`,

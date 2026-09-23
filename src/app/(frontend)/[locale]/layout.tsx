@@ -4,7 +4,9 @@ import { notFound } from 'next/navigation'
 import { locale } from 'next/root-params'
 import type { ReactNode } from 'react'
 
+import { JsonLd } from '@/components/site/JsonLd'
 import { LOCALES, isLocale } from '@/domain/routes'
+import { organizationMarkup, websiteMarkup } from '@/domain/structured-data'
 import { siteOrigin } from '@/lib/site'
 
 import '../styles.css'
@@ -50,6 +52,9 @@ export const dynamicParams = false
  * param: any server component can read it from `next/root-params` rather than having it
  * drilled down (ADR-0002). Canonicals and hreflang are not here — they are per-URL, so
  * each page's `generateMetadata` emits them.
+ *
+ * `Organization` and `WebSite` are, being sitewide (ADR-0002). Each names only what every
+ * page shows: the business's name, in the header's wordmark, and the site's home.
  */
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const current = await locale()
@@ -63,7 +68,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       lang={current}
       className={`${cormorant.variable} ${geist.variable} ${parisienne.variable}`}
     >
-      <body className="bg-ground font-sans text-ink antialiased">{children}</body>
+      <body className="bg-ground font-sans text-ink antialiased">
+        <JsonLd data={[organizationMarkup(siteOrigin()), websiteMarkup(current, siteOrigin())]} />
+        {children}
+      </body>
     </html>
   )
 }

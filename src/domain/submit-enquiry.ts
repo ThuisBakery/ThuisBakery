@@ -87,6 +87,8 @@ export type Receipt = {
   /** `YYYY-MM-DD`. */
   requestedPickupDate: string | null
   specialRequests: string | null
+  /** What the customer wrote on Custom order or Contact. */
+  message: string | null
   estimate: Estimate | null
   /** The Lead time's days that applied, which is how long to wait before following up. */
   leadTimeDays: number | null
@@ -269,7 +271,7 @@ const judgedABot = async ({ isBot, report }: SubmitDependencies): Promise<boolea
 }
 
 export const submitEnquiry = async (
-  { body: raw, photo }: EnquiryInput,
+  { body: raw, photo: sent }: EnquiryInput,
   deps: SubmitDependencies,
 ): Promise<SubmitOutcome> => {
   const { now, load, reencode, store, reference } = deps
@@ -289,6 +291,9 @@ export const submitEnquiry = async (
   }
 
   const locale = isLocale(raw['locale']) ? raw['locale'] : DEFAULT_LOCALE
+  // Contact's form offers no Inspiration photo, so one arriving with a question is not
+  // stored: a stranger's upload is kept only where the site asks for one.
+  const photo = raw['enquiryType'] === 'contact' ? null : sent
   const photoIssue = photo ? photoProblem(photo) : null
 
   let context: EnquiryContext
@@ -345,6 +350,7 @@ export const submitEnquiry = async (
       filling: data.filling,
       requestedPickupDate: data.requestedPickupDate?.slice(0, 10) ?? null,
       specialRequests: data.specialRequests,
+      message: data.message,
       estimate: data.estimate,
       leadTimeDays: context.leadTime?.days ?? null,
     },

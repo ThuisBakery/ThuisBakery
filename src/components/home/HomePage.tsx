@@ -1,6 +1,8 @@
 import { IllustratedMenu } from '@/components/menu/IllustratedMenu'
 import { CakeStand } from '@/components/site/CakeStand'
+import { Paragraphs } from '@/components/site/Paragraphs'
 import { Photograph } from '@/components/site/Photograph'
+import { Questions } from '@/components/site/Questions'
 import { Reveal } from '@/components/site/Reveal'
 import { fromPrice, leadTimeFact } from '@/domain/home'
 import { catalogueSections } from '@/domain/menu'
@@ -54,6 +56,7 @@ export const HomePage = ({
       <About locale={locale} about={home.about} />
       <AllergenNotice allergens={home.allergens} statement={statement} />
       <Quote quote={home.quote} />
+      {/* 7. Accordion. */}
       <Questions faq={home.faq} />
       <Closing closing={home.closing} labels={home.hero} cakes={cakes} nibbles={nibbles} />
     </div>
@@ -202,11 +205,10 @@ const About = ({ locale, about }: { locale: Locale; about: Home['about'] }) => (
         <h2 className="max-w-[18ch] font-display text-[34px] leading-tight font-medium md:text-5xl">
           {about.heading}
         </h2>
-        {paragraphs(about.body).map((each) => (
-          <p key={each} className="mt-5 max-w-[48ch] text-[15px] leading-relaxed text-ink-muted">
-            {each}
-          </p>
-        ))}
+        <Paragraphs
+          text={about.body}
+          className="mt-5 max-w-[48ch] text-[15px] leading-relaxed text-ink-muted"
+        />
         <a
           href={pagePath('about', locale)}
           className={`mt-8 ${TEXT_LINK} decoration-rule hover:decoration-ink`}
@@ -259,36 +261,6 @@ const Quote = ({ quote }: { quote: Home['quote'] }) => (
   </section>
 )
 
-/**
- * 7. Accordion. Native `<details>`, so it opens without JavaScript and every answer is in
- * the HTML for search.
- */
-const Questions = ({ faq }: { faq: Home['faq'] }) => (
-  <section className="px-4 pb-24 md:px-10 md:pb-28">
-    <div className="mx-auto max-w-[820px]">
-      <h2 className="font-display text-[34px] leading-tight font-medium md:text-4xl">
-        {faq.heading}
-      </h2>
-      <div className="mt-8 border-t border-rule">
-        {faq.questions.map(({ id, question, answer }) => (
-          <details key={id ?? question} className="group border-b border-rule">
-            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-6 py-4 font-display text-xl leading-snug [&::-webkit-details-marker]:hidden">
-              {question}
-              <span
-                aria-hidden="true"
-                className="shrink-0 font-sans text-lg text-ink-muted group-open:rotate-45 motion-safe:transition-transform motion-safe:duration-300"
-              >
-                +
-              </span>
-            </summary>
-            <p className="max-w-[64ch] pb-5 text-[15px] leading-relaxed text-ink-muted">{answer}</p>
-          </details>
-        ))}
-      </div>
-    </div>
-  </section>
-)
-
 /** 8. Colour band: the page ends where it began, sending the customer into the menu. */
 const Closing = ({
   closing,
@@ -321,10 +293,3 @@ const Closing = ({
     </div>
   </section>
 )
-
-/** Jana's paragraphs, as she separated them with a blank line. */
-const paragraphs = (text: string): string[] =>
-  text
-    .split(/\n\s*\n/)
-    .map((each) => each.trim())
-    .filter((each) => each !== '')

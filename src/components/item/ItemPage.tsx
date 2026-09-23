@@ -3,6 +3,7 @@ import Image from 'next/image'
 
 import { EnquiryForm } from '@/components/enquiry/EnquiryForm'
 import { CakeStand } from '@/components/site/CakeStand'
+import { JsonLd } from '@/components/site/JsonLd'
 import { Photograph } from '@/components/site/Photograph'
 import { DICTIONARY } from '@/domain/dictionary'
 import { itemOffer } from '@/domain/enquiry'
@@ -115,14 +116,7 @@ export const ItemPage = ({
 
   return (
     <article className="px-4 pt-6 pb-20 md:px-10 md:pt-10 md:pb-28">
-      {structuredData.map((data) => (
-        <script
-          key={String(data['@type'])}
-          type="application/ld+json"
-          // JSON-LD is data, not markup: `<` is escaped so no value can close the tag.
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, '\\u003c') }}
-        />
-      ))}
+      <JsonLd data={structuredData} />
 
       <div className="mx-auto max-w-[1400px]">
         <nav aria-label={words.item.breadcrumb}>

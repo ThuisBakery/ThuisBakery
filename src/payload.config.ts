@@ -20,12 +20,16 @@ import { Submissions } from './collections/Submissions'
 import { Users } from './collections/Users'
 import { previewUrl } from './domain/preview'
 import { DEFAULT_LOCALE, LOCALES } from './domain/routes'
+import { About } from './globals/About'
 import { ClosedUntil } from './globals/ClosedUntil'
+import { Contact } from './globals/Contact'
 import { CrossContamination } from './globals/CrossContamination'
+import { CustomOrder } from './globals/CustomOrder'
 import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
 import { Home } from './globals/Home'
 import { LeadTimeGlobal } from './globals/LeadTimeGlobal'
+import { Privacy } from './globals/Privacy'
 import { revalidatingCollection, revalidatingGlobal } from './hooks/revalidateSite'
 import { seo } from './plugins/seo'
 
@@ -46,7 +50,16 @@ export default buildConfig({
      */
     livePreview: {
       collections: [Items.slug, Pages.slug],
-      globals: [Home.slug, CrossContamination.slug, LeadTimeGlobal.slug, ClosedUntil.slug],
+      globals: [
+        Home.slug,
+        About.slug,
+        Contact.slug,
+        CustomOrder.slug,
+        Privacy.slug,
+        CrossContamination.slug,
+        LeadTimeGlobal.slug,
+        ClosedUntil.slug,
+      ],
       url: ({ collectionConfig, globalConfig, data, locale }) => {
         const id: unknown = data['id']
 
@@ -70,9 +83,18 @@ export default buildConfig({
     Submissions,
     Users,
   ],
-  globals: [Header, Footer, Home, CrossContamination, LeadTimeGlobal, ClosedUntil].map(
-    revalidatingGlobal,
-  ),
+  globals: [
+    Header,
+    Footer,
+    Home,
+    About,
+    Contact,
+    CustomOrder,
+    Privacy,
+    CrossContamination,
+    LeadTimeGlobal,
+    ClosedUntil,
+  ].map(revalidatingGlobal),
   /**
    * Content locales. `fallback: true` is the site-wide default, so a missing Dutch value
    * falls back to English unless a request says otherwise.

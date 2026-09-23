@@ -81,6 +81,7 @@ export const EnquirySent = ({
               value={pickup ? formatDisplayDate(pickup, locale) : null}
             />
             <Row term={words.sent.specialRequests} value={receipt.specialRequests} />
+            <Row term={words.sent.message} value={receipt.message} />
           </dl>
           {receipt.estimate ? (
             <div className="mt-6">

@@ -1,39 +1,7 @@
-import type { Field, GlobalConfig } from 'payload'
+import type { GlobalConfig } from 'payload'
 
+import { paragraph, photograph, questions, words } from '@/fields/copy'
 import { DRAFTS_WITH_AUTOSAVE } from '@/versions'
-
-type CopyOptions = { optional?: boolean; width?: string }
-
-/** A localized line of homepage copy. */
-const words = (name: string, description: string, options: CopyOptions = {}): Field => ({
-  name,
-  type: 'text',
-  required: !options.optional,
-  localized: true,
-  admin: { description, ...(options.width ? { width: options.width } : {}) },
-})
-
-/** A localized paragraph of homepage copy. */
-const paragraph = (
-  name: string,
-  description: string,
-  options: Pick<CopyOptions, 'optional'> = {},
-): Field => ({
-  name,
-  type: 'textarea',
-  required: !options.optional,
-  localized: true,
-  admin: { description },
-})
-
-const photograph = (description: string): Field => ({
-  name: 'photograph',
-  type: 'upload',
-  relationTo: 'media',
-  admin: {
-    description: `${description} Set its focal point on the photograph itself, so the cake stays in frame when the page crops it.`,
-  },
-})
 
 /**
  * The homepage's words (ADR-0003's page-content singleton for `/` and `/nl`). Jana fills the
@@ -133,25 +101,7 @@ export const Home: GlobalConfig = {
         words('attribution', 'Who said it — “Marieke, Uithoorn”. Ask before using a surname.'),
       ],
     },
-    {
-      name: 'faq',
-      type: 'group',
-      label: 'Questions',
-      fields: [
-        words('heading', '“Before you ask”.'),
-        {
-          name: 'questions',
-          type: 'array',
-          required: true,
-          minRows: 1,
-          labels: { singular: 'Question', plural: 'Questions' },
-          fields: [
-            words('question', 'The question, as a customer would ask it.'),
-            paragraph('answer', 'The answer.'),
-          ],
-        },
-      ],
-    },
+    questions('“Before you ask”.'),
     {
       name: 'closing',
       type: 'group',

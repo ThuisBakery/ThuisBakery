@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { PREVIEW_ROUTE, previewUrl } from './preview'
+import { PREVIEW_ROUTE, globalPreviewPath, previewUrl } from './preview'
 
 describe('previewUrl', () => {
   it('carries the collection document’s id rather than a resolved path', () => {
@@ -25,5 +25,19 @@ describe('previewUrl', () => {
 
     expect(url.searchParams.has('id')).toBe(false)
     expect(url.searchParams.get('slug')).toBe('lead-time')
+  })
+})
+
+describe('globalPreviewPath', () => {
+  it('previews a page’s own global on that page, in the locale being edited', () => {
+    expect(globalPreviewPath('about', 'en')).toBe('/about')
+    expect(globalPreviewPath('contact', 'nl')).toBe('/nl/contact')
+    expect(globalPreviewPath('custom-order', 'nl')).toBe('/nl/maatwerk')
+    expect(globalPreviewPath('privacy', 'en')).toBe('/privacy')
+  })
+
+  it('previews a site-wide global on the front page', () => {
+    expect(globalPreviewPath('lead-time', 'en')).toBe('/')
+    expect(globalPreviewPath('home', 'nl')).toBe('/nl')
   })
 })

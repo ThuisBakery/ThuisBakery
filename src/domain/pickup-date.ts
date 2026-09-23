@@ -88,6 +88,15 @@ export const formatDisplayDate = (
     // `en-GB` puts a comma after the weekday; the site's dates are set without one.
     .replace(',', '')
 
+/** A date in full and without its weekday, for a record rather than a plan — `23 September 2026`. */
+export const formatFullDate = (date: CalendarDate, locale: Locale): string =>
+  new Intl.DateTimeFormat(DISPLAY_LOCALES[locale], {
+    timeZone: 'UTC',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(toUtc(date)))
+
 /**
  * The Closed until global's date as an Amsterdam day. Payload stores a day-only date as a
  * timestamp — noon UTC from its date picker — so reading it in Amsterdam gives the day Jana
