@@ -160,10 +160,8 @@ export default async function Page(props: Props) {
       ) : page === 'enquirySent' ? (
         <EnquirySent
           locale={current}
-          siteLeadTimeDays={
-            (await payload.findGlobal({ slug: 'lead-time', depth: 0 })).days ?? null
-          }
           contactPath={pagePath('contact', current)}
+          {...await fetchEnquirySent(payload)}
         />
       ) : isCatalogue(page) ? (
         <CataloguePage
@@ -286,4 +284,14 @@ const fetchHome = async (payload: Payload, current: Locale) => {
   ])
 
   return { home, categories, leadTime, statement: crossContamination.statement }
+}
+
+/**
+ * The confirmation page's one fact from the CMS: the site-wide Lead time's days, which is how
+ * long to wait for a reply when the customer's own receipt is not there to say.
+ */
+const fetchEnquirySent = async (payload: Payload) => {
+  const leadTime = await payload.findGlobal({ slug: 'lead-time', depth: 0 })
+
+  return { siteLeadTimeDays: leadTime.days ?? null }
 }

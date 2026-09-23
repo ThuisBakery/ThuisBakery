@@ -1,5 +1,5 @@
 import {
-  ENQUIRY_TYPES,
+  isEnquiryType,
   validateEnquiry,
   type Enquiry,
   type EnquiryProblems,
@@ -250,7 +250,7 @@ export const parseReceipt = (value: string | null): Receipt | null => {
   if (
     !isRecord(parsed) ||
     typeof parsed['reference'] !== 'number' ||
-    !(ENQUIRY_TYPES as readonly unknown[]).includes(parsed['enquiryType'])
+    !isEnquiryType(parsed['enquiryType'])
   ) {
     return null
   }

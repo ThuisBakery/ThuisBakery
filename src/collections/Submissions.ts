@@ -23,6 +23,13 @@ import { LOCALES, type Locale } from '@/domain/routes'
 
 const loggedIn: Access = ({ req }) => Boolean(req.user)
 
+/** Which fields the admin shows, by which form a Submission came from. */
+type Condition = (data: Partial<Record<string, unknown>>) => boolean
+
+const fromItemPage: Condition = (data) => data['enquiryType'] === 'item'
+const notFromItemPage: Condition = (data) => data['enquiryType'] !== 'item'
+const hasPickupDate: Condition = (data) => data['enquiryType'] !== 'contact'
+
 const ENQUIRY_TYPE_LABELS: Record<EnquiryType, string> = {
   item: 'Item',
   'custom-order': 'Custom order',
@@ -99,7 +106,7 @@ export const Submissions: CollectionConfig = {
       relationTo: 'items',
       index: true,
       admin: {
-        condition: (data) => data['enquiryType'] === 'item',
+        condition: fromItemPage,
         description: 'The Item page this was sent from.',
       },
     },
@@ -109,14 +116,14 @@ export const Submissions: CollectionConfig = {
       label: 'Item as named',
       admin: {
         readOnly: true,
-        condition: (data) => data['enquiryType'] === 'item',
+        condition: fromItemPage,
         description: 'The Item’s title when the customer sent this, in their language.',
       },
     },
     {
       type: 'row',
       admin: {
-        condition: (data) => data['enquiryType'] === 'item',
+        condition: fromItemPage,
       },
       fields: [
         { name: 'size', type: 'text', admin: { width: '25%' } },
@@ -131,7 +138,7 @@ export const Submissions: CollectionConfig = {
       index: true,
       label: 'Requested pickup date',
       admin: {
-        condition: (data) => data['enquiryType'] !== 'contact',
+        condition: hasPickupDate,
         description: 'Requested, never confirmed: only Jana’s reply confirms a date.',
         date: {
           pickerAppearance: 'dayOnly',
@@ -144,7 +151,7 @@ export const Submissions: CollectionConfig = {
       type: 'textarea',
       label: 'Special requests',
       admin: {
-        condition: (data) => data['enquiryType'] === 'item',
+        condition: fromItemPage,
         description: 'The customer’s own words, never priced by the Estimate.',
       },
     },
@@ -152,7 +159,7 @@ export const Submissions: CollectionConfig = {
       name: 'message',
       type: 'textarea',
       admin: {
-        condition: (data) => data['enquiryType'] !== 'item',
+        condition: notFromItemPage,
       },
     },
     {
@@ -160,7 +167,7 @@ export const Submissions: CollectionConfig = {
       type: 'group',
       admin: {
         readOnly: true,
-        condition: (data) => data['enquiryType'] === 'item',
+        condition: fromItemPage,
         description:
           'Exactly what the customer was shown, stored when they sent it and never recomputed. Provisional: your reply sets the price.',
       },

@@ -19,8 +19,15 @@ export type EnquiryType = (typeof ENQUIRY_TYPES)[number]
 /** A generous ceiling for a home bakery, which also keeps a typo from reading as 100 cakes. */
 export const MAX_QUANTITY = 50
 
-/** What an Item offers an Enquiry: its Sizes, and its Sponges and Fillings if configurable. */
-export type ItemOffer = {
+/** Whether a count is one an Enquiry may ask for: a whole number from 1 to `MAX_QUANTITY`. */
+export const isQuantity = (count: number): boolean =>
+  Number.isInteger(count) && count >= 1 && count <= MAX_QUANTITY
+
+export const isEnquiryType = (value: unknown): value is EnquiryType =>
+  typeof value === 'string' && (ENQUIRY_TYPES as readonly string[]).includes(value)
+
+export /** What an Item offers an Enquiry: its Sizes, and its Sponges and Fillings if configurable. */
+type ItemOffer = {
   id: number
   title: string
   sizes: { id: string; label: string; price: number }[]
@@ -227,7 +234,7 @@ const reader = (raw: Record<string, unknown>) => {
 
     const count = Number(figure)
 
-    if (!Number.isInteger(count) || count < 1 || count > MAX_QUANTITY) {
+    if (!isQuantity(count)) {
       problems.quantity = 'invalidQuantity'
       return null
     }
@@ -274,9 +281,6 @@ const reader = (raw: Record<string, unknown>) => {
 
   return { problems, text, choice, quantity, pickupDate, contact }
 }
-
-const isEnquiryType = (value: unknown): value is EnquiryType =>
-  typeof value === 'string' && (ENQUIRY_TYPES as readonly string[]).includes(value)
 
 const itemEnquiry = (
   read: ReturnType<typeof reader>,

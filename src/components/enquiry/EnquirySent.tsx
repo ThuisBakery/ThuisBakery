@@ -8,15 +8,7 @@ import type { Locale } from '@/domain/routes'
 import { parseReceipt } from '@/domain/submit-enquiry'
 
 import { EstimateSummary } from './EstimateSummary'
-import { RECEIPT_KEY } from './EnquiryForm'
-
-const readStoredReceipt = (): string | null => {
-  try {
-    return sessionStorage.getItem(RECEIPT_KEY)
-  } catch {
-    return null
-  }
-}
+import { readKeptReceipt } from './receipt-storage'
 
 // The receipt is written once, before this page loads; there is nothing to subscribe to.
 const subscribeToNothing = () => () => {}
@@ -35,7 +27,7 @@ export const EnquirySent = ({
   locale,
   siteLeadTimeDays,
   contactPath,
-  readReceipt = readStoredReceipt,
+  readReceipt = readKeptReceipt,
 }: {
   locale: Locale
   /** The site-wide Lead time's days: how long to wait, when there is no receipt to say. */

@@ -40,8 +40,9 @@ export const EstimateSummary = ({
         </span>
       </h3>
       <ul className="mt-3 grid gap-1.5 text-sm">
-        {estimate.lines.map((line) => (
-          <li key={line.label} className="flex items-baseline justify-between gap-4">
+        {/* A Filling may share a Size's name, so the position keeps each line's key unique. */}
+        {estimate.lines.map((line, index) => (
+          <li key={`${index}-${line.label}`} className="flex items-baseline justify-between gap-4">
             <span>{words.line(line.label, line.quantity)}</span>
             <span className="tabular-nums">{formatEuros(line.amount, locale)}</span>
           </li>

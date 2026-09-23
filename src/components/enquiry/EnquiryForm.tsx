@@ -5,6 +5,7 @@ import { useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode 
 import { DICTIONARY } from '@/domain/dictionary'
 import {
   MAX_QUANTITY,
+  isQuantity,
   validateEnquiry,
   type EnquiryField,
   type EnquiryProblem,
@@ -26,12 +27,10 @@ import { pagePath, type Locale } from '@/domain/routes'
 import { HONEYPOT_FIELD, type EnquiryReply, type Receipt } from '@/domain/submit-enquiry'
 
 import { EstimateSummary } from './EstimateSummary'
+import { keepReceipt } from './receipt-storage'
 
 /** Where every Enquiry is sent. See `src/app/(frontend)/next/enquiry/route.ts`. */
 export const ENQUIRY_ENDPOINT = '/next/enquiry'
-
-/** Where the receipt waits for the confirmation page, for this tab only. */
-export const RECEIPT_KEY = 'thuisbakery:receipt'
 
 /** Sends an Enquiry. Anything that is not a reply the route could have written is a failure. */
 export const postEnquiry = async (body: Record<string, unknown>): Promise<EnquiryReply> => {
@@ -53,12 +52,8 @@ export const postEnquiry = async (body: Record<string, unknown>): Promise<Enquir
 
 /** Keeps the receipt for the confirmation page, then goes there. */
 const toConfirmation = (locale: Locale) => (receipt: Receipt | null) => {
-  try {
-    if (receipt) {
-      sessionStorage.setItem(RECEIPT_KEY, JSON.stringify(receipt))
-    }
-  } catch {
-    // Storage can be blocked. The page still says what happens next, just not what was sent.
+  if (receipt) {
+    keepReceipt(receipt)
   }
 
   window.location.assign(pagePath('enquirySent', locale))
@@ -226,7 +221,7 @@ export const EnquiryForm = ({
     if (field === 'quantity') {
       const count = Number(value)
 
-      if (value.trim() !== '' && Number.isInteger(count) && count >= 1 && count <= MAX_QUANTITY) {
+      if (value.trim() !== '' && isQuantity(count)) {
         setEstimateQuantity(count)
       }
     }
