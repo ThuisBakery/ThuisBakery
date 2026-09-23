@@ -2,7 +2,7 @@ import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 
 import { httpReply, submitEnquiry } from '@/domain/submit-enquiry'
-import { loadEnquiryContext, storeSubmission } from '@/lib/enquiry'
+import { loadEnquiryContext, newReference, storeSubmission } from '@/lib/enquiry'
 
 /**
  * `POST /next/enquiry` — the one route an Enquiry is sent to, from any of the three forms
@@ -24,6 +24,7 @@ export const POST = async (request: Request): Promise<Response> => {
     now: new Date(),
     load: loadEnquiryContext(payload),
     store: storeSubmission(payload),
+    reference: newReference,
   })
 
   if (outcome.status === 'failed') {

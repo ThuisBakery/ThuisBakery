@@ -24,6 +24,7 @@ import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
 import { Home } from './globals/Home'
 import { LeadTimeGlobal } from './globals/LeadTimeGlobal'
+import { revalidatingCollection, revalidatingGlobal } from './hooks/revalidateSite'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -55,18 +56,20 @@ export default buildConfig({
       },
     },
   },
+  /**
+   * Everything the public pages show rebuilds them when it changes (`src/hooks/revalidateSite.ts`).
+   * Submissions and Users are never shown, so saving one rebuilds nothing.
+   */
   collections: [
-    Items,
-    Categories,
-    Occasions,
-    Sponges,
-    Fillings,
-    Allergens,
-    Media,
+    ...[Items, Categories, Occasions, Sponges, Fillings, Allergens, Media].map(
+      revalidatingCollection,
+    ),
     Submissions,
     Users,
   ],
-  globals: [Header, Footer, Home, CrossContamination, LeadTimeGlobal, ClosedUntil],
+  globals: [Header, Footer, Home, CrossContamination, LeadTimeGlobal, ClosedUntil].map(
+    revalidatingGlobal,
+  ),
   /**
    * Content locales. `fallback: true` is the site-wide default, so a missing Dutch value
    * falls back to English unless a request says otherwise.

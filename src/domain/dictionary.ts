@@ -92,7 +92,7 @@ export type Dictionary = {
     byWhen: (days: number) => string
     followUp: string
     receipt: string
-    reference: (reference: number) => string
+    reference: (reference: string) => string
     item: string
     requestedPickupDate: string
     specialRequests: string

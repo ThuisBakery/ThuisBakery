@@ -472,6 +472,10 @@ export interface Allergen {
 export interface Submission {
   id: number;
   /**
+   * The code the customer was shown on their confirmation page, and will quote if they follow up.
+   */
+  reference?: string | null;
+  /**
    * Which form this came from.
    */
   enquiryType: 'item' | 'custom-order' | 'contact';
@@ -847,6 +851,7 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "submissions_select".
  */
 export interface SubmissionsSelect<T extends boolean = true> {
+  reference?: T;
   enquiryType?: T;
   locale?: T;
   name?: T;

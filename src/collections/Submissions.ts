@@ -55,13 +55,32 @@ export const Submissions: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'enquiryType', 'itemTitle', 'requestedPickupDate', 'createdAt'],
-    listSearchableFields: ['name', 'email', 'itemTitle'],
+    defaultColumns: [
+      'name',
+      'reference',
+      'enquiryType',
+      'itemTitle',
+      'requestedPickupDate',
+      'createdAt',
+    ],
+    listSearchableFields: ['name', 'email', 'reference', 'itemTitle'],
     description:
       'Every Enquiry customers have sent, newest first. Use Filters to narrow by type, Item, language or Requested pickup date.',
   },
   defaultSort: '-createdAt',
   fields: [
+    {
+      name: 'reference',
+      type: 'text',
+      unique: true,
+      index: true,
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+        description:
+          'The code the customer was shown on their confirmation page, and will quote if they follow up.',
+      },
+    },
     {
       type: 'row',
       fields: [

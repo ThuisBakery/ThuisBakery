@@ -25,7 +25,7 @@ const cheesecake: ItemOffer = {
 }
 
 const receipt: Receipt = {
-  reference: 481,
+  reference: 'K7MQ-3XTP',
   enquiryType: 'item',
   itemTitle: 'Burnt Basque Cheesecake',
   size: 'Large',

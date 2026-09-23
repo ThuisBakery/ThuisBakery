@@ -39,6 +39,8 @@ export type EnquiryContext = {
  * the Submission still says what the customer asked for and was shown.
  */
 export type SubmissionData = {
+  /** What the customer quotes when they follow up. See `reference.ts`. */
+  reference: string
   enquiryType: EnquiryType
   /** The locale the customer submitted in — the language Jana replies in. */
   locale: Locale
@@ -60,7 +62,7 @@ export type SubmissionData = {
 
 /** What the confirmation page shows back to the customer: what they sent, and its number. */
 export type Receipt = {
-  reference: number
+  reference: string
   enquiryType: EnquiryType
   itemTitle: string | null
   size: string | null
@@ -86,7 +88,9 @@ export type SubmitOutcome =
 export type SubmitDependencies = {
   now: Date
   load: (request: { item: number | null; locale: Locale }) => Promise<EnquiryContext>
-  store: (submission: SubmissionData) => Promise<{ id: number }>
+  store: (submission: SubmissionData) => Promise<void>
+  /** A fresh random reference for the Submission. */
+  reference: () => string
 }
 
 const dayOnlyTimestamp = (date: CalendarDate): string => `${formatCalendarDate(date)}T12:00:00.000Z`
@@ -105,10 +109,11 @@ const nothingChosen = {
 } as const
 
 /** The Submission an Enquiry is stored as. The Estimate is worked out here, once. */
-export const submission = (enquiry: Enquiry, locale: Locale): SubmissionData => {
+export const submission = (enquiry: Enquiry, locale: Locale, reference: string): SubmissionData => {
   const { contact } = enquiry
   const common = {
     ...nothingChosen,
+    reference,
     enquiryType: enquiry.enquiryType,
     locale,
     name: contact.name,
@@ -156,7 +161,7 @@ const itemId = (value: unknown): number | null => {
 
 export const submitEnquiry = async (
   raw: unknown,
-  { now, load, store }: SubmitDependencies,
+  { now, load, store, reference }: SubmitDependencies,
 ): Promise<SubmitOutcome> => {
   if (!isRecord(raw)) {
     return { status: 'invalid', problems: { enquiryType: 'unknownChoice' } }
@@ -189,13 +194,13 @@ export const submitEnquiry = async (
       return { status: 'invalid', problems: validation.problems }
     }
 
-    const data = submission(validation.enquiry, locale)
-    const { id } = await store(data)
+    const data = submission(validation.enquiry, locale, reference())
+    await store(data)
 
     return {
       status: 'accepted',
       receipt: {
-        reference: id,
+        reference: data.reference,
         enquiryType: data.enquiryType,
         itemTitle: data.itemTitle,
         size: data.size,
@@ -249,7 +254,7 @@ export const parseReceipt = (value: string | null): Receipt | null => {
 
   if (
     !isRecord(parsed) ||
-    typeof parsed['reference'] !== 'number' ||
+    typeof parsed['reference'] !== 'string' ||
     !isEnquiryType(parsed['enquiryType'])
   ) {
     return null
