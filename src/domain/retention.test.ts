@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { anonymised, isAnonymised, isPhotoDue, retentionCutoffs } from './retention'
+import { anonymisedFields, isPhotoDue, retentionCutoffs } from './retention'
 
 const at = (iso: string) => new Date(iso)
 
@@ -42,7 +42,7 @@ describe('retentionCutoffs', () => {
   })
 })
 
-describe('anonymised', () => {
+describe('anonymisedFields', () => {
   const submission = {
     reference: 'K7QM-3XRD',
     enquiryType: 'item',
@@ -64,7 +64,7 @@ describe('anonymised', () => {
     createdAt: '2026-10-01T09:30:00.000Z',
   }
 
-  const after = { ...submission, ...anonymised }
+  const after = { ...submission, ...anonymisedFields }
 
   it('keeps nothing the customer told us about themselves', () => {
     const kept = JSON.stringify(after)
@@ -76,6 +76,8 @@ describe('anonymised', () => {
       'inspiration/',
       'Noor',
       'Dorpsstraat',
+      // Jana's copy of the email carries it, next to the customer's name and address.
+      'K7QM-3XRD',
     ]) {
       expect(kept).not.toContain(personal)
     }
@@ -93,10 +95,5 @@ describe('anonymised', () => {
       estimate: submission.estimate,
       createdAt: '2026-10-01T09:30:00.000Z',
     })
-  })
-
-  it('can tell an anonymised Submission from one that is not yet', () => {
-    expect(isAnonymised(submission)).toBe(false)
-    expect(isAnonymised(after)).toBe(true)
   })
 })

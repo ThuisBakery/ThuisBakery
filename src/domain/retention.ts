@@ -5,9 +5,9 @@
  * dates rather than by waiting a year.
  */
 
-export const PHOTO_RETENTION_MONTHS = 12
+const PHOTO_RETENTION_MONTHS = 12
 
-export const SUBMISSION_RETENTION_MONTHS = 24
+const SUBMISSION_RETENTION_MONTHS = 24
 
 /** The same instant `months` calendar months earlier, in UTC, clamped to the month's end. */
 const monthsBefore = (now: Date, months: number): Date => {
@@ -38,7 +38,7 @@ export const retentionCutoffs = (now: Date): RetentionCutoffs => ({
   anonymise: monthsBefore(now, SUBMISSION_RETENTION_MONTHS),
 })
 
-/** Whether a photo sent at `sentAt` has been kept its 12 months by `now`. */
+/** Whether a photo sent at `sentAt` has been kept as long as it may be by `now`. */
 export const isPhotoDue = (sentAt: Date, now: Date): boolean =>
   sentAt.getTime() <= retentionCutoffs(now).photo.getTime()
 
@@ -54,11 +54,14 @@ export const ANONYMISED_EMAIL = 'anonymised@example.invalid'
 
 /**
  * What anonymising a Submission writes over it: everything the customer told us about
- * themselves, including their own words, which are as likely as anything to name someone.
- * The Item, Size, Sponge, Filling, quantity, dates and Estimate stay — what sold, at what
- * size, in which month — and once the rest is gone, none of that is personal data.
+ * themselves, including their own words, which are as likely as anything to name someone —
+ * and the reference, which Jana's copy of the email carries next to the customer's name, and
+ * which would otherwise link the row straight back to them. The Item, Size, Sponge, Filling,
+ * quantity, dates and Estimate stay — what sold, at what size, in which month — and once the
+ * rest is gone, none of that is personal data.
  */
-export const anonymised = {
+export const anonymisedFields = {
+  reference: null,
   name: ANONYMISED_NAME,
   email: ANONYMISED_EMAIL,
   phone: null,
@@ -66,6 +69,3 @@ export const anonymised = {
   specialRequests: null,
   message: null,
 } as const
-
-export const isAnonymised = (submission: { email: string }): boolean =>
-  submission.email === ANONYMISED_EMAIL

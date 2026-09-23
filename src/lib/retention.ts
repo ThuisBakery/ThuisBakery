@@ -1,6 +1,12 @@
-import type { Payload } from 'payload'
+import type { Payload, Where } from 'payload'
 
-import { ANONYMISED_EMAIL, anonymised, isPhotoDue, retentionCutoffs } from '@/domain/retention'
+import {
+  ANONYMISED_EMAIL,
+  anonymisedFields,
+  isPhotoDue,
+  retentionCutoffs,
+} from '@/domain/retention'
+import type { Submission } from '@/payload-types'
 
 import { deletePhoto, listPhotos } from './inspiration-photo'
 
@@ -13,10 +19,10 @@ import { deletePhoto, listPhotos } from './inspiration-photo'
  * rather than a file nothing points at. One Submission failing is logged and skipped, so it
  * cannot hold up the rest.
  *
- * At most `BATCH` Submissions per step per run: whatever is left over is still due tomorrow.
+ * At most `MAX_PER_RUN` Submissions per step: whatever is left over is still due tomorrow.
  */
 
-const BATCH = 200
+const MAX_PER_RUN = 200
 
 export type RetentionReport = {
   photosDeleted: number
@@ -34,77 +40,70 @@ export const runRetention = async (payload: Payload, now: Date): Promise<Retenti
     failures: 0,
   }
 
-  const attempt = async (what: string, step: () => Promise<void>): Promise<boolean> => {
+  /** Runs one step, counting it under `counter` if it worked and as a failure if not. */
+  const attempt = async (
+    counter: Exclude<keyof RetentionReport, 'failures'>,
+    what: string,
+    step: () => Promise<void>,
+  ): Promise<void> => {
     try {
       await step()
-      return true
+      report[counter] += 1
     } catch (error) {
       report.failures += 1
       payload.logger.error({ err: error, msg: `Retention: could not ${what}.` })
-      return false
     }
   }
 
-  // Inspiration photos at 12 months.
-  const { docs: withPhoto } = await payload.find({
-    collection: 'submissions',
-    where: {
-      and: [
-        { createdAt: { less_than_equal: cutoffs.photo.toISOString() } },
-        { inspirationPhoto: { exists: true } },
-      ],
-    },
-    depth: 0,
-    limit: BATCH,
-    pagination: false,
-  })
+  const createdBy = async (cutoff: Date, where: Where) =>
+    (
+      await payload.find({
+        collection: 'submissions',
+        where: { and: [{ createdAt: { less_than_equal: cutoff.toISOString() } }, where] },
+        sort: 'createdAt',
+        depth: 0,
+        limit: MAX_PER_RUN,
+        pagination: false,
+      })
+    ).docs
 
-  for (const { id, inspirationPhoto } of withPhoto) {
-    const done = await attempt(`delete the photo of Submission ${id}`, async () => {
-      if (inspirationPhoto) {
-        await deletePhoto(inspirationPhoto)
-      }
+  // A photo whose Submission is due for either step goes first, then the Submission is
+  // written. Anonymising only finds one if deleting it on time kept failing.
+  const withoutPhoto = async (
+    id: number,
+    photo: Submission['inspirationPhoto'],
+    data: Partial<Submission>,
+  ) => {
+    if (photo) {
+      await deletePhoto(photo)
+    }
 
-      await payload.update({ collection: 'submissions', id, data: { inspirationPhoto: null } })
-    })
-
-    report.photosDeleted += done ? 1 : 0
+    await payload.update({ collection: 'submissions', id, data })
   }
 
-  // Submissions at 24 months.
-  const { docs: toAnonymise } = await payload.find({
-    collection: 'submissions',
-    where: {
-      and: [
-        { createdAt: { less_than_equal: cutoffs.anonymise.toISOString() } },
-        { email: { not_equals: ANONYMISED_EMAIL } },
-      ],
-    },
-    depth: 0,
-    limit: BATCH,
-    pagination: false,
-  })
-
-  for (const { id, inspirationPhoto } of toAnonymise) {
-    const done = await attempt(`anonymise Submission ${id}`, async () => {
-      // Only there if deleting it at 12 months kept failing.
-      if (inspirationPhoto) {
-        await deletePhoto(inspirationPhoto)
-      }
-
-      await payload.update({ collection: 'submissions', id, data: anonymised })
-    })
-
-    report.submissionsAnonymised += done ? 1 : 0
+  for (const { id, inspirationPhoto } of await createdBy(cutoffs.photo, {
+    inspirationPhoto: { exists: true },
+  })) {
+    await attempt('photosDeleted', `delete the photo of Submission ${id}`, () =>
+      withoutPhoto(id, inspirationPhoto, { inspirationPhoto: null }),
+    )
   }
 
-  // Any photo in the store past 12 months, whatever does or does not name it: one whose
+  for (const { id, inspirationPhoto } of await createdBy(cutoffs.anonymise, {
+    email: { not_equals: ANONYMISED_EMAIL },
+  })) {
+    await attempt('submissionsAnonymised', `anonymise Submission ${id}`, () =>
+      withoutPhoto(id, inspirationPhoto, anonymisedFields),
+    )
+  }
+
+  // Any photo in the store past its time, whatever does or does not name it: one whose
   // Submission Jana deleted in the admin, or one a failed Enquiry could not clean up after.
   for await (const { pathname, uploadedAt } of listPhotos()) {
     if (isPhotoDue(uploadedAt, now)) {
-      const done = await attempt(`delete stray photo ${pathname}`, () => deletePhoto(pathname))
-
-      report.strayPhotosDeleted += done ? 1 : 0
+      await attempt('strayPhotosDeleted', `delete stray photo ${pathname}`, () =>
+        deletePhoto(pathname),
+      )
     }
   }
 
