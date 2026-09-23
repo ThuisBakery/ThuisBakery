@@ -18,7 +18,7 @@ export const LanguageSwitcher = ({
   className,
 }: {
   locale: Locale
-  page: CodedPage
+  page: CodedPage | null
   /**
    * This page's path in the other locale, when it is not a coded page's — an Item's. An
    * Item untranslated there has no such path, and the caller passes where it should land.
@@ -30,7 +30,7 @@ export const LanguageSwitcher = ({
 
   return (
     <a
-      href={alternate ?? pagePath(page, target)}
+      href={alternate ?? pagePath(page ?? 'home', target)}
       lang={target}
       hrefLang={target}
       className={cn(

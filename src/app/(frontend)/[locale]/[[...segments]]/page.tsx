@@ -7,11 +7,13 @@ import { getPayload, type Payload } from 'payload'
 import { EnquirySent } from '@/components/enquiry/EnquirySent'
 import { HomePage } from '@/components/home/HomePage'
 import { ItemPage } from '@/components/item/ItemPage'
+import { MarketingPage } from '@/components/page/MarketingPage'
 import { CataloguePage } from '@/components/menu/CataloguePage'
 import { PageShell } from '@/components/site/PageShell'
 import { Placeholder } from '@/components/site/Placeholder'
 import { alternates } from '@/domain/alternates'
 import { DICTIONARY, documentTitle, itemTitle } from '@/domain/dictionary'
+import { linkTargetKey, occasionPages } from '@/domain/page'
 import {
   LOCALES,
   CODED_PAGES,
@@ -19,16 +21,19 @@ import {
   isCatalogue,
   isLocale,
   itemSegments,
+  marketingPageSegments,
   otherLocale,
   pagePath,
   pageSegments,
   resolveItem,
+  resolveMarketingPage,
   resolvePage,
   type Catalogue,
   type Locale,
   type CodedPage,
 } from '@/domain/routes'
 import { itemListings, readyItemIds, type ItemListing } from '@/lib/items'
+import { pageListings, type PageListing } from '@/lib/pages'
 import { siteOrigin } from '@/lib/site'
 
 type Props = { params: Promise<{ segments?: string[] }> }
@@ -46,7 +51,7 @@ export const dynamicParams = false
 export const generateStaticParams = async () => {
   const current = await locale()
   const locales: readonly Locale[] = isLocale(current) ? [current] : LOCALES
-  const listings = await itemListings()
+  const [listings, pages] = await Promise.all([itemListings(), pageListings()])
 
   return locales.flatMap((each) => [
     ...CODED_PAGES.map((page) => ({ segments: pageSegments(page, each) })),
@@ -56,15 +61,22 @@ export const generateStaticParams = async () => {
 
       return slug === undefined ? [] : [{ segments: itemSegments(catalogue, each, slug) }]
     }),
+    // A marketing page untranslated in a locale has no path there either.
+    ...pages.flatMap(({ slugs }) => {
+      const slug = slugs[each]
+
+      return slug === undefined ? [] : [{ segments: marketingPageSegments(slug) }]
+    }),
   ])
 }
 
-/** What a request is for: a coded page, or an Item with a URL in this locale. */
+/** What a request is for: a coded page, or an Item or marketing page with a URL in this locale. */
 type Resolved =
   | { locale: Locale; kind: 'page'; page: CodedPage }
   | { locale: Locale; kind: 'item'; listing: ItemListing }
+  | { locale: Locale; kind: 'marketing'; listing: PageListing }
 
-/** The locale and page or Item a request is for, or a 404. */
+/** The locale and page, Item or marketing page a request is for, or a 404. */
 const resolve = async ({ params }: Props): Promise<Resolved> => {
   const [current, { segments = [] }] = await Promise.all([locale(), params])
 
@@ -90,6 +102,16 @@ const resolve = async ({ params }: Props): Promise<Resolved> => {
     }
   }
 
+  const slug = resolveMarketingPage(current, segments)
+
+  if (slug !== null) {
+    const listing = (await pageListings()).find((each) => each.slugs[current] === slug)
+
+    if (listing) {
+      return { locale: current, kind: 'marketing', listing }
+    }
+  }
+
   notFound()
 }
 
@@ -97,7 +119,7 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
   const resolved = await resolve(props)
   const { locale: current } = resolved
 
-  if (resolved.kind === 'item') {
+  if (resolved.kind === 'item' || resolved.kind === 'marketing') {
     return {
       title: itemTitle(resolved.listing.titles[current] ?? ''),
       // Built from the locales the Item is ready in only: a missing one is omitted, never
@@ -146,6 +168,28 @@ export default async function Page(props: Props) {
           catalogue={catalogue}
           origin={siteOrigin()}
           {...await fetchItem(payload, resolved.listing, current)}
+        />
+      </PageShell>
+    )
+  }
+
+  if (resolved.kind === 'marketing') {
+    const { paths } = resolved.listing
+    const other = otherLocale(current)
+
+    return (
+      <PageShell
+        locale={current}
+        // Not in the nav (ADR-0003), so no nav link is marked as the current page.
+        page={null}
+        // The same page in the other locale, or that locale's home when it is untranslated.
+        alternate={paths[other] ?? pagePath('home', other)}
+        header={header}
+        footer={footer}
+      >
+        <MarketingPage
+          locale={current}
+          {...await fetchMarketingPage(payload, resolved.listing, current)}
         />
       </PageShell>
     )
@@ -222,11 +266,72 @@ const fetchItem = async (payload: Payload, listing: ItemListing, current: Locale
     leadTime,
     closedUntil,
     statement: crossContamination.statement,
-    // Occasion pages are marketing pages, which the Pages collection (issue #26) brings.
-    // Until it lands no Occasion has a page, so none is linked rather than one linked to a
-    // 404; #26 fills this map from the Page each Occasion is written up on.
-    occasionPages: new Map<number, string>(),
+    // Occasion pages are marketing pages with their Occasion set; one untranslated here is
+    // left out rather than linked to a 404.
+    occasionPages: occasionPages(await pageListings(), current),
   }
+}
+
+/**
+ * A marketing page's documents: the page, populated for its photographs; where its links
+ * lead in this locale; and, on an Occasion page, the Items tagged with its Occasion that
+ * have a URL here.
+ *
+ * Read with locale fallback **off**. The hero and blocks are localized whole, so a page
+ * ready in this locale is written in it; with fallback on, a hero Jana left empty in Dutch
+ * would quietly fill with the English one.
+ */
+const fetchMarketingPage = async (payload: Payload, listing: PageListing, current: Locale) => {
+  const [page, targets, ready] = await Promise.all([
+    payload.findByID({
+      collection: 'pages',
+      id: listing.id,
+      depth: 1,
+      locale: current,
+      fallbackLocale: 'none',
+    }),
+    linkTargets(current),
+    readyItemIds(current),
+  ])
+
+  const { docs: occasionItems } =
+    listing.occasion === null || ready.length === 0
+      ? { docs: [] }
+      : await payload.find({
+          collection: 'items',
+          where: { and: [{ id: { in: ready } }, { occasions: { in: [listing.occasion] } }] },
+          sort: 'title',
+          depth: 0,
+          locale: current,
+          pagination: false,
+        })
+
+  return { page, targets, occasionItems }
+}
+
+/**
+ * Every page and Item with a URL in this locale, by `linkTargetKey`: where an editorial
+ * link inside a marketing page may lead. One that is missing has no URL here, so a link to
+ * it is left unlinked rather than pointed at a 404.
+ */
+const linkTargets = async (current: Locale): Promise<Map<string, string>> => {
+  const [items, pages] = await Promise.all([itemListings(), pageListings()])
+  const targets = new Map<string, string>()
+
+  for (const [relationTo, listings] of [
+    ['items', items],
+    ['pages', pages],
+  ] as const) {
+    for (const { id, paths } of listings) {
+      const path = paths[current]
+
+      if (path !== undefined) {
+        targets.set(linkTargetKey(relationTo, id), path)
+      }
+    }
+  }
+
+  return targets
 }
 
 /**

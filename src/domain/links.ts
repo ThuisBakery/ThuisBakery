@@ -9,7 +9,8 @@ export type ResolvedLink = { href: string; label: string; current: boolean }
 export const resolveLinks = (
   links: readonly PageLink[],
   locale: Locale,
-  currentPage: CodedPage,
+  /** `null` on a page the nav does not list — an Item's or a marketing page. */
+  currentPage: CodedPage | null,
 ): ResolvedLink[] =>
   links.map(({ page, label }) => ({
     href: pagePath(page, locale),

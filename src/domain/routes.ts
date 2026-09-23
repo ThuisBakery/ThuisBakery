@@ -195,3 +195,31 @@ export const resolveItem = (
 
   return catalogue ? { catalogue, slug } : null
 }
+
+/**
+ * The public path of a marketing page — `/christmas`, `/nl/kerst`. Marketing pages sit at
+ * the bare root because that is where they rank (ADR-0003); their slugs are what the
+ * reserved list keeps out of the coded segments' way.
+ */
+export const marketingPagePath = (locale: Locale, slug: string): string =>
+  `${locale === DEFAULT_LOCALE ? '' : `/${locale}`}/${slug}`
+
+/** A marketing page's segments after the locale prefix: its slug, alone. */
+export const marketingPageSegments = (slug: string): string[] => [slug]
+
+/**
+ * The marketing page slug a path's segments name in a locale — one segment that no coded
+ * page claims — or `null`. Whether such a page exists is the caller's question.
+ */
+export const resolveMarketingPage = (
+  locale: Locale,
+  segments: readonly string[],
+): string | null => {
+  const [slug, ...rest] = segments
+
+  if (slug === undefined || rest.length > 0 || resolvePage(locale, segments) !== null) {
+    return null
+  }
+
+  return slug
+}

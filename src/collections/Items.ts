@@ -2,8 +2,8 @@ import type { CollectionConfig } from 'payload'
 import { ValidationError } from 'payload'
 
 import { isWholeLeadTimeOverride } from '@/domain/lead-time'
-import { RESERVED_SLUGS, isReservedSlug } from '@/domain/routes'
 import { PAIRING_MESSAGE, leadTimeFields } from '@/fields/leadTime'
+import { slugField } from '@/fields/slug'
 import { DRAFTS_WITH_AUTOSAVE } from '@/versions'
 
 /**
@@ -62,40 +62,9 @@ export const Items: CollectionConfig = {
       required: true,
       localized: true,
     },
-    {
-      name: 'slug',
-      type: 'text',
-      required: true,
-      localized: true,
-      unique: true,
-      index: true,
-      admin: {
-        position: 'sidebar',
-        description:
-          'The last part of this Item’s URL, in this locale’s own words — apple-pie, appeltaart.',
-      },
-      /**
-       * Postgres scopes a unique index on a localized field to `(value, _locale)` in the
-       * `_locales` table, so English and Dutch may each use `appeltaart` without
-       * colliding. Payload documents the per-locale behaviour for MongoDB only; this was
-       * read out of `@payloadcms/drizzle` rather than assumed.
-       */
-      validate: (value: string | null | undefined) => {
-        if (typeof value !== 'string' || value.trim() === '') {
-          return 'A slug is required.'
-        }
-
-        if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)) {
-          return 'Use lowercase letters, numbers and hyphens only.'
-        }
-
-        if (isReservedSlug(value)) {
-          return `“${value}” is one of the site’s own page addresses and cannot be used as a slug. Reserved: ${RESERVED_SLUGS.join(', ')}.`
-        }
-
-        return true
-      },
-    },
+    slugField(
+      'The last part of this Item’s URL, in this locale’s own words — apple-pie, appeltaart.',
+    ),
     {
       name: 'category',
       type: 'relationship',

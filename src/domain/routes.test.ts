@@ -11,6 +11,9 @@ import {
   isReservedSlug,
   itemPath,
   itemSegments,
+  marketingPagePath,
+  marketingPageSegments,
+  resolveMarketingPage,
   otherLocale,
   pagePath,
   pageSegments,
@@ -193,5 +196,30 @@ describe('type guards', () => {
     expect(isCatalogue({ id: 1 })).toBe(false)
     expect(isLocale('de')).toBe(false)
     expect(isLocale(null)).toBe(false)
+  })
+})
+
+describe('marketingPagePath', () => {
+  it('puts a marketing page at the bare root in English and under /nl in Dutch', () => {
+    expect(marketingPagePath('en', 'christmas')).toBe('/christmas')
+    expect(marketingPagePath('nl', 'kerst')).toBe('/nl/kerst')
+  })
+})
+
+describe('resolveMarketingPage', () => {
+  it('names the slug of a single segment no coded page claims', () => {
+    expect(resolveMarketingPage('en', ['christmas'])).toBe('christmas')
+    expect(resolveMarketingPage('nl', ['kerst'])).toBe('kerst')
+  })
+
+  it('names nothing for home, a coded page, or a deeper path', () => {
+    expect(resolveMarketingPage('en', [])).toBeNull()
+    expect(resolveMarketingPage('en', ['cakes'])).toBeNull()
+    expect(resolveMarketingPage('nl', ['taarten'])).toBeNull()
+    expect(resolveMarketingPage('en', ['cakes', 'apple-pie'])).toBeNull()
+  })
+
+  it('round-trips with the segments a marketing page is generated at', () => {
+    expect(resolveMarketingPage('nl', marketingPageSegments('kerst'))).toBe('kerst')
   })
 })

@@ -45,6 +45,11 @@ export type Dictionary = {
     /** The line before the link to Custom order. */
     somethingElse: string
   }
+  /** A marketing page's own labels. */
+  page: {
+    /** Above an Occasion page's list of the Items tagged with its Occasion. */
+    occasionItems: string
+  }
   /**
    * The Enquiry form. The Estimate is never called a price, a total or a quote (CONTEXT.md):
    * its figure is labelled as the Estimate, and always as provisional.
@@ -135,6 +140,9 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       siblings: 'More from the menu',
       somethingElse: 'Imagining something else?',
     },
+    page: {
+      occasionItems: 'From the menu',
+    },
     enquiry: {
       heading: 'Send an enquiry',
       intro:
@@ -224,6 +232,9 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       moreOf: (category) => `Meer ${category}`,
       siblings: 'Meer van de kaart',
       somethingElse: 'Iets anders in gedachten?',
+    },
+    page: {
+      occasionItems: 'Van de kaart',
     },
     enquiry: {
       heading: 'Stuur Jana je vraag',

@@ -13,6 +13,7 @@ import { Fillings } from './collections/Fillings'
 import { Items } from './collections/Items'
 import { Media } from './collections/Media'
 import { Occasions } from './collections/Occasions'
+import { Pages } from './collections/Pages'
 import { Sponges } from './collections/Sponges'
 import { Submissions } from './collections/Submissions'
 import { Users } from './collections/Users'
@@ -42,7 +43,7 @@ export default buildConfig({
      * real path once, on load. See `src/lib/preview.ts`.
      */
     livePreview: {
-      collections: [Items.slug],
+      collections: [Items.slug, Pages.slug],
       globals: [Home.slug, CrossContamination.slug, LeadTimeGlobal.slug, ClosedUntil.slug],
       url: ({ collectionConfig, globalConfig, data, locale }) => {
         const id: unknown = data['id']
@@ -61,7 +62,7 @@ export default buildConfig({
    * Submissions and Users are never shown, so saving one rebuilds nothing.
    */
   collections: [
-    ...[Items, Categories, Occasions, Sponges, Fillings, Allergens, Media].map(
+    ...[Items, Pages, Categories, Occasions, Sponges, Fillings, Allergens, Media].map(
       revalidatingCollection,
     ),
     Submissions,
