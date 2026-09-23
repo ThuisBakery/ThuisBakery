@@ -31,6 +31,9 @@ import { changesPublicSite } from '@/domain/revalidation'
 /** Every page the catch-all renders, both locales. See `src/app/(frontend)/[locale]`. */
 const PUBLIC_PAGES = '/[locale]/[[...segments]]'
 
+/** The sitemap lists those pages, so a page published or unpublished changes it too. */
+const SITEMAP = '/sitemap.xml'
+
 const revalidatePublicPages = (payload: Payload, context: Record<string, unknown>): void => {
   // A seed migration or script saves documents outside a Next request, where there is no
   // cache to mark. It sets this flag, as Payload's template does.
@@ -40,6 +43,7 @@ const revalidatePublicPages = (payload: Payload, context: Record<string, unknown
 
   try {
     revalidatePath(PUBLIC_PAGES, 'page')
+    revalidatePath(SITEMAP)
   } catch (error) {
     // Outside a Next request `revalidatePath` throws; the next deploy rebuilds everything.
     payload.logger.warn({ err: error, msg: 'Public pages were not revalidated.' })
