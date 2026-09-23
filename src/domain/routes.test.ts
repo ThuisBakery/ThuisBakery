@@ -9,9 +9,11 @@ import {
   isLocale,
   isReservedSlug,
   itemPath,
+  itemSegments,
   otherLocale,
   pagePath,
   pageSegments,
+  resolveItem,
   resolvePage,
 } from './routes'
 
@@ -70,6 +72,44 @@ describe('resolvePage', () => {
   it('leaves anything deeper or unknown to other resolvers', () => {
     expect(resolvePage('en', ['cakes', 'apple-pie'])).toBeNull()
     expect(resolvePage('en', ['summer'])).toBeNull()
+  })
+})
+
+describe('resolveItem', () => {
+  it('names an Item by its catalogue’s localized segment and its slug', () => {
+    expect(resolveItem('en', ['cakes', 'apple-pie'])).toEqual({
+      catalogue: 'cakes',
+      slug: 'apple-pie',
+    })
+    expect(resolveItem('nl', ['lekkernijen', 'brownies'])).toEqual({
+      catalogue: 'nibbles',
+      slug: 'brownies',
+    })
+  })
+
+  it('does not accept the other locale’s catalogue segment', () => {
+    expect(resolveItem('en', ['taarten', 'appeltaart'])).toBeNull()
+    expect(resolveItem('nl', ['cakes', 'apple-pie'])).toBeNull()
+  })
+
+  it('names nothing that is not a catalogue followed by exactly one slug', () => {
+    expect(resolveItem('en', ['cakes'])).toBeNull()
+    expect(resolveItem('en', ['about', 'jana'])).toBeNull()
+    expect(resolveItem('en', ['cakes', 'apple-pie', 'more'])).toBeNull()
+    expect(resolveItem('en', [])).toBeNull()
+  })
+})
+
+describe('itemSegments', () => {
+  it('round-trips through resolveItem and agrees with itemPath', () => {
+    expect(itemSegments('cakes', 'nl', 'appeltaart')).toEqual(['taarten', 'appeltaart'])
+    expect(resolveItem('nl', itemSegments('cakes', 'nl', 'appeltaart'))).toEqual({
+      catalogue: 'cakes',
+      slug: 'appeltaart',
+    })
+    expect(`/nl/${itemSegments('cakes', 'nl', 'appeltaart').join('/')}`).toBe(
+      itemPath('cakes', 'nl', 'appeltaart'),
+    )
   })
 })
 

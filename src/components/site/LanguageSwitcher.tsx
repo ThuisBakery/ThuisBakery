@@ -14,17 +14,23 @@ import { cn } from '@/lib/utils'
 export const LanguageSwitcher = ({
   locale,
   page,
+  alternate,
   className,
 }: {
   locale: Locale
   page: CodedPage
+  /**
+   * This page's path in the other locale, when it is not a coded page's — an Item's. An
+   * Item untranslated there has no such path, and the caller passes where it should land.
+   */
+  alternate?: string | undefined
   className?: string
 }) => {
   const target = otherLocale(locale)
 
   return (
     <a
-      href={pagePath(page, target)}
+      href={alternate ?? pagePath(page, target)}
       lang={target}
       hrefLang={target}
       className={cn(

@@ -22,21 +22,25 @@ import { SiteHeader } from './SiteHeader'
 export const PageShell = ({
   locale,
   page,
+  alternate,
   header,
   footer,
   children,
 }: {
   locale: Locale
+  /** The coded page, or for an Item page the catalogue it sits under. */
   page: CodedPage
+  /** Where the language switcher leads, when it is not `page` in the other locale. */
+  alternate?: string | undefined
   header: Header
   footer: Footer
   children: ReactNode
 }) => (
   <div className="flex min-h-dvh flex-col">
-    <SiteHeader locale={locale} page={page} header={header} />
+    <SiteHeader locale={locale} page={page} alternate={alternate} header={header} />
     <main id="content" className="flex-1">
       {children}
     </main>
-    <SiteFooter locale={locale} page={page} footer={footer} />
+    <SiteFooter locale={locale} page={page} alternate={alternate} footer={footer} />
   </div>
 )

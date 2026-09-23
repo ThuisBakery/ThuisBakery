@@ -24,6 +24,26 @@ export type Dictionary = {
   categoryIndex: string
   /** Placeholder page headings until each page's real content lands. */
   pageTitles: Record<CodedPage, string>
+  /** The Item page's own labels. */
+  item: {
+    breadcrumb: string
+    home: string
+    sizes: string
+    /** How a Size reads beside its label — diameter, layers, servings — each optional. */
+    diameter: (centimetres: number) => string
+    layers: (count: number) => string
+    servings: (count: number) => string
+    sponge: string
+    filling: string
+    allergens: string
+    leadTime: string
+    occasions: string
+    /** The link back to the Item's Category section: `More Specialty Cakes`. */
+    moreOf: (category: string) => string
+    siblings: string
+    /** The line before the link to Custom order. */
+    somethingElse: string
+  }
 }
 
 export const DICTIONARY: Record<Locale, Dictionary> = {
@@ -45,6 +65,22 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       contact: 'Contact',
       privacy: 'Privacy',
     },
+    item: {
+      breadcrumb: 'Breadcrumb',
+      home: 'Home',
+      sizes: 'Sizes',
+      diameter: (centimetres) => `${centimetres} cm`,
+      layers: (count) => (count === 1 ? '1 layer' : `${count} layers`),
+      servings: (count) => `serves ${count}`,
+      sponge: 'Sponge',
+      filling: 'Filling',
+      allergens: 'Allergens',
+      leadTime: 'How far ahead to ask',
+      occasions: 'Made for',
+      moreOf: (category) => `More ${category}`,
+      siblings: 'More from the menu',
+      somethingElse: 'Imagining something else?',
+    },
   },
   nl: {
     switchLanguage: 'In English',
@@ -64,9 +100,28 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       contact: 'Contact',
       privacy: 'Privacy',
     },
+    item: {
+      breadcrumb: 'Kruimelpad',
+      home: 'Home',
+      sizes: 'Maten',
+      diameter: (centimetres) => `${centimetres} cm`,
+      layers: (count) => (count === 1 ? '1 laag' : `${count} lagen`),
+      servings: (count) => `voor ${count} personen`,
+      sponge: 'Biscuit',
+      filling: 'Vulling',
+      allergens: 'Allergenen',
+      leadTime: 'Hoe ver van tevoren vragen',
+      occasions: 'Gemaakt voor',
+      moreOf: (category) => `Meer ${category}`,
+      siblings: 'Meer van de kaart',
+      somethingElse: 'Iets anders in gedachten?',
+    },
   },
 }
 
 /** A coded page's `<title>`: the name alone on home, `<page> — ThuisBakery` elsewhere. */
 export const documentTitle = (page: CodedPage, locale: Locale): string =>
   page === 'home' ? 'ThuisBakery' : `${DICTIONARY[locale].pageTitles[page]} — ThuisBakery`
+
+/** An Item page's `<title>`: `<Item> — ThuisBakery`, as ADR-0002's computed fallback. */
+export const itemTitle = (title: string): string => `${title} — ThuisBakery`
