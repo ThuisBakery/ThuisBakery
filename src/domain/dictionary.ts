@@ -45,6 +45,11 @@ export type Dictionary = {
     /** The line before the link to Custom order. */
     somethingElse: string
   }
+  /** A marketing page's own labels. */
+  page: {
+    /** Above an Occasion page's list of the Items tagged with its Occasion. */
+    occasionItems: string
+  }
   /**
    * The Enquiry form. The Estimate is never called a price, a total or a quote (CONTEXT.md):
    * its figure is labelled as the Estimate, and always as provisional.
@@ -134,6 +139,9 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       moreOf: (category) => `More ${category}`,
       siblings: 'More from the menu',
       somethingElse: 'Imagining something else?',
+    },
+    page: {
+      occasionItems: 'From the menu',
     },
     enquiry: {
       heading: 'Send an enquiry',
@@ -225,6 +233,9 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       siblings: 'Meer van de kaart',
       somethingElse: 'Iets anders in gedachten?',
     },
+    page: {
+      occasionItems: 'Van de kaart',
+    },
     enquiry: {
       heading: 'Stuur Jana je vraag',
       intro:
@@ -285,5 +296,8 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
 export const documentTitle = (page: CodedPage, locale: Locale): string =>
   page === 'home' ? 'ThuisBakery' : `${DICTIONARY[locale].pageTitles[page]} — ThuisBakery`
 
-/** An Item page's `<title>`: `<Item> — ThuisBakery`, as ADR-0002's computed fallback. */
+/**
+ * An Item or marketing page's `<title>`: `<title> — ThuisBakery`, as ADR-0002's computed
+ * fallback.
+ */
 export const itemTitle = (title: string): string => `${title} — ThuisBakery`

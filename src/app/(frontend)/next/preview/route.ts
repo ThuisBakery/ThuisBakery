@@ -3,7 +3,7 @@ import { draftMode } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { DEFAULT_LOCALE, isCatalogue, isLocale, itemPath } from '@/domain/routes'
+import { DEFAULT_LOCALE, isCatalogue, isLocale, itemPath, marketingPagePath } from '@/domain/routes'
 
 /**
  * The Live Preview entry point. Payload's preview iframe lands here; this route enables
@@ -72,6 +72,34 @@ export const GET = async (request: Request): Promise<Response> => {
     }
 
     path = itemPath(catalogue, locale, item.slug)
+  }
+
+  if (kind === 'collection' && slug === 'pages') {
+    const id = params.get('id')
+
+    if (!id) {
+      return new Response('Missing id.', { status: 400 })
+    }
+
+    const page = await payload.findByID({
+      collection: 'pages',
+      id,
+      locale,
+      fallbackLocale: 'none',
+      draft: true,
+      depth: 0,
+      overrideAccess: false,
+      user,
+    })
+
+    if (typeof page.slug !== 'string' || page.slug === '') {
+      return new Response(
+        `This page has no ${locale.toUpperCase()} address yet: it needs a slug in this locale.`,
+        { status: 404 },
+      )
+    }
+
+    path = marketingPagePath(locale, page.slug)
   }
 
   const draft = await draftMode()

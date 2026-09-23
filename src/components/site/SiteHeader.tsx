@@ -20,7 +20,7 @@ export const SiteHeader = ({
   header,
 }: {
   locale: Locale
-  page: CodedPage
+  page: CodedPage | null
   /** The language switcher's target, when it is not `page` in the other locale. */
   alternate?: string | undefined
   header: Header

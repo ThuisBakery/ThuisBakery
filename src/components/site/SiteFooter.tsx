@@ -18,7 +18,7 @@ export const SiteFooter = ({
   footer,
 }: {
   locale: Locale
-  page: CodedPage
+  page: CodedPage | null
   /** The language switcher's target, when it is not `page` in the other locale. */
   alternate?: string | undefined
   footer: Footer

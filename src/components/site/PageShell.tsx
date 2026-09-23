@@ -28,8 +28,11 @@ export const PageShell = ({
   children,
 }: {
   locale: Locale
-  /** The coded page, or for an Item page the catalogue it sits under. */
-  page: CodedPage
+  /**
+   * The coded page, or for an Item page the catalogue it sits under. `null` for a marketing
+   * page, which the nav does not list — and which always passes `alternate`.
+   */
+  page: CodedPage | null
   /** Where the language switcher leads, when it is not `page` in the other locale. */
   alternate?: string | undefined
   header: Header
