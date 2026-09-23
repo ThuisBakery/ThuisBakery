@@ -1,8 +1,8 @@
 import { seoPlugin } from '@payloadcms/plugin-seo'
 import type { Plugin } from 'payload'
 
-import { itemPath, isCatalogue, isLocale, marketingPagePath } from '@/domain/routes'
-import { metaDescription, metaTitle, pageRichTexts, summary } from '@/domain/seo'
+import { DEFAULT_LOCALE, itemPath, isCatalogue, isLocale, marketingPagePath } from '@/domain/routes'
+import { descriptionFallback, metaDescription, metaTitle } from '@/domain/seo'
 import { siteOrigin } from '@/lib/site'
 
 /**
@@ -23,22 +23,21 @@ type Doc = Record<string, unknown>
 
 const name = (doc: Doc): string => (typeof doc['title'] === 'string' ? doc['title'] : '')
 
-/** What a blank description is cut from: an Item's description, or a page's own words. */
-const descriptionSource = (collection: string | undefined, doc: Doc): unknown[] =>
-  collection === 'pages' ? pageRichTexts(doc) : [doc['description']]
-
 export const seo: Plugin = seoPlugin({
   collections: ['items', 'pages'],
   generateTitle: ({ doc }) => metaTitle(null, name(doc)),
   generateDescription: ({ doc, collectionConfig }) =>
-    metaDescription(null, summary(descriptionSource(collectionConfig?.slug, doc))) ?? '',
+    metaDescription(
+      null,
+      descriptionFallback(collectionConfig?.slug === 'pages' ? 'pages' : 'items', doc),
+    ) ?? '',
   /**
    * The address shown in the search-result preview. An Item's catalogue follows from its
    * Category, which the form holds only as an id, so it is looked up.
    */
   generateURL: async ({ doc, collectionConfig, locale, req }) => {
     const slug = typeof doc['slug'] === 'string' ? doc['slug'] : ''
-    const current = isLocale(locale) ? locale : 'en'
+    const current = isLocale(locale) ? locale : DEFAULT_LOCALE
 
     if (collectionConfig?.slug === 'pages') {
       return `${siteOrigin()}${marketingPagePath(current, slug)}`

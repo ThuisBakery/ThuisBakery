@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   DESCRIPTION_LENGTH,
+  descriptionFallback,
   isIndexed,
   metaDescription,
   metaTitle,
@@ -134,5 +135,20 @@ describe('pageRichTexts', () => {
 
   it('copes with a page that has no hero or no blocks', () => {
     expect(pageRichTexts({ hero: null, layout: null })).toEqual([])
+  })
+})
+
+describe('descriptionFallback', () => {
+  it('cuts an Item’s from its description', () => {
+    expect(descriptionFallback('items', { description: richText('A classic.') })).toBe('A classic.')
+  })
+
+  it('cuts a marketing page’s from its own words, having no description field', () => {
+    expect(
+      descriptionFallback('pages', {
+        hero: { richText: richText({ heading: 'Christmas' }, 'Order early.') },
+        layout: [{ blockType: 'cta', richText: richText('Ask Jana.') }],
+      }),
+    ).toBe('Order early. Ask Jana.')
   })
 })

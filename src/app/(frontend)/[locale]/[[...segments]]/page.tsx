@@ -32,7 +32,7 @@ import {
   type Locale,
   type CodedPage,
 } from '@/domain/routes'
-import { isIndexed, metaDescription, metaTitle, pageRichTexts, summary } from '@/domain/seo'
+import { descriptionFallback, isIndexed, metaDescription, metaTitle } from '@/domain/seo'
 import { itemListings, readyItemIds, type ItemListing } from '@/lib/items'
 import { pageListings, type PageListing } from '@/lib/pages'
 import { siteOrigin } from '@/lib/site'
@@ -255,7 +255,7 @@ const fetchMeta = async (
 
     return {
       title: metaTitle(item.meta, name),
-      description: metaDescription(item.meta, summary([item.description])),
+      description: metaDescription(item.meta, descriptionFallback('items', item)),
     }
   }
 
@@ -267,7 +267,7 @@ const fetchMeta = async (
 
   return {
     title: metaTitle(page.meta, name),
-    description: metaDescription(page.meta, summary(pageRichTexts(page))),
+    description: metaDescription(page.meta, descriptionFallback('pages', page)),
   }
 }
 

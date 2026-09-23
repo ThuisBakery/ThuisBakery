@@ -99,6 +99,16 @@ export const pageRichTexts = (page: { hero?: unknown; layout?: unknown }): unkno
   ].filter((richText) => richText !== undefined && richText !== null)
 
 /**
+ * The text a blank description is cut from: an Item's description, or a marketing page's
+ * own words, having no description field. One function for both the page's `<meta>` and
+ * the admin's Auto-generate button, so the button fills in exactly what the page would say.
+ */
+export const descriptionFallback = (
+  collection: 'items' | 'pages',
+  doc: { description?: unknown; hero?: unknown; layout?: unknown },
+): string => summary(collection === 'pages' ? pageRichTexts(doc) : [doc.description])
+
+/**
  * Whether a coded page is for search. The Enquiry receipt is not: it is reached only by
  * sending an Enquiry. It carries `noindex` and is left out of the sitemap — one rule, read
  * in both places, so the two can never disagree.
