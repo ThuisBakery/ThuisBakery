@@ -1,9 +1,11 @@
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import Image from 'next/image'
 
+import { EnquiryForm } from '@/components/enquiry/EnquiryForm'
 import { CakeStand } from '@/components/site/CakeStand'
 import { Photograph } from '@/components/site/Photograph'
 import { DICTIONARY } from '@/domain/dictionary'
+import { itemOffer } from '@/domain/enquiry'
 import { leadTimeFact } from '@/domain/home'
 import {
   itemLeadTime,
@@ -16,11 +18,14 @@ import {
 import { formatEuros } from '@/domain/menu'
 import { cataloguePath, itemPath, pagePath, type Catalogue, type Locale } from '@/domain/routes'
 import { breadcrumbMarkup, productMarkup } from '@/domain/structured-data'
-import type { Filling, Item, LeadTime, Media, Sponge } from '@/payload-types'
+import type { ClosedUntil, Filling, Item, LeadTime, Media, Sponge } from '@/payload-types'
 
 /** The one secondary link style, as the homepage sets it. */
 const TEXT_LINK =
   'inline-flex min-h-11 items-center text-sm tracking-wide underline underline-offset-4 transition-colors duration-200 hover:text-accent'
+
+/** The Enquiry section's anchor, which the call to action near the top jumps to. */
+const ENQUIRY_ID = 'enquire'
 
 /** A section's small heading down the details column. */
 const LABEL = 'font-sans text-[13px] tracking-wide text-ink-muted'
@@ -31,6 +36,9 @@ const LABEL = 'font-sans text-[13px] tracking-wide text-ink-muted'
  * Surcharge, the Allergens beside the cross-contamination statement, and how far ahead to
  * ask. Item pages are the SEO destinations, so this is also where `Product`/`offers` and
  * `BreadcrumbList` are carried, and every value they mark up is printed here (ADR-0002).
+ *
+ * It ends at the Enquiry, which ADR-0003 keeps welded to the Item it prices: the form is
+ * scoped to this Item's Sizes and choices, with a running Estimate.
  *
  * The links are the ones ADR-0003 specifies for an Item: its Category's section, two or
  * three siblings computed from Item data, its Occasion pages, and Custom order.
@@ -45,6 +53,7 @@ export const ItemPage = ({
   sponges,
   fillings,
   leadTime,
+  closedUntil,
   statement,
   occasionPages,
   origin,
@@ -61,6 +70,8 @@ export const ItemPage = ({
   fillings: readonly Filling[]
   /** The site-wide Lead time; empty when the global has never been saved. */
   leadTime: Partial<Pick<LeadTime, 'days' | 'timeOfDay'>>
+  /** The Closed until global, in this locale; empty when it has never been saved. */
+  closedUntil: Partial<Pick<ClosedUntil, 'date' | 'notice'>>
   statement: string | null | undefined
   /** Each Occasion's page in this locale, by Occasion id. */
   occasionPages: ReadonlyMap<number | string, string>
@@ -197,6 +208,13 @@ export const ItemPage = ({
               </section>
             ) : null}
 
+            <a
+              href={`#${ENQUIRY_ID}`}
+              className="mt-8 inline-flex min-h-12 items-center bg-accent px-8 py-3.5 text-sm tracking-wide text-accent-ink motion-safe:transition-transform motion-safe:duration-200 motion-safe:active:translate-y-px"
+            >
+              {words.enquiry.heading}
+            </a>
+
             <Allergens
               label={words.item.allergens}
               allergens={(item.allergens ?? []).flatMap((allergen) =>
@@ -221,6 +239,32 @@ export const ItemPage = ({
             ) : null}
           </div>
         </div>
+
+        <section
+          id={ENQUIRY_ID}
+          aria-labelledby={`${ENQUIRY_ID}-heading`}
+          className="mt-20 grid scroll-mt-24 gap-6 border-t border-rule pt-12 md:mt-28 md:grid-cols-12 md:gap-x-12"
+        >
+          <div className="md:col-span-5">
+            <h2
+              id={`${ENQUIRY_ID}-heading`}
+              className="font-display text-[34px] leading-tight font-semibold"
+            >
+              {words.enquiry.heading}
+            </h2>
+            <p className="mt-3 leading-relaxed text-ink-muted">{words.enquiry.intro}</p>
+          </div>
+          <div className="md:col-span-7">
+            <EnquiryForm
+              locale={locale}
+              offer={itemOffer(item, sponges, fillings)}
+              leadTime={figures}
+              closedUntil={closedUntil.date}
+              closedNotice={closedUntil.notice}
+              contactPath={pagePath('contact', locale)}
+            />
+          </div>
+        </section>
 
         {siblings.length > 0 ? (
           <nav aria-label={words.item.siblings} className="mt-20 md:mt-28">

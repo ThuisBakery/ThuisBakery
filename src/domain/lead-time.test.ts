@@ -4,6 +4,7 @@ import {
   earliestRequestedPickupDate,
   isWholeLeadTimeOverride,
   isRequestedPickupDateAllowed,
+  leadTimeOf,
   parseTimeOfDay,
   type LeadTime,
 } from './lead-time'
@@ -113,5 +114,16 @@ describe('isWholeLeadTimeOverride', () => {
     expect(isWholeLeadTimeOverride({ days: 5 })).toBe(false)
     expect(isWholeLeadTimeOverride({ timeOfDay: '12:00' })).toBe(false)
     expect(isWholeLeadTimeOverride({ days: 0, timeOfDay: '' })).toBe(false)
+  })
+})
+
+describe('leadTimeOf', () => {
+  it('reads a stored Lead time into days and a cutoff', () => {
+    expect(leadTimeOf({ days: 3, timeOfDay: '17:00' })).toEqual(threeDaysBy1700)
+  })
+
+  it('is null when there is none, or its time of day does not parse', () => {
+    expect(leadTimeOf(null)).toBeNull()
+    expect(leadTimeOf({ days: 3, timeOfDay: '5pm' })).toBeNull()
   })
 })

@@ -44,9 +44,18 @@ export const CODED_PAGES = [
   'about',
   'contact',
   'privacy',
+  'enquirySent',
 ] as const
 
 export type CodedPage = (typeof CODED_PAGES)[number]
+
+/**
+ * The coded pages the Header and Footer may link to. The confirmation page an Enquiry lands
+ * on is not one: it is a receipt, reached only by sending one.
+ */
+export const LINKABLE_PAGES = CODED_PAGES.filter(
+  (page): page is Exclude<CodedPage, 'enquirySent'> => page !== 'enquirySent',
+)
 
 /** What each coded page is called in the admin, where Jana picks a link's target. */
 export const CODED_PAGE_LABELS: Record<CodedPage, string> = {
@@ -57,6 +66,7 @@ export const CODED_PAGE_LABELS: Record<CodedPage, string> = {
   about: 'About',
   contact: 'Contact',
   privacy: 'Privacy',
+  enquirySent: 'Enquiry sent',
 }
 
 /**
@@ -64,8 +74,8 @@ export const CODED_PAGE_LABELS: Record<CodedPage, string> = {
  * these in a dictionary rather than as route folders, so one `[locale]/[[...segments]]`
  * tree serves them all. Home is the empty segment.
  *
- * `lekkernijen` and `over-jana` are provisional Dutch wording per ADR-0003; changing them
- * here is the whole change.
+ * `lekkernijen`, `over-jana` and `vraag-verstuurd` are provisional Dutch wording per
+ * ADR-0003; changing them here is the whole change.
  */
 const ROUTE_MAP: Record<CodedPage, Record<Locale, string>> = {
   home: { en: '', nl: '' },
@@ -75,6 +85,7 @@ const ROUTE_MAP: Record<CodedPage, Record<Locale, string>> = {
   about: { en: 'about', nl: 'over-jana' },
   contact: { en: 'contact', nl: 'contact' },
   privacy: { en: 'privacy', nl: 'privacy' },
+  enquirySent: { en: 'enquiry-sent', nl: 'vraag-verstuurd' },
 }
 
 /** Every coded route segment in one locale, home excluded. */

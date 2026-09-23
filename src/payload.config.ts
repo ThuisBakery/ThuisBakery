@@ -14,6 +14,7 @@ import { Items } from './collections/Items'
 import { Media } from './collections/Media'
 import { Occasions } from './collections/Occasions'
 import { Sponges } from './collections/Sponges'
+import { Submissions } from './collections/Submissions'
 import { Users } from './collections/Users'
 import { previewUrl } from './domain/preview'
 import { DEFAULT_LOCALE, LOCALES } from './domain/routes'
@@ -54,7 +55,17 @@ export default buildConfig({
       },
     },
   },
-  collections: [Items, Categories, Occasions, Sponges, Fillings, Allergens, Media, Users],
+  collections: [
+    Items,
+    Categories,
+    Occasions,
+    Sponges,
+    Fillings,
+    Allergens,
+    Media,
+    Submissions,
+    Users,
+  ],
   globals: [Header, Footer, Home, CrossContamination, LeadTimeGlobal, ClosedUntil],
   /**
    * Content locales. `fallback: true` is the site-wide default, so a missing Dutch value

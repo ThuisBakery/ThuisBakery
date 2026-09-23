@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   CATALOGUES,
   LOCALES,
+  LINKABLE_PAGES,
   RESERVED_SLUGS,
   cataloguePath,
   isCatalogue,
@@ -128,13 +129,33 @@ describe('otherLocale', () => {
   })
 })
 
+describe('the confirmation page', () => {
+  it('has a path in each locale, like any coded page', () => {
+    expect(pagePath('enquirySent', 'en')).toBe('/enquiry-sent')
+    expect(pagePath('enquirySent', 'nl')).toBe('/nl/vraag-verstuurd')
+    expect(resolvePage('nl', ['vraag-verstuurd'])).toBe('enquirySent')
+  })
+
+  it('is not a page the Header or Footer can link to', () => {
+    expect(LINKABLE_PAGES).not.toContain('enquirySent')
+    expect(LINKABLE_PAGES).toContain('customOrder')
+  })
+})
+
 describe('isReservedSlug', () => {
-  it.each(['cakes', 'taarten', 'nibbles', 'lekkernijen', 'custom-order', 'maatwerk', 'contact'])(
-    'rejects the coded segment %s',
-    (slug) => {
-      expect(isReservedSlug(slug)).toBe(true)
-    },
-  )
+  it.each([
+    'cakes',
+    'taarten',
+    'nibbles',
+    'lekkernijen',
+    'custom-order',
+    'maatwerk',
+    'contact',
+    'enquiry-sent',
+    'vraag-verstuurd',
+  ])('rejects the coded segment %s', (slug) => {
+    expect(isReservedSlug(slug)).toBe(true)
+  })
 
   it.each(['nl', 'admin', 'api', 'next'])('rejects the infrastructure segment %s', (slug) => {
     expect(isReservedSlug(slug)).toBe(true)
