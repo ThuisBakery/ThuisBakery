@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
-import { del, get, put } from '@vercel/blob'
+import { del, get, list, put } from '@vercel/blob'
 import sharp from 'sharp'
 
 import { PHOTO_LONG_EDGE } from '@/domain/inspiration-photo'
@@ -42,9 +42,11 @@ export const reencodePhoto = async (photo: Uint8Array): Promise<Uint8Array> =>
       .toBuffer(),
   )
 
+const PREFIX = 'inspiration/'
+
 /** Stores a re-encoded photo under a random name, and returns its pathname. */
 export const putPhoto = async (photo: Uint8Array): Promise<string> => {
-  const { pathname } = await put(`inspiration/${randomUUID()}.jpg`, Buffer.from(photo), {
+  const { pathname } = await put(`${PREFIX}${randomUUID()}.jpg`, Buffer.from(photo), {
     access: 'private',
     contentType: 'image/jpeg',
     addRandomSuffix: false,
@@ -63,4 +65,16 @@ export const readPhoto = async (pathname: string) => {
   const result = await get(pathname, { access: 'private', token: token() })
 
   return result && result.statusCode === 200 ? result.stream : null
+}
+
+/** Every photo in the store, with when it was stored, a page of the store at a time. */
+export async function* listPhotos(): AsyncGenerator<{ pathname: string; uploadedAt: Date }> {
+  let cursor: string | undefined
+
+  do {
+    const page = await list({ prefix: PREFIX, token: token(), ...(cursor ? { cursor } : {}) })
+
+    yield* page.blobs.map(({ pathname, uploadedAt }) => ({ pathname, uploadedAt }))
+    cursor = page.hasMore ? page.cursor : undefined
+  } while (cursor)
 }
