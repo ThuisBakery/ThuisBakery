@@ -1,3 +1,5 @@
+import type { EnquiryProblem } from './enquiry'
+
 /**
  * The Inspiration photo's rules (ADR-0006): how far the browser shrinks it before it is sent,
  * and what the route accepts. The declared MIME type is never trusted — a file is judged by
@@ -11,7 +13,7 @@ export const PHOTO_LONG_EDGE = 2000
 /** The hard ceiling after downscaling. A downscaled photo is roughly 1 MB; this is room, not a target. */
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024
 
-export type PhotoProblem = 'tooLarge' | 'notAnImage'
+export type PhotoProblem = Extract<EnquiryProblem, 'tooLarge' | 'notAnImage'>
 
 const startsWith = (bytes: Uint8Array, signature: readonly number[], offset = 0): boolean =>
   bytes.length >= offset + signature.length &&

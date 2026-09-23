@@ -30,6 +30,13 @@ const MAX_BODY_BYTES = MAX_PHOTO_BYTES + 256 * 1024
 
 export const POST = async (request: Request): Promise<Response> => {
   const payload = await getPayload({ config: configPromise })
+  const jana = process.env.ENQUIRY_INBOX
+
+  if (!jana) {
+    // Not the customer's problem: the Submission is still stored, and Jana's copy is recorded
+    // as not sent. Said on every Enquiry until it is fixed.
+    payload.logger.error({ msg: 'ENQUIRY_INBOX is not set; Jana will not be emailed.' })
+  }
 
   if (Number(request.headers.get('content-length') ?? 0) > MAX_BODY_BYTES) {
     const reply = httpReply({ status: 'invalid', problems: { [PHOTO_FIELD]: 'tooLarge' } })
@@ -61,7 +68,7 @@ export const POST = async (request: Request): Promise<Response> => {
       store: storeSubmission(payload),
       send: sendEnquiryEmail(payload),
       recordDelivery: recordDelivery(payload),
-      jana: process.env.ENQUIRY_INBOX || '',
+      jana: jana ?? '',
       report: (msg, err) => payload.logger.error({ err, msg }),
     },
   )

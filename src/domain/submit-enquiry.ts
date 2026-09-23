@@ -2,7 +2,9 @@ import {
   isEnquiryType,
   validateEnquiry,
   type Enquiry,
+  type EnquiryProblem,
   type EnquiryProblems,
+  type EnquiryValidation,
   type EnquiryType,
   type ItemOffer,
 } from './enquiry'
@@ -130,7 +132,7 @@ export type SubmitDependencies = {
 }
 
 /** What arrived: the form's fields, and the Inspiration photo's bytes if one was attached. */
-export type EnquiryRequest = { body: unknown; photo: Uint8Array | null }
+export type EnquiryInput = { body: unknown; photo: Uint8Array | null }
 
 const dayOnlyTimestamp = (date: CalendarDate): string => `${formatCalendarDate(date)}T12:00:00.000Z`
 
@@ -198,19 +200,41 @@ const itemId = (value: unknown): number | null => {
   return typeof id === 'number' && Number.isInteger(id) && id > 0 ? id : null
 }
 
+/**
+ * Every problem with an Enquiry and its Inspiration photo together, so both are reported at
+ * once — or `null` when there are none. The form and the route judge by the same one.
+ */
+export const withPhotoProblem = (
+  validation: EnquiryValidation,
+  photo: EnquiryProblem | null,
+): EnquiryProblems | null =>
+  validation.ok && !photo
+    ? null
+    : { ...(validation.ok ? {} : validation.problems), ...(photo ? { photo } : {}) }
+
 /** Hands both emails to the provider. One failing never stops the other. */
 const sendBoth = async (
   data: SubmissionData,
-  photo: Uint8Array | null,
+  hasPhoto: boolean,
   context: EnquiryContext,
   { now, send, recordDelivery, jana, report }: SubmitDependencies,
 ): Promise<void> => {
-  const { toJana, toCustomer } = enquiryEmails(data, {
-    jana,
-    leadTimeDays: context.leadTime?.days ?? null,
-    photo,
-    today: amsterdamArrival(now).date,
-  })
+  let emails: ReturnType<typeof enquiryEmails>
+
+  try {
+    emails = enquiryEmails(data, {
+      jana,
+      leadTimeDays: context.leadTime?.days ?? null,
+      hasPhoto,
+      today: amsterdamArrival(now).date,
+    })
+  } catch (error) {
+    // The Submission is stored: this is our delivery problem, never the customer's.
+    report(`The emails for Enquiry ${data.reference} could not be written.`, error)
+    return
+  }
+
+  const { toJana, toCustomer } = emails
 
   const deliver = async (email: EnquiryEmail, whose: string): Promise<EmailDelivery> => {
     try {
@@ -245,7 +269,7 @@ const judgedABot = async ({ isBot, report }: SubmitDependencies): Promise<boolea
 }
 
 export const submitEnquiry = async (
-  { body: raw, photo }: EnquiryRequest,
+  { body: raw, photo }: EnquiryInput,
   deps: SubmitDependencies,
 ): Promise<SubmitOutcome> => {
   const { now, load, reencode, store, reference } = deps
@@ -286,14 +310,10 @@ export const submitEnquiry = async (
       },
     })
 
-    if (!validation.ok || photoIssue) {
-      return {
-        status: 'invalid',
-        problems: {
-          ...(validation.ok ? {} : validation.problems),
-          ...(photoIssue ? { photo: photoIssue } : {}),
-        },
-      }
+    const problems = withPhotoProblem(validation, photoIssue)
+
+    if (problems || !validation.ok) {
+      return { status: 'invalid', problems: problems ?? {} }
     }
 
     if (photo) {
@@ -311,7 +331,7 @@ export const submitEnquiry = async (
     return { status: 'failed', error }
   }
 
-  await sendBoth(data, stored, context, deps)
+  await sendBoth(data, stored !== null, context, deps)
 
   return {
     status: 'accepted',

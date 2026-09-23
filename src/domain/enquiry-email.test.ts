@@ -33,7 +33,7 @@ const submission: SubmissionData = {
 const context: EmailContext = {
   jana: 'jana@thuisbakery.com',
   leadTimeDays: 3,
-  photo: null,
+  hasPhoto: false,
   today: { year: 2026, month: 9, day: 21 },
 }
 
@@ -61,7 +61,7 @@ describe('enquiryEmails', () => {
     expect(toJana.text).toContain('Written in Dutch: reply in Dutch.')
     expect(toJana.text).toContain('Size: Groot')
     expect(toJana.text).toContain('How many: 2')
-    expect(toJana.text).toContain('Pickup date asked for: Saturday 26 September')
+    expect(toJana.text).toContain('Requested pickup date: Saturday 26 September')
     expect(toJana.text).toContain('Phone: 06 1234 5678')
   })
 
@@ -96,13 +96,18 @@ describe('enquiryEmails', () => {
     expect(toCustomer.text).toContain('Indicatie (voorlopig): €130')
   })
 
-  it('attaches the Inspiration photo to Jana’s copy alone', () => {
-    const photo = new Uint8Array([0xff, 0xd8, 0xff])
-    const { toJana, toCustomer } = enquiryEmails(submission, { ...context, photo })
+  it('tells Jana there is an Inspiration photo, but never attaches it', () => {
+    const { toJana, toCustomer } = enquiryEmails(submission, { ...context, hasPhoto: true })
 
-    expect(toJana.attachments).toEqual([{ filename: 'K7MQ-3XTP.jpg', content: photo }])
-    expect(toJana.text).toContain('Inspiration photo attached.')
-    expect(toCustomer.attachments).toEqual([])
+    expect(toJana.text).toContain(
+      'There is an Inspiration photo: open Submission K7MQ-3XTP in the admin to see it.',
+    )
+    expect(toJana).not.toHaveProperty('attachments')
+    expect(toCustomer.text).not.toContain('Inspiration photo')
+  })
+
+  it('says nothing of a photo when there is none', () => {
+    expect(enquiryEmails(submission, context).toJana.text).not.toContain('Inspiration photo')
   })
 
   it('names a Contact message for what it is, with no Item and no date', () => {

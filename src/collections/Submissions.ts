@@ -9,8 +9,13 @@ import { LOCALES, type Locale } from '@/domain/routes'
  * Submission is what the site keeps, and it outlives the emails about it. See CONTEXT.md and
  * ADR-0006.
  *
- * One collection for all three forms, told apart by `enquiryType` (ADR-0003). Public
- * `create`; `read`, `update` and `delete` for a logged-in user — Jana — only.
+ * One collection for all three forms, told apart by `enquiryType` (ADR-0003). `read`,
+ * `update` and `delete` for a logged-in user — Jana — only.
+ *
+ * `create` is public in the sense ADR-0006 means — a stranger's Enquiry is stored — but only
+ * through the Enquiry route, which marks its write with `FROM_ENQUIRY_ROUTE`. Payload's own
+ * REST and GraphQL `create` would otherwise let anyone skip BotID and the honeypot, and set
+ * a Delivery status or point `inspirationPhoto` at any file in the private store.
  *
  * **No hook here does I/O**, and none may. An `afterChange` hook fires when Jana edits a
  * Submission in the admin, so one that sent email would silently re-email the customer.
@@ -27,6 +32,12 @@ import { LOCALES, type Locale } from '@/domain/routes'
  */
 
 const loggedIn: Access = ({ req }) => Boolean(req.user)
+
+/** The `context` flag the Enquiry route writes a Submission with. See `src/lib/enquiry.ts`. */
+export const FROM_ENQUIRY_ROUTE = 'fromEnquiryRoute'
+
+const fromEnquiryRoute: Access = ({ req }) =>
+  Boolean(req.user) || req.context[FROM_ENQUIRY_ROUTE] === true
 
 /** Which fields the admin shows, by which form a Submission came from. */
 type Condition = (data: Partial<Record<string, unknown>>) => boolean
@@ -83,7 +94,7 @@ export const Submissions: CollectionConfig = {
     plural: 'Submissions',
   },
   access: {
-    create: () => true,
+    create: fromEnquiryRoute,
     read: loggedIn,
     update: loggedIn,
     delete: loggedIn,

@@ -29,6 +29,7 @@ import {
   ENQUIRY_ENDPOINT,
   HONEYPOT_FIELD,
   PHOTO_FIELD,
+  withPhotoProblem,
   type EnquiryReply,
   type Receipt,
 } from '@/domain/submit-enquiry'
@@ -215,10 +216,7 @@ export const EnquiryForm = ({
     )
 
   const validation = validate(values)
-  const ownProblems: EnquiryProblems = {
-    ...(validation.ok ? {} : validation.problems),
-    ...(photoIssue ? { photo: photoIssue } : {}),
-  }
+  const ownProblems = withPhotoProblem(validation, photoIssue) ?? {}
   const problems: EnquiryProblems = { ...serverProblems }
 
   for (const field of FIELD_ORDER) {
@@ -306,13 +304,10 @@ export const EnquiryForm = ({
     event.preventDefault()
     setAttempted(true)
 
-    const checked = validate(values)
+    const checked = withPhotoProblem(validate(values), photoIssue)
 
-    if (!checked.ok || photoIssue) {
-      focusFirst({
-        ...(checked.ok ? {} : checked.problems),
-        ...(photoIssue ? { photo: photoIssue } : {}),
-      })
+    if (checked) {
+      focusFirst(checked)
       return
     }
 

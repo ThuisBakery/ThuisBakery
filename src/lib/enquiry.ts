@@ -6,6 +6,7 @@ import {
   type DeliveryEvent,
   type DeliveryStatus,
 } from '@/domain/delivery-status'
+import { FROM_ENQUIRY_ROUTE } from '@/collections/Submissions'
 import { itemOffer } from '@/domain/enquiry'
 import { itemLeadTime } from '@/domain/item'
 import { leadTimeOf } from '@/domain/lead-time'
@@ -65,9 +66,11 @@ export const storeSubmission =
     try {
       await payload.create({
         collection: 'submissions',
-        // Held to the collection's own access rules — public `create` — rather than the local
-        // API's default of overriding them: this write is made on a stranger's behalf.
+        // Held to the collection's own access rules rather than the local API's default of
+        // overriding them: this write is made on a stranger's behalf, and the flag below is
+        // the one thing that lets it through.
         overrideAccess: false,
+        context: { [FROM_ENQUIRY_ROUTE]: true },
         data: { ...data, ...(estimate ? { estimate } : {}), inspirationPhoto },
       })
     } catch (error) {
@@ -87,18 +90,8 @@ export const storeSubmission =
  */
 export const sendEnquiryEmail =
   (payload: Payload): SubmitDependencies['send'] =>
-  async ({ to, replyTo, subject, text, html, attachments }) => {
-    const sent: unknown = await payload.sendEmail({
-      to,
-      replyTo,
-      subject,
-      text,
-      html,
-      attachments: attachments.map(({ filename, content }) => ({
-        filename,
-        content: Buffer.from(content).toString('base64'),
-      })),
-    })
+  async ({ to, replyTo, subject, text, html }) => {
+    const sent: unknown = await payload.sendEmail({ to, replyTo, subject, text, html })
 
     const id =
       typeof sent === 'object' && sent !== null && 'id' in sent && typeof sent.id === 'string'

@@ -391,16 +391,6 @@ describe('submitEnquiry', () => {
       )
     })
 
-    it('attaches the re-encoded photo to Jana’s email', async () => {
-      const { submit, send } = setup()
-
-      await submit(enquiry, JPEG)
-
-      const toJana = send.mock.calls.find(([email]) => email.to === 'jana@thuisbakery.com')?.[0]
-
-      expect(toJana?.attachments).toEqual([{ filename: 'K7MQ-3XTP.jpg', content: REENCODED }])
-    })
-
     it('judges a photo by its bytes, and rejects what is not an image', async () => {
       const { submit, reencode, store } = setup()
 

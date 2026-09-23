@@ -22,7 +22,6 @@ export type EnquiryEmail = {
   subject: string
   text: string
   html: string
-  attachments: { filename: string; content: Uint8Array }[]
 }
 
 export type EmailContext = {
@@ -30,8 +29,11 @@ export type EmailContext = {
   jana: string
   /** The Lead time's days that applied: how long the customer should wait for a reply. */
   leadTimeDays: number | null
-  /** The Inspiration photo as stored — re-encoded, never the bytes the customer sent. */
-  photo: Uint8Array | null
+  /**
+   * Whether the Submission has an Inspiration photo. It is named, never attached: attached,
+   * it would live on in Jana's mailbox past the 12 months after which it is deleted (ADR-0006).
+   */
+  hasPhoto: boolean
   /** Today in Amsterdam, which decides whether a date needs its year. */
   today: CalendarDate
 }
@@ -41,7 +43,7 @@ const LANGUAGE_NAMES: Record<Locale, string> = { en: 'English', nl: 'Dutch' }
 /** One line of text, for a header: whatever was typed, it cannot start another. */
 const oneLine = (value: string): string => value.replace(/\s+/g, ' ').trim()
 
-const pickupDate = (submission: SubmissionData, locale: Locale, today: CalendarDate) => {
+const requestedPickupDate = (submission: SubmissionData, locale: Locale, today: CalendarDate) => {
   const date = submission.requestedPickupDate
     ? parseCalendarDate(submission.requestedPickupDate.slice(0, 10))
     : null
@@ -89,7 +91,7 @@ const janaSubject = (submission: SubmissionData, date: string | null): string =>
 }
 
 const toJana = (submission: SubmissionData, context: EmailContext): EnquiryEmail => {
-  const date = pickupDate(submission, 'en', context.today)
+  const date = requestedPickupDate(submission, 'en', context.today)
   const language = LANGUAGE_NAMES[submission.locale]
 
   const text = paragraphs(
@@ -101,7 +103,7 @@ const toJana = (submission: SubmissionData, context: EmailContext): EnquiryEmail
       ['How many', submission.quantity],
       ['Sponge', submission.sponge],
       ['Filling', submission.filling],
-      ['Pickup date asked for', date],
+      ['Requested pickup date', date],
     ]),
     fields([
       ['Special requests', submission.specialRequests],
@@ -114,7 +116,9 @@ const toJana = (submission: SubmissionData, context: EmailContext): EnquiryEmail
       ['Email', submission.email],
       ['Phone', submission.phone],
     ]),
-    context.photo ? 'Inspiration photo attached.' : null,
+    context.hasPhoto
+      ? `There is an Inspiration photo: open Submission ${submission.reference} in the admin to see it.`
+      : null,
     `Reply to this email to answer ${submission.name} directly.`,
   )
 
@@ -124,9 +128,6 @@ const toJana = (submission: SubmissionData, context: EmailContext): EnquiryEmail
     subject: oneLine(janaSubject(submission, date)),
     text,
     html: textToHtml(text),
-    attachments: context.photo
-      ? [{ filename: `${submission.reference}.jpg`, content: context.photo }]
-      : [],
   }
 }
 
@@ -149,7 +150,7 @@ const toCustomer = (submission: SubmissionData, context: EmailContext): EnquiryE
         [words.enquiry.quantity, submission.quantity],
         [words.item.sponge, submission.sponge],
         [words.item.filling, submission.filling],
-        [words.sent.requestedPickupDate, pickupDate(submission, locale, context.today)],
+        [words.sent.requestedPickupDate, requestedPickupDate(submission, locale, context.today)],
       ]),
     ],
     fields([
@@ -172,7 +173,6 @@ const toCustomer = (submission: SubmissionData, context: EmailContext): EnquiryE
     subject: oneLine(words.acknowledgement.subject(submission.reference)),
     text,
     html: textToHtml(text),
-    attachments: [],
   }
 }
 

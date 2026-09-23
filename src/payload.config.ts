@@ -122,7 +122,8 @@ export default buildConfig({
   }),
   sharp,
   /**
-   * Resend (ADR-0006), for the two Enquiry emails. Unset locally and in CI, where Payload
+   * Resend (ADR-0006), for the two Enquiry emails. Set in Vercel for Production and Preview
+   * only, so it is unset locally and in CI, where Payload
    * falls back to logging each email instead — which the Enquiry route records as not sent.
    *
    * The sending domain's region is `eu-west-1`. It is chosen per domain in Resend's dashboard
