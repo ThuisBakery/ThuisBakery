@@ -145,3 +145,17 @@ export const instagramLink = (
     ? { href: `https://www.instagram.com/${handle}/`, label: `@${handle}` }
     : null
 }
+
+/**
+ * The phone number as the Contact page prints it — as Jana wrote it — and as a phone dials
+ * it. The printed label is also what the `Bakery` markup's `telephone` carries, so the two
+ * match. `null` when there is no number, or nothing in it to dial.
+ */
+export const phoneLink = (
+  value: string | null | undefined,
+): { href: string; label: string } | null => {
+  const label = (value ?? '').trim()
+  const dialled = label.replace(/[^\d+]/g, '')
+
+  return /\d/.test(dialled) ? { href: `tel:${dialled}`, label } : null
+}

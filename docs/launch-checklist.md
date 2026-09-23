@@ -117,6 +117,9 @@ Nothing here is optional. The site does not go live with any of it outstanding.
       hours. None were seeded, because a guessed value would be printed and marked up for Google.
       Each empty one is left out of the page and the `Bakery` markup, so the page works without
       them, but `telephone` and `openingHoursSpecification` are what the markup is for.
+- [ ] **Two photographs uploaded**, neither of which was seeded: Jana's portrait on the About
+      global (the page holds an empty frame for it until then), and the Contact global's
+      photograph, which is the only source of the `Bakery` markup's `image`.
 - [ ] Every Published Item is **complete in both Dutch and English**. Published is a whole-document
       state, never per locale (issue #10, `CONTEXT.md`). Nothing half-translated goes live.
 - [ ] **Dutch route segments confirmed by Jana.** `taarten`, `lekkernijen`, `maatwerk`, `over-jana`

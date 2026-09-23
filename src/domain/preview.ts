@@ -43,4 +43,4 @@ const PAGE_GLOBALS: Readonly<Record<string, CodedPage>> = {
  * Lead time, Closed until, the homepage's words — on the front page.
  */
 export const globalPreviewPath = (slug: string, locale: Locale): string =>
-  pagePath(Object.hasOwn(PAGE_GLOBALS, slug) ? (PAGE_GLOBALS[slug] ?? 'home') : 'home', locale)
+  pagePath((Object.hasOwn(PAGE_GLOBALS, slug) && PAGE_GLOBALS[slug]) || 'home', locale)

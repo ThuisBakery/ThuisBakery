@@ -25,12 +25,12 @@ import {
   INPUT,
   LEGEND,
   PhotoField,
-  PickupDateField,
+  RequestedPickupDateField,
   SendFooter,
   postEnquiry,
   toConfirmation,
   usePhoto,
-  usePickupCalendar,
+  useRequestedPickupCalendar,
   useProblems,
   type FieldProps,
   type Submit,
@@ -120,7 +120,7 @@ export const EnquiryForm = ({
   const [estimateQuantity, setEstimateQuantity] = useState(1)
   const [status, setStatus] = useState<'idle' | 'sending' | 'failed'>('idle')
 
-  const calendar = usePickupCalendar({ locale, leadTime, closedUntil })
+  const calendar = useRequestedPickupCalendar({ locale, leadTime, closedUntil })
 
   const validate = (current: Values) =>
     validateEnquiry({ enquiryType: 'item', ...current }, { item: offer, pickup: calendar.rules })
@@ -263,7 +263,7 @@ export const EnquiryForm = ({
         <EstimateSummary locale={locale} estimate={figure} id="enquiry-estimate" live />
       ) : null}
 
-      <PickupDateField
+      <RequestedPickupDateField
         locale={locale}
         calendar={calendar}
         value={values.requestedPickupDate}

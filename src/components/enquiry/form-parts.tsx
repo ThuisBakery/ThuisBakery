@@ -93,7 +93,7 @@ const currentMinute = () => Math.floor(Date.now() / 60_000)
 const noMinuteOnServer = () => null
 
 /** The dates a Requested pickup date is held to, as the browser sees them now. */
-export const usePickupCalendar = ({
+export const useRequestedPickupCalendar = ({
   locale,
   leadTime,
   closedUntil,
@@ -126,7 +126,7 @@ export const usePickupCalendar = ({
   }
 }
 
-export type PickupCalendar = ReturnType<typeof usePickupCalendar>
+export type RequestedPickupCalendar = ReturnType<typeof useRequestedPickupCalendar>
 
 /** Fields answered by choosing rather than typing: missing one reads "choose", not "fill in". */
 const CHOICE_FIELDS: ReadonlySet<EnquiryField> = new Set(['size', 'sponge', 'filling'])
@@ -147,7 +147,7 @@ export const useProblems = ({
   order: readonly EnquiryField[]
   /** What the form's own validation finds wrong right now. */
   own: EnquiryProblems
-  calendar: PickupCalendar | null
+  calendar: RequestedPickupCalendar | null
   formRef: RefObject<HTMLFormElement | null>
 }) => {
   const words = DICTIONARY[locale].enquiry
@@ -302,7 +302,7 @@ export const ClosedNotice = ({
   notice,
 }: {
   locale: Locale
-  calendar: PickupCalendar
+  calendar: RequestedPickupCalendar
   notice: string | null | undefined
 }) =>
   calendar.closed && calendar.until ? (
@@ -312,7 +312,7 @@ export const ClosedNotice = ({
     </div>
   ) : null
 
-export const PickupDateField = ({
+export const RequestedPickupDateField = ({
   locale,
   calendar,
   value,
@@ -321,7 +321,7 @@ export const PickupDateField = ({
   problem,
 }: {
   locale: Locale
-  calendar: PickupCalendar
+  calendar: RequestedPickupCalendar
   value: string
   onChange: (value: string) => void
   fieldProps: FieldProps

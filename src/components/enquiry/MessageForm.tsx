@@ -16,12 +16,12 @@ import {
   INPUT,
   LEGEND,
   PhotoField,
-  PickupDateField,
+  RequestedPickupDateField,
   SendFooter,
   postEnquiry,
   toConfirmation,
   usePhoto,
-  usePickupCalendar,
+  useRequestedPickupCalendar,
   useProblems,
   type Submit,
 } from './form-parts'
@@ -96,7 +96,7 @@ export const MessageForm = ({
   })
   const [status, setStatus] = useState<'idle' | 'sending' | 'failed'>('idle')
 
-  const calendar = usePickupCalendar({ locale, leadTime, closedUntil })
+  const calendar = useRequestedPickupCalendar({ locale, leadTime, closedUntil })
 
   /** What this form sends: a Contact question carries no date. */
   const body = (current: Values): Record<string, string> => {
@@ -184,7 +184,7 @@ export const MessageForm = ({
 
       {customOrder ? (
         <>
-          <PickupDateField
+          <RequestedPickupDateField
             locale={locale}
             calendar={calendar}
             value={values.requestedPickupDate}

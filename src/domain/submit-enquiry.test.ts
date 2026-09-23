@@ -385,6 +385,26 @@ describe('submitEnquiry', () => {
   })
 
   describe('Inspiration photo', () => {
+    it('keeps no photo on a Contact Enquiry, whose form offers none', async () => {
+      const { submit, reencode, store } = setup({
+        load: async () => ({ ...context, item: null }),
+      })
+
+      await submit(
+        {
+          enquiryType: 'contact',
+          locale: 'en',
+          name: 'Sanne',
+          email: 'sanne@example.nl',
+          message: 'Is there parking?',
+        },
+        JPEG,
+      )
+
+      expect(reencode).not.toHaveBeenCalled()
+      expect(store).toHaveBeenCalledWith(expect.objectContaining({ enquiryType: 'contact' }), null)
+    })
+
     it('stores the re-encoded photo, never the bytes that were sent', async () => {
       const { submit, reencode, store } = setup()
 

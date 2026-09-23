@@ -3,7 +3,14 @@ import { JsonLd } from '@/components/site/JsonLd'
 import { Paragraphs } from '@/components/site/Paragraphs'
 import { Photograph } from '@/components/site/Photograph'
 import { Questions } from '@/components/site/Questions'
-import { AREA_SERVED, hoursLines, instagramLink, openingHours, priceRange } from '@/domain/contact'
+import {
+  AREA_SERVED,
+  hoursLines,
+  instagramLink,
+  openingHours,
+  phoneLink,
+  priceRange,
+} from '@/domain/contact'
 import { DICTIONARY } from '@/domain/dictionary'
 import { pagePath, type Locale } from '@/domain/routes'
 import { bakeryMarkup } from '@/domain/structured-data'
@@ -43,6 +50,7 @@ export const ContactPage = ({
   const words = DICTIONARY[locale]
   const { email, telephone, instagram: handle, photograph } = contact.details ?? {}
   const instagram = instagramLink(handle)
+  const phone = phoneLink(telephone)
   const hours = openingHours(contact.hours?.rows)
   const range = priceRange(prices, locale)
   const image = populated(photograph)
@@ -51,7 +59,7 @@ export const ContactPage = ({
     {
       path: pagePath('contact', locale),
       email: email ?? null,
-      telephone: telephone?.trim() || null,
+      telephone: phone?.label ?? null,
       images: image?.url ? [image.url] : [],
       openingHours: hours,
       priceRange: range,
@@ -63,12 +71,7 @@ export const ContactPage = ({
 
   const details = [
     email ? { term: words.contact.email, value: <a href={`mailto:${email}`}>{email}</a> } : null,
-    telephone?.trim()
-      ? {
-          term: words.contact.phone,
-          value: <a href={`tel:${telephone.replace(/[^\d+]/g, '')}`}>{telephone.trim()}</a>,
-        }
-      : null,
+    phone ? { term: words.contact.phone, value: <a href={phone.href}>{phone.label}</a> } : null,
     instagram
       ? { term: words.contact.instagram, value: <a href={instagram.href}>{instagram.label}</a> }
       : null,

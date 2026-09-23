@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { hoursLines, instagramLink, openingHours, priceRange } from './contact'
+import { hoursLines, instagramLink, openingHours, phoneLink, priceRange } from './contact'
 
 describe('openingHours', () => {
   it('keeps each row with days and two times, the days in week order', () => {
@@ -78,5 +78,21 @@ describe('instagramLink', () => {
     expect(instagramLink('')).toBeNull()
     expect(instagramLink(null)).toBeNull()
     expect(instagramLink('thuis bakery')).toBeNull()
+  })
+})
+
+describe('phoneLink', () => {
+  it('prints the number as Jana wrote it, and dials it without the spacing', () => {
+    expect(phoneLink(' +31 6 1234 5678 ')).toEqual({
+      href: 'tel:+31612345678',
+      label: '+31 6 1234 5678',
+    })
+    expect(phoneLink('06-12345678')).toEqual({ href: 'tel:0612345678', label: '06-12345678' })
+  })
+
+  it('is nothing when there is no number to dial', () => {
+    expect(phoneLink(null)).toBeNull()
+    expect(phoneLink('  ')).toBeNull()
+    expect(phoneLink('call me')).toBeNull()
   })
 })

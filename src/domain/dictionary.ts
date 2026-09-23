@@ -84,7 +84,7 @@ export type Dictionary = {
     customOrderMessage: string
     customOrderMessageHint: string
     contactMessage: string
-    /** Contact's button: a question is a message, not an Enquiry about a cake. */
+    /** Contact's button: its Enquiry is a question, so it reads as sending a message. */
     sendMessage: string
     sending: string
     /** Above the form when a submit is stopped by the customer's own mistakes. */
