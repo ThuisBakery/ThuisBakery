@@ -52,6 +52,16 @@ export const parseTimeOfDay = (value: string): TimeOfDay | null => {
   return { hour: Number(match[1]), minute: Number(match[2]) }
 }
 
+/**
+ * A stored Lead time as the arithmetic reads it, or `null` when there is none — or when its
+ * time of day does not parse, which validation on save means only old data can do.
+ */
+export const leadTimeOf = (stored: StoredLeadTime | null): LeadTime | null => {
+  const cutoff = stored ? parseTimeOfDay(stored.timeOfDay) : null
+
+  return stored && cutoff ? { days: stored.days, cutoff } : null
+}
+
 const addDays = (date: CalendarDate, days: number): CalendarDate => {
   const shifted = new Date(Date.UTC(date.year, date.month - 1, date.day + days))
 

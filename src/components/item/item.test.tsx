@@ -124,6 +124,7 @@ const renderPage = (overrides: Partial<Parameters<typeof ItemPage>[0]> = {}) =>
       sponges={sponges}
       fillings={fillings}
       leadTime={siteLeadTime}
+      closedUntil={{}}
       statement={statement}
       occasionPages={new Map([[2, '/wedding-cakes']])}
       origin="https://thuisbakery.nl"
@@ -265,6 +266,38 @@ describe('ItemPage', () => {
         item: 'https://thuisbakery.nl/cakes/burnt-basque-cheesecake',
       },
     ])
+  })
+
+  it('ends at an Enquiry for this Item, scoped to its own Sizes and choices', () => {
+    renderPage()
+
+    const enquiry = screen.getByRole('region', { name: 'Send an enquiry' })
+
+    expect(
+      within(within(enquiry).getByRole('group', { name: 'Size' }))
+        .getAllByRole('radio')
+        .map((radio) => radio.getAttribute('value')),
+      // The fixture's Sizes carry no row ids, so they are keyed by position.
+    ).toEqual(['0', '1'])
+    expect(
+      within(within(enquiry).getByRole('group', { name: 'Sponge' }))
+        .getAllByRole('radio')
+        .map((radio) => radio.getAttribute('value')),
+    ).toEqual(['1', '3'])
+    expect(screen.getByRole('link', { name: 'Send an enquiry' }).getAttribute('href')).toBe(
+      '#enquire',
+    )
+  })
+
+  it('holds the Enquiry to Closed until, with Jana’s notice', () => {
+    renderPage({
+      closedUntil: { date: '2099-01-04T12:00:00.000Z', notice: 'Away for the winter.' },
+    })
+
+    const enquiry = screen.getByRole('region', { name: 'Send an enquiry' })
+
+    expect(within(enquiry).getByText('Away for the winter.')).toBeTruthy()
+    expect(within(enquiry).getByText(/Jana is closed until/)).toBeTruthy()
   })
 
   it('marks up a Product whose offers are the prices printed on the page', () => {

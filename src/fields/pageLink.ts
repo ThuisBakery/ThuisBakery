@@ -1,6 +1,6 @@
 import type { Field } from 'payload'
 
-import { CODED_PAGES, CODED_PAGE_LABELS } from '@/domain/routes'
+import { CODED_PAGE_LABELS, LINKABLE_PAGES } from '@/domain/routes'
 
 /**
  * A link to one of the coded pages, as the Header and Footer globals hold them.
@@ -14,7 +14,7 @@ export const pageLinkFields: Field[] = [
     name: 'page',
     type: 'select',
     required: true,
-    options: CODED_PAGES.map((page) => ({ label: CODED_PAGE_LABELS[page], value: page })),
+    options: LINKABLE_PAGES.map((page) => ({ label: CODED_PAGE_LABELS[page], value: page })),
     admin: { width: '50%' },
   },
   {

@@ -74,6 +74,7 @@ export interface Config {
     fillings: Filling;
     allergens: Allergen;
     media: Media;
+    submissions: Submission;
     users: User;
     'payload-kv': PayloadKv;
     'payload-folders': FolderInterface;
@@ -94,6 +95,7 @@ export interface Config {
     fillings: FillingsSelect<false> | FillingsSelect<true>;
     allergens: AllergensSelect<false> | AllergensSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    submissions: SubmissionsSelect<false> | SubmissionsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
@@ -462,6 +464,66 @@ export interface Allergen {
   createdAt: string;
 }
 /**
+ * Every Enquiry customers have sent, newest first. Use Filters to narrow by type, Item, language or Requested pickup date.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submissions".
+ */
+export interface Submission {
+  id: number;
+  /**
+   * Which form this came from.
+   */
+  enquiryType: 'item' | 'custom-order' | 'contact';
+  /**
+   * The language the customer wrote in — the one to reply in.
+   */
+  locale: 'en' | 'nl';
+  name: string;
+  email: string;
+  phone?: string | null;
+  /**
+   * The Item page this was sent from.
+   */
+  item?: (number | null) | Item;
+  /**
+   * The Item’s title when the customer sent this, in their language.
+   */
+  itemTitle?: string | null;
+  size?: string | null;
+  quantity?: number | null;
+  sponge?: string | null;
+  filling?: string | null;
+  /**
+   * Requested, never confirmed: only Jana’s reply confirms a date.
+   */
+  requestedPickupDate?: string | null;
+  /**
+   * The customer’s own words, never priced by the Estimate.
+   */
+  specialRequests?: string | null;
+  message?: string | null;
+  /**
+   * Exactly what the customer was shown, stored when they sent it and never recomputed. Provisional: your reply sets the price.
+   */
+  estimate?: {
+    lines?:
+      | {
+          label: string;
+          unitAmount: number;
+          quantity: number;
+          amount: number;
+          id?: string | null;
+        }[]
+      | null;
+    total?: number | null;
+    currency?: 'EUR' | null;
+    provisional?: boolean | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
@@ -538,6 +600,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'submissions';
+        value: number | Submission;
       } | null)
     | ({
         relationTo: 'users';
@@ -775,6 +841,44 @@ export interface MediaSelect<T extends boolean = true> {
               filename?: T;
             };
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submissions_select".
+ */
+export interface SubmissionsSelect<T extends boolean = true> {
+  enquiryType?: T;
+  locale?: T;
+  name?: T;
+  email?: T;
+  phone?: T;
+  item?: T;
+  itemTitle?: T;
+  size?: T;
+  quantity?: T;
+  sponge?: T;
+  filling?: T;
+  requestedPickupDate?: T;
+  specialRequests?: T;
+  message?: T;
+  estimate?:
+    | T
+    | {
+        lines?:
+          | T
+          | {
+              label?: T;
+              unitAmount?: T;
+              quantity?: T;
+              amount?: T;
+              id?: T;
+            };
+        total?: T;
+        currency?: T;
+        provisional?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { locale } from 'next/root-params'
 import { getPayload, type Payload } from 'payload'
 
+import { EnquirySent } from '@/components/enquiry/EnquirySent'
 import { HomePage } from '@/components/home/HomePage'
 import { ItemPage } from '@/components/item/ItemPage'
 import { CataloguePage } from '@/components/menu/CataloguePage'
@@ -107,6 +108,8 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
 
   return {
     title: documentTitle(resolved.page, current),
+    // A receipt reached only by sending an Enquiry: nothing for a search engine to list.
+    ...(resolved.page === 'enquirySent' ? { robots: { index: false } } : {}),
     alternates: alternates(
       { en: pagePath(resolved.page, 'en'), nl: pagePath(resolved.page, 'nl') },
       current,
@@ -154,6 +157,12 @@ export default async function Page(props: Props) {
     <PageShell locale={current} page={page} header={header} footer={footer}>
       {page === 'home' ? (
         <HomePage locale={current} {...await fetchHome(payload, current)} />
+      ) : page === 'enquirySent' ? (
+        <EnquirySent
+          locale={current}
+          contactPath={pagePath('contact', current)}
+          {...await fetchEnquirySent(payload)}
+        />
       ) : isCatalogue(page) ? (
         <CataloguePage
           locale={current}
@@ -170,7 +179,8 @@ export default async function Page(props: Props) {
 /**
  * An Item page's documents: the Item, populated deep enough for its Allergens' icons; its
  * catalogue's other Items with a URL here, for the siblings; every Sponge and Filling, for
- * an Item that names none of its own; and the two globals it states.
+ * an Item that names none of its own; and the three globals it states or its Enquiry form
+ * is held to.
  *
  * Read with locale fallback on. Whether the Item has a URL here was settled without it
  * (`itemListings`); what remains — a Size's label, a Filling's name — is exactly what
@@ -186,6 +196,7 @@ const fetchItem = async (payload: Payload, listing: ItemListing, current: Locale
     { docs: sponges },
     { docs: fillings },
     leadTime,
+    closedUntil,
     crossContamination,
   ] = await Promise.all([
     payload.findByID({ collection: 'items', id: listing.id, depth: 2, locale: current }),
@@ -199,6 +210,7 @@ const fetchItem = async (payload: Payload, listing: ItemListing, current: Locale
     payload.find({ collection: 'sponges', sort: 'name', locale: current, pagination: false }),
     payload.find({ collection: 'fillings', sort: 'name', locale: current, pagination: false }),
     payload.findGlobal({ slug: 'lead-time', depth: 0 }),
+    payload.findGlobal({ slug: 'closed-until', locale: current, depth: 0 }),
     payload.findGlobal({ slug: 'cross-contamination', locale: current, depth: 0 }),
   ])
 
@@ -208,6 +220,7 @@ const fetchItem = async (payload: Payload, listing: ItemListing, current: Locale
     sponges,
     fillings,
     leadTime,
+    closedUntil,
     statement: crossContamination.statement,
     // Occasion pages are marketing pages, which the Pages collection (issue #26) brings.
     // Until it lands no Occasion has a page, so none is linked rather than one linked to a
@@ -271,4 +284,14 @@ const fetchHome = async (payload: Payload, current: Locale) => {
   ])
 
   return { home, categories, leadTime, statement: crossContamination.statement }
+}
+
+/**
+ * The confirmation page's one fact from the CMS: the site-wide Lead time's days, which is how
+ * long to wait for a reply when the customer's own receipt is not there to say.
+ */
+const fetchEnquirySent = async (payload: Payload) => {
+  const leadTime = await payload.findGlobal({ slug: 'lead-time', depth: 0 })
+
+  return { siteLeadTimeDays: leadTime.days ?? null }
 }
