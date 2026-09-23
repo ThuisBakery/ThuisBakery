@@ -86,9 +86,43 @@ export const occasionPages = (
   return pages
 }
 
+/**
+ * What an editorial link may point at inside the site: marketing pages and Items. The
+ * website template's `link` field targets `pages` and `posts`; this site has no posts.
+ */
+export const LINK_TARGETS = ['pages', 'items'] as const
+
+export type LinkTarget = (typeof LINK_TARGETS)[number]
+
 /** The key a link's internal target is looked up by: `pages:3`, `items:10`. */
-export const linkTargetKey = (relationTo: string, id: number | string): string =>
-  `${relationTo}:${id}`
+export const linkTargetKey = (
+  relationTo: LinkTarget | (string & {}),
+  id: number | string,
+): string => `${relationTo}:${id}`
+
+/**
+ * Every Item and marketing page with a URL in this locale, by `linkTargetKey`: where an
+ * editorial link may lead. One missing here has no URL in this locale, so a link to it is
+ * left unlinked rather than pointed at a 404.
+ */
+export const linkTargets = (
+  listings: Record<LinkTarget, readonly { id: number; paths: Partial<Record<Locale, string>> }[]>,
+  locale: Locale,
+): Map<string, string> => {
+  const targets = new Map<string, string>()
+
+  for (const relationTo of LINK_TARGETS) {
+    for (const { id, paths } of listings[relationTo]) {
+      const path = paths[locale]
+
+      if (path !== undefined) {
+        targets.set(linkTargetKey(relationTo, id), path)
+      }
+    }
+  }
+
+  return targets
+}
 
 /** An internal link's target as Payload stores it, populated or not. */
 export type LinkReference = {

@@ -296,5 +296,8 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
 export const documentTitle = (page: CodedPage, locale: Locale): string =>
   page === 'home' ? 'ThuisBakery' : `${DICTIONARY[locale].pageTitles[page]} — ThuisBakery`
 
-/** An Item page's `<title>`: `<Item> — ThuisBakery`, as ADR-0002's computed fallback. */
+/**
+ * An Item or marketing page's `<title>`: `<title> — ThuisBakery`, as ADR-0002's computed
+ * fallback.
+ */
 export const itemTitle = (title: string): string => `${title} — ThuisBakery`

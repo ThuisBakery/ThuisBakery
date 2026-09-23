@@ -125,15 +125,20 @@ export const MarketingPage = ({
 }
 
 /**
- * The template's four heroes. Whatever Jana chooses, the page has exactly one `h1`: her
- * hero's own, or the page title when her hero has none — a marketing page is a search
- * landing page, and one with no heading is a weaker one.
+ * The template's four heroes. Whatever Jana chooses, the page opens with an `h1`: her
+ * hero's own, or the page title when her hero shows none — a marketing page is a search
+ * landing page, and one with no heading is a weaker one. (A Call to Action may still add a
+ * second; the template allows it, and inside the sandbox that is hers to decide.)
  */
 const Hero = ({ page, targets }: { page: Page; targets: ReadonlyMap<string, string> }) => {
   const { type, richText, links, media } = page.hero
-  const title = hasHeading(richText, 'h1') ? null : (
-    <h1 className="font-display text-[40px] leading-[1.1] font-medium md:text-6xl">{page.title}</h1>
-  )
+  // A hero set to None shows none of its words, so its heading cannot stand in for the title.
+  const title =
+    type !== 'none' && hasHeading(richText, 'h1') ? null : (
+      <h1 className="font-display text-[40px] leading-[1.1] font-medium md:text-6xl">
+        {page.title}
+      </h1>
+    )
 
   const words =
     type === 'none' ? (

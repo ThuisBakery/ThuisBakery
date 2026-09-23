@@ -257,3 +257,18 @@ describe('MarketingPage', () => {
     expect(screen.queryByRole('navigation', { name: 'From the menu' })).toBeNull()
   })
 })
+
+describe('MarketingPage with no hero', () => {
+  it('still heads the page with its title when the unused hero text holds a heading', () => {
+    render(
+      <MarketingPage
+        locale="en"
+        page={christmas({ hero: { type: 'none', richText: root(heading('h1', 'Old words')) } })}
+        targets={targets}
+        occasionItems={[]}
+      />,
+    )
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Christmas' })).toBeDefined()
+  })
+})

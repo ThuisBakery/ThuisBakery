@@ -13,7 +13,7 @@ import { PageShell } from '@/components/site/PageShell'
 import { Placeholder } from '@/components/site/Placeholder'
 import { alternates } from '@/domain/alternates'
 import { DICTIONARY, documentTitle, itemTitle } from '@/domain/dictionary'
-import { linkTargetKey, occasionPages } from '@/domain/page'
+import { linkTargets, occasionPages } from '@/domain/page'
 import {
   LOCALES,
   CODED_PAGES,
@@ -290,7 +290,9 @@ const fetchMarketingPage = async (payload: Payload, listing: PageListing, curren
       locale: current,
       fallbackLocale: 'none',
     }),
-    linkTargets(current),
+    Promise.all([itemListings(), pageListings()]).then(([items, pages]) =>
+      linkTargets({ items, pages }, current),
+    ),
     readyItemIds(current),
   ])
 
@@ -307,31 +309,6 @@ const fetchMarketingPage = async (payload: Payload, listing: PageListing, curren
         })
 
   return { page, targets, occasionItems }
-}
-
-/**
- * Every page and Item with a URL in this locale, by `linkTargetKey`: where an editorial
- * link inside a marketing page may lead. One that is missing has no URL here, so a link to
- * it is left unlinked rather than pointed at a 404.
- */
-const linkTargets = async (current: Locale): Promise<Map<string, string>> => {
-  const [items, pages] = await Promise.all([itemListings(), pageListings()])
-  const targets = new Map<string, string>()
-
-  for (const [relationTo, listings] of [
-    ['items', items],
-    ['pages', pages],
-  ] as const) {
-    for (const { id, paths } of listings) {
-      const path = paths[current]
-
-      if (path !== undefined) {
-        targets.set(linkTargetKey(relationTo, id), path)
-      }
-    }
-  }
-
-  return targets
 }
 
 /**

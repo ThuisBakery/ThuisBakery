@@ -1,5 +1,7 @@
 import type { Field, GroupField } from 'payload'
 
+import { LINK_TARGETS } from '@/domain/page'
+
 /**
  * The link field from Payload's website template, kept as the template writes it so Jana
  * gets the documented experience (ADR-0003). One change: the template links internally to
@@ -13,8 +15,6 @@ export const appearanceOptions: Record<LinkAppearances, { label: string; value: 
   default: { label: 'Default', value: 'default' },
   outline: { label: 'Outline', value: 'outline' },
 }
-
-export const LINK_TARGETS = ['pages', 'items'] as const
 
 type LinkType = (options?: {
   appearances?: LinkAppearances[] | false

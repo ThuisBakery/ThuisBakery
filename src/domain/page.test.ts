@@ -6,6 +6,7 @@ import {
   isPageReady,
   linkHref,
   linkTargetKey,
+  linkTargets,
   occasionPages,
   pageListing,
 } from './page'
@@ -116,5 +117,25 @@ describe('hasHeading', () => {
     expect(hasHeading(doc({ type: 'heading', tag: 'h2', children: [] }), 'h1')).toBe(false)
     expect(hasHeading(doc({ type: 'paragraph', children: [] }), 'h1')).toBe(false)
     expect(hasHeading(null, 'h1')).toBe(false)
+  })
+})
+
+describe('linkTargets', () => {
+  const item = { id: 10, paths: { en: '/cakes/apple-pie' } }
+  const page = pageListing(3, null, { en: english, nl: dutch })
+
+  it('maps every Item and page with a URL in this locale to that URL', () => {
+    expect(linkTargets({ items: [item], pages: [page] }, 'en')).toEqual(
+      new Map([
+        ['items:10', '/cakes/apple-pie'],
+        ['pages:3', '/christmas'],
+      ]),
+    )
+  })
+
+  it('leaves out one with no URL in this locale', () => {
+    expect(linkTargets({ items: [item], pages: [page] }, 'nl')).toEqual(
+      new Map([['pages:3', '/nl/kerst']]),
+    )
   })
 })
