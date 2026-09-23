@@ -67,6 +67,9 @@ export type Dictionary = {
     closedUntil: (date: string) => string
     specialRequests: string
     specialRequestsHint: string
+    photo: string
+    photoHint: string
+    removePhoto: string
     name: string
     email: string
     phone: string
@@ -101,6 +104,18 @@ export type Dictionary = {
     item: string
     requestedPickupDate: string
     specialRequests: string
+  }
+  /**
+   * The acknowledgement email: fixed words in the customer's language, never machine
+   * translated (ADR-0006). What the customer typed goes between them verbatim.
+   */
+  acknowledgement: {
+    subject: (reference: string) => string
+    greeting: (name: string) => string
+    /** In place of the confirmation page's link: an email can simply be answered. */
+    followUp: string
+    message: string
+    signOff: string
   }
 }
 
@@ -155,6 +170,9 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       closedUntil: (date) => `Jana is closed until ${date}.`,
       specialRequests: 'Special requests',
       specialRequestsHint: 'A written message, colours or a theme. Jana prices these in her reply.',
+      photo: 'Inspiration photo (optional)',
+      photoHint: 'One photo of what you have in mind. Only Jana sees it.',
+      removePhoto: 'Remove photo',
       name: 'Your name',
       email: 'Email',
       phone: 'Phone (optional)',
@@ -176,6 +194,8 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
         invalidQuantity: (max) => `Choose a whole number from 1 to ${max}.`,
         unknownChoice: 'Please choose one of the options.',
         invalidDate: 'Please choose a date.',
+        tooLarge: 'This photo is too large. Please choose a smaller one.',
+        notAnImage: 'This does not look like a photo. Please choose a JPEG or PNG.',
         tooSoon: (earliest) =>
           earliest ? `That is too soon. The earliest is ${earliest}.` : 'That is too soon.',
         closed: (until) =>
@@ -196,6 +216,13 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       item: 'Item',
       requestedPickupDate: 'Pickup date you asked for',
       specialRequests: 'Special requests',
+    },
+    acknowledgement: {
+      subject: (reference) => `Your enquiry to ThuisBakery (${reference})`,
+      greeting: (name) => `Hi ${name},`,
+      followUp: 'Heard nothing by then? Check your spam folder, or simply reply to this email.',
+      message: 'Your message',
+      signOff: 'ThuisBakery, Uithoorn',
     },
   },
   nl: {
@@ -249,6 +276,9 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       specialRequests: 'Bijzonderheden',
       specialRequestsHint:
         'Een tekst op de taart, kleuren of een thema. Jana rekent dit mee in haar antwoord.',
+      photo: 'Inspiratiefoto (optioneel)',
+      photoHint: 'Eén foto van wat je in gedachten hebt. Alleen Jana ziet hem.',
+      removePhoto: 'Foto verwijderen',
       name: 'Je naam',
       email: 'E-mail',
       phone: 'Telefoon (optioneel)',
@@ -270,6 +300,8 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
         invalidQuantity: (max) => `Kies een heel getal van 1 tot en met ${max}.`,
         unknownChoice: 'Kies een van de opties.',
         invalidDate: 'Kies een datum.',
+        tooLarge: 'Deze foto is te groot. Kies een kleinere.',
+        notAnImage: 'Dit lijkt geen foto. Kies een JPEG of PNG.',
         tooSoon: (earliest) =>
           earliest ? `Dat is te snel. De vroegste datum is ${earliest}.` : 'Dat is te snel.',
         closed: (until) =>
@@ -288,6 +320,13 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       item: 'Wat',
       requestedPickupDate: 'Gevraagde ophaaldatum',
       specialRequests: 'Bijzonderheden',
+    },
+    acknowledgement: {
+      subject: (reference) => `Je vraag aan ThuisBakery (${reference})`,
+      greeting: (name) => `Hallo ${name},`,
+      followUp: 'Nog niets gehoord? Kijk in je spammap, of beantwoord deze e-mail gewoon.',
+      message: 'Je bericht',
+      signOff: 'ThuisBakery, Uithoorn',
     },
   },
 }

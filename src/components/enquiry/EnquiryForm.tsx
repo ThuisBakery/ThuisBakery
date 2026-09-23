@@ -13,6 +13,7 @@ import {
   type ItemOffer,
 } from '@/domain/enquiry'
 import { estimate } from '@/domain/estimate'
+import { MAX_PHOTO_BYTES } from '@/domain/inspiration-photo'
 import { leadTimeOf, type CalendarDate, type StoredLeadTime } from '@/domain/lead-time'
 import { formatEuros } from '@/domain/menu'
 import {
@@ -24,22 +25,39 @@ import {
   isClosed,
 } from '@/domain/pickup-date'
 import { pagePath, type Locale } from '@/domain/routes'
-import { HONEYPOT_FIELD, type EnquiryReply, type Receipt } from '@/domain/submit-enquiry'
+import {
+  ENQUIRY_ENDPOINT,
+  HONEYPOT_FIELD,
+  PHOTO_FIELD,
+  type EnquiryReply,
+  type Receipt,
+} from '@/domain/submit-enquiry'
 
+import { downscalePhoto } from './downscale-photo'
 import { EstimateSummary } from './EstimateSummary'
 import { keepReceipt } from './receipt-storage'
 
-/** Where every Enquiry is sent. See `src/app/(frontend)/next/enquiry/route.ts`. */
-export const ENQUIRY_ENDPOINT = '/next/enquiry'
+/**
+ * Sends an Enquiry as a form, with the downscaled Inspiration photo if there is one. BotID
+ * attaches its challenge to this request (`instrumentation-client.ts`). Anything that is not
+ * a reply the route could have written is a failure — a refusal from BotID included.
+ */
+export const postEnquiry = async (
+  body: Record<string, unknown>,
+  photo: Blob | null,
+): Promise<EnquiryReply> => {
+  const form = new FormData()
 
-/** Sends an Enquiry. Anything that is not a reply the route could have written is a failure. */
-export const postEnquiry = async (body: Record<string, unknown>): Promise<EnquiryReply> => {
+  for (const [key, value] of Object.entries(body)) {
+    form.append(key, String(value))
+  }
+
+  if (photo) {
+    form.append(PHOTO_FIELD, photo, 'inspiration.jpg')
+  }
+
   try {
-    const response = await fetch(ENQUIRY_ENDPOINT, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    })
+    const response = await fetch(ENQUIRY_ENDPOINT, { method: 'POST', body: form })
     const reply = (await response.json()) as Partial<EnquiryReply> | null
 
     return reply?.status === 'accepted' || reply?.status === 'invalid'
@@ -93,6 +111,7 @@ const FIELD_ORDER: readonly EnquiryField[] = [
   'filling',
   'requestedPickupDate',
   'specialRequests',
+  'photo',
   'name',
   'email',
   'phone',
@@ -123,6 +142,7 @@ export const EnquiryForm = ({
   closedNotice,
   contactPath,
   submit = postEnquiry,
+  downscale = downscalePhoto,
   onSent,
 }: {
   locale: Locale
@@ -135,12 +155,15 @@ export const EnquiryForm = ({
   closedNotice: string | null | undefined
   /** Where to get in touch directly when sending fails. */
   contactPath: string
-  submit?: (body: Record<string, unknown>) => Promise<EnquiryReply>
+  submit?: (body: Record<string, unknown>, photo: Blob | null) => Promise<EnquiryReply>
+  /** Shrinks a chosen photo before it is sent. Throws when the file is not one. */
+  downscale?: (file: File) => Promise<Blob>
   onSent?: (receipt: Receipt | null) => void
 }) => {
   const words = DICTIONARY[locale].enquiry
   const itemWords = DICTIONARY[locale].item
   const formRef = useRef<HTMLFormElement>(null)
+  const photoRef = useRef<HTMLInputElement>(null)
 
   const [values, setValues] = useState<Values>({
     size: offer.sizes[0]?.id ?? '',
@@ -161,6 +184,10 @@ export const EnquiryForm = ({
   const [attempted, setAttempted] = useState(false)
   const [serverProblems, setServerProblems] = useState<EnquiryProblems>({})
   const [status, setStatus] = useState<'idle' | 'sending' | 'failed'>('idle')
+  // The photo as it will be sent — already downscaled — or what is wrong with the one chosen.
+  const [photo, setPhoto] = useState<Blob | null>(null)
+  const [photoIssue, setPhotoIssue] = useState<EnquiryProblem | null>(null)
+  const [readingPhoto, setReadingPhoto] = useState(false)
 
   const minute = useSyncExternalStore(subscribeToMinutes, currentMinute, noMinuteOnServer)
   const arrival = minute === null ? null : amsterdamArrival(new Date(minute * 60_000))
@@ -188,7 +215,10 @@ export const EnquiryForm = ({
     )
 
   const validation = validate(values)
-  const ownProblems = validation.ok ? {} : validation.problems
+  const ownProblems: EnquiryProblems = {
+    ...(validation.ok ? {} : validation.problems),
+    ...(photoIssue ? { photo: photoIssue } : {}),
+  }
   const problems: EnquiryProblems = { ...serverProblems }
 
   for (const field of FIELD_ORDER) {
@@ -227,6 +257,41 @@ export const EnquiryForm = ({
     }
   }
 
+  const choosePhoto = async (file: File | undefined) => {
+    setServerProblems(({ photo: _, ...rest }) => rest)
+    setPhoto(null)
+    setPhotoIssue(null)
+    touch('photo')
+
+    if (!file) {
+      return
+    }
+
+    setReadingPhoto(true)
+
+    try {
+      const downscaled = await downscale(file)
+
+      if (downscaled.size > MAX_PHOTO_BYTES) {
+        setPhotoIssue('tooLarge')
+      } else {
+        setPhoto(downscaled)
+      }
+    } catch {
+      setPhotoIssue('notAnImage')
+    } finally {
+      setReadingPhoto(false)
+    }
+  }
+
+  const removePhoto = () => {
+    if (photoRef.current) {
+      photoRef.current.value = ''
+    }
+
+    void choosePhoto(undefined)
+  }
+
   const touch = (field: EnquiryField) => setTouched((current) => new Set(current).add(field))
 
   const focusFirst = (found: EnquiryProblems) => {
@@ -243,14 +308,17 @@ export const EnquiryForm = ({
 
     const checked = validate(values)
 
-    if (!checked.ok) {
-      focusFirst(checked.problems)
+    if (!checked.ok || photoIssue) {
+      focusFirst({
+        ...(checked.ok ? {} : checked.problems),
+        ...(photoIssue ? { photo: photoIssue } : {}),
+      })
       return
     }
 
     setStatus('sending')
 
-    const reply = await submit({ enquiryType: 'item', locale, item: offer.id, ...values })
+    const reply = await submit({ enquiryType: 'item', locale, item: offer.id, ...values }, photo)
 
     if (reply.status === 'accepted') {
       // Stays "sending" while the confirmation page loads, so it cannot be sent twice.
@@ -409,6 +477,33 @@ export const EnquiryForm = ({
         {problemFor('specialRequests')}
       </div>
 
+      <div>
+        <label htmlFor="enquiry-photo" className={LEGEND}>
+          {words.photo}
+        </label>
+        <input
+          {...fieldProps('photo', ['enquiry-photo-hint'])}
+          ref={photoRef}
+          type="file"
+          accept="image/*"
+          onChange={(event) => void choosePhoto(event.target.files?.[0])}
+          className="mt-2 block w-full text-sm file:mr-3 file:min-h-11 file:border file:border-rule file:bg-raised file:px-4 file:py-2 file:text-ink"
+        />
+        <p id="enquiry-photo-hint" className="mt-1.5 text-sm text-ink-muted">
+          {words.photoHint}
+        </p>
+        {photo ? (
+          <button
+            type="button"
+            onClick={removePhoto}
+            className="mt-2 text-sm underline underline-offset-4 hover:text-accent"
+          >
+            {words.removePhoto}
+          </button>
+        ) : null}
+        {problemFor('photo')}
+      </div>
+
       <div className="grid gap-6 md:grid-cols-2">
         <TextField
           field="name"
@@ -472,7 +567,7 @@ export const EnquiryForm = ({
       <div>
         <button
           type="submit"
-          disabled={status === 'sending'}
+          disabled={status === 'sending' || readingPhoto}
           className="min-h-12 bg-accent px-8 py-3.5 text-sm tracking-wide text-accent-ink motion-safe:transition-transform motion-safe:duration-200 motion-safe:active:translate-y-px disabled:opacity-60"
         >
           {status === 'sending' ? words.sending : words.send}

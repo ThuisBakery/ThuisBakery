@@ -659,6 +659,22 @@ export interface Submission {
    */
   reference?: string | null;
   /**
+   * Whether the emails about this Enquiry arrived. Nothing is retried: if either says Not sent, Bounced or Failed, reply to the customer yourself.
+   */
+  delivery?: {
+    /**
+     * The email to you.
+     */
+    toJana?: ('pending' | 'sent' | 'delayed' | 'delivered' | 'not-sent' | 'bounced' | 'failed' | 'complained') | null;
+    toJanaEmailId?: string | null;
+    /**
+     * Bounced usually means a mistyped address: try their phone.
+     */
+    toCustomer?:
+      ('pending' | 'sent' | 'delayed' | 'delivered' | 'not-sent' | 'bounced' | 'failed' | 'complained') | null;
+    toCustomerEmailId?: string | null;
+  };
+  /**
    * Which form this came from.
    */
   enquiryType: 'item' | 'custom-order' | 'contact';
@@ -690,6 +706,7 @@ export interface Submission {
    */
   specialRequests?: string | null;
   message?: string | null;
+  inspirationPhoto?: string | null;
   /**
    * Exactly what the customer was shown, stored when they sent it and never recomputed. Provisional: your reply sets the price.
    */
@@ -1151,6 +1168,14 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface SubmissionsSelect<T extends boolean = true> {
   reference?: T;
+  delivery?:
+    | T
+    | {
+        toJana?: T;
+        toJanaEmailId?: T;
+        toCustomer?: T;
+        toCustomerEmailId?: T;
+      };
   enquiryType?: T;
   locale?: T;
   name?: T;
@@ -1165,6 +1190,7 @@ export interface SubmissionsSelect<T extends boolean = true> {
   requestedPickupDate?: T;
   specialRequests?: T;
   message?: T;
+  inspirationPhoto?: T;
   estimate?:
     | T
     | {
