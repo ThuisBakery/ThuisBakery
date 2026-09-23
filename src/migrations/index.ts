@@ -12,6 +12,7 @@ import * as migration_20260923_182011_seo_meta from './20260923_182011_seo_meta'
 import * as migration_20260923_183830_enquiry_delivery from './20260923_183830_enquiry_delivery';
 import * as migration_20260923_191002_about_contact_privacy_pages from './20260923_191002_about_contact_privacy_pages';
 import * as migration_20260923_191019_seed_about_contact_privacy from './20260923_191019_seed_about_contact_privacy';
+import * as migration_20260923_200000_seed_placeholder_catalogue from './20260923_200000_seed_placeholder_catalogue';
 
 export const migrations = [
   {
@@ -82,6 +83,11 @@ export const migrations = [
   {
     up: migration_20260923_191019_seed_about_contact_privacy.up,
     down: migration_20260923_191019_seed_about_contact_privacy.down,
-    name: '20260923_191019_seed_about_contact_privacy'
+    name: '20260923_191019_seed_about_contact_privacy',
+  },
+  {
+    up: migration_20260923_200000_seed_placeholder_catalogue.up,
+    down: migration_20260923_200000_seed_placeholder_catalogue.down,
+    name: '20260923_200000_seed_placeholder_catalogue'
   },
 ];
