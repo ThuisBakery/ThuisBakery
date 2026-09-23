@@ -1,9 +1,11 @@
+import { randomInt } from 'node:crypto'
 import type { Payload } from 'payload'
 
 import { itemOffer } from '@/domain/enquiry'
 import { itemLeadTime } from '@/domain/item'
 import { leadTimeOf } from '@/domain/lead-time'
 import { closedUntilDate } from '@/domain/pickup-date'
+import { enquiryReference } from '@/domain/reference'
 import type { SubmitDependencies } from '@/domain/submit-enquiry'
 
 /**
@@ -50,13 +52,14 @@ export const loadEnquiryContext =
 export const storeSubmission =
   (payload: Payload): SubmitDependencies['store'] =>
   async ({ estimate, ...data }) => {
-    const { id } = await payload.create({
+    await payload.create({
       collection: 'submissions',
       // Held to the collection's own access rules — public `create` — rather than the local
       // API's default of overriding them: this write is made on a stranger's behalf.
       overrideAccess: false,
       data: { ...data, ...(estimate ? { estimate } : {}) },
     })
-
-    return { id }
   }
+
+/** A reference from a cryptographic source, so one customer's cannot be guessed from another's. */
+export const newReference: SubmitDependencies['reference'] = () => enquiryReference(randomInt)

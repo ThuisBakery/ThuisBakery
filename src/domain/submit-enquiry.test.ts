@@ -43,14 +43,16 @@ const enquiry = {
 // 21 September, 09:00 in Amsterdam.
 const now = new Date('2026-09-21T07:00:00Z')
 
+const reference = () => 'K7MQ-3XTP'
+
 const setup = (overrides: { load?: () => Promise<EnquiryContext> } = {}) => {
-  const store = vi.fn(async (_: SubmissionData) => ({ id: 481 }))
+  const store = vi.fn(async (_: SubmissionData) => {})
   const load = vi.fn(overrides.load ?? (async () => context))
 
   return {
     store,
     load,
-    submit: (raw: unknown) => submitEnquiry(raw, { now, load, store }),
+    submit: (raw: unknown) => submitEnquiry(raw, { now, load, store, reference }),
   }
 }
 
@@ -62,6 +64,7 @@ describe('submitEnquiry', () => {
 
     expect(load).toHaveBeenCalledWith({ item: 10, locale: 'nl' })
     expect(store).toHaveBeenCalledWith({
+      reference: 'K7MQ-3XTP',
       enquiryType: 'item',
       locale: 'nl',
       name: 'Sanne de Vries',
@@ -90,7 +93,7 @@ describe('submitEnquiry', () => {
     expect(outcome).toEqual({
       status: 'accepted',
       receipt: {
-        reference: 481,
+        reference: 'K7MQ-3XTP',
         enquiryType: 'item',
         itemTitle: 'Burnt Basque Cheesecake',
         size: 'Large',
@@ -141,6 +144,7 @@ describe('submitEnquiry', () => {
       now: new Date('2026-09-23T22:30:00Z'),
       load,
       store,
+      reference,
     })
 
     expect(late).toEqual({ status: 'invalid', problems: { requestedPickupDate: 'tooSoon' } })
@@ -172,7 +176,9 @@ describe('submitEnquiry', () => {
       throw new Error('connection refused')
     }
 
-    expect(await submitEnquiry(enquiry, { now, load: async () => context, store })).toEqual({
+    expect(
+      await submitEnquiry(enquiry, { now, load: async () => context, store, reference }),
+    ).toEqual({
       status: 'failed',
       error: new Error('connection refused'),
     })
@@ -220,7 +226,7 @@ describe('submitEnquiry', () => {
 
 describe('httpReply', () => {
   const receipt = {
-    reference: 481,
+    reference: 'K7MQ-3XTP',
     enquiryType: 'contact',
     itemTitle: null,
     size: null,
@@ -264,7 +270,7 @@ describe('httpReply', () => {
 
 describe('parseReceipt', () => {
   const receipt = {
-    reference: 481,
+    reference: 'K7MQ-3XTP',
     enquiryType: 'item',
     itemTitle: 'Burnt Basque Cheesecake',
     size: 'Large',

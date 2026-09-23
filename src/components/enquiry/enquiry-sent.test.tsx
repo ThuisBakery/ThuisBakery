@@ -8,7 +8,7 @@ import { EnquirySent } from './EnquirySent'
 afterEach(cleanup)
 
 const receipt: Receipt = {
-  reference: 481,
+  reference: 'K7MQ-3XTP',
   enquiryType: 'item',
   itemTitle: 'Burnt Basque Cheesecake',
   size: 'Large',
@@ -73,7 +73,7 @@ describe('EnquirySent', () => {
 
     const sent = screen.getByRole('region', { name: 'What you sent' })
 
-    expect(within(sent).getByText('Reference 481')).toBeTruthy()
+    expect(within(sent).getByText('Reference K7MQ-3XTP')).toBeTruthy()
     expect(within(sent).getByText('Burnt Basque Cheesecake')).toBeTruthy()
     // Once as what was asked for, once as the Estimate's line.
     expect(within(sent).getAllByText('Large × 2')).toHaveLength(2)
