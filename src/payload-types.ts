@@ -108,6 +108,7 @@ export interface Config {
   globals: {
     header: Header;
     footer: Footer;
+    home: Home;
     'cross-contamination': CrossContamination;
     'lead-time': LeadTime;
     'closed-until': ClosedUntil;
@@ -115,6 +116,7 @@ export interface Config {
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
+    home: HomeSelect<false> | HomeSelect<true>;
     'cross-contamination': CrossContaminationSelect<false> | CrossContaminationSelect<true>;
     'lead-time': LeadTimeSelect<false> | LeadTimeSelect<true>;
     'closed-until': ClosedUntilSelect<false> | ClosedUntilSelect<true>;
@@ -251,7 +253,7 @@ export interface Item {
 export interface Category {
   id: number;
   /**
-   * Jana’s own name for the tier — Proefhapjes, Cheeky Bento Cakes, Indulgent Cakes, Specialty Cakes, Nibbles.
+   * Jana’s own name for this Category — Proefhapjes, Cheeky Bento Cakes, Indulgent Cakes, Specialty Cakes, Nibbles.
    */
   name: string;
   /**
@@ -259,7 +261,7 @@ export interface Category {
    */
   generateSlug?: boolean | null;
   /**
-   * Where the catalogue page scrolls to for this tier — /cakes#bento. Changing it breaks links people have shared.
+   * Where the catalogue page scrolls to for this Category — /cakes#bento. Changing it breaks links people have shared.
    */
   slug: string;
   /**
@@ -271,11 +273,11 @@ export interface Category {
    */
   note?: string | null;
   /**
-   * The photograph this tier is shown as. Set its focal point on the photograph itself, so the cake stays in frame when the menu crops it.
+   * The photograph this Category is shown as. Set its focal point on the photograph itself, so the cake stays in frame when the menu crops it.
    */
   photograph: number | Media;
   /**
-   * Euros, as on the card — 29. Leave empty for a tier priced Item by Item, like Specialty or Nibbles.
+   * Euros, as on the card — 29. Leave empty for a Category priced Item by Item, like Specialty or Nibbles.
    */
   price?: number | null;
   /**
@@ -897,6 +899,135 @@ export interface Footer {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "home".
+ */
+export interface Home {
+  id: number;
+  hero: {
+    /**
+     * The page’s heading — “Baked at home in Uithoorn”.
+     */
+    headline: string;
+    /**
+     * One or two sentences under the heading.
+     */
+    intro: string;
+    /**
+     * The photograph along the foot of the opening screen, cut by the bottom edge so it leads down into the menu. A wide shot works best. Set its focal point on the photograph itself, so the cake stays in frame when the page crops it.
+     */
+    photograph?: (number | null) | Media;
+    /**
+     * The main button, to the cakes — “See the cakes”.
+     */
+    cakesLabel: string;
+    /**
+     * The link beside it, to the nibbles.
+     */
+    nibblesLabel: string;
+  };
+  /**
+   * Three facts under the opening. The notice needed comes from Lead time, and the starting price from the Categories — only pickup and the line under the price are written here.
+   */
+  facts: {
+    /**
+     * Where cakes are collected — “Pickup in Uithoorn”.
+     */
+    pickupTitle: string;
+    /**
+     * The line beneath — “Address sent once your day is confirmed.”
+     */
+    pickupDetail: string;
+    /**
+     * Optional. The line under the starting price — “A bento cake. Full sizes run to about €110.”
+     */
+    priceDetail?: string | null;
+  };
+  /**
+   * The menu shows every Category, as it does on the catalogue pages.
+   */
+  menu: {
+    /**
+     * The heading above the menu — “The menu”.
+     */
+    heading: string;
+  };
+  about: {
+    /**
+     * “One kitchen, one pair of hands”.
+     */
+    heading: string;
+    /**
+     * A few sentences. Leave a blank line between paragraphs.
+     */
+    body: string;
+    /**
+     * The link to the About page — “Meet Jana”.
+     */
+    linkLabel: string;
+    /**
+     * A photograph of Jana, or of her kitchen. Tall rather than wide. Set its focal point on the photograph itself, so the cake stays in frame when the page crops it.
+     */
+    photograph?: (number | null) | Media;
+  };
+  /**
+   * The cross-contamination statement is added beneath automatically; it is written once, on its own global.
+   */
+  allergens: {
+    /**
+     * “About allergies”.
+     */
+    heading: string;
+    /**
+     * Optional. A sentence before the statement.
+     */
+    intro?: string | null;
+  };
+  quote: {
+    /**
+     * What the customer said, without quotation marks.
+     */
+    text: string;
+    /**
+     * Who said it — “Marieke, Uithoorn”. Ask before using a surname.
+     */
+    attribution: string;
+  };
+  faq: {
+    /**
+     * “Before you ask”.
+     */
+    heading: string;
+    questions: {
+      /**
+       * The question, as a customer would ask it.
+       */
+      question: string;
+      /**
+       * The answer.
+       */
+      answer: string;
+      id?: string | null;
+    }[];
+  };
+  /**
+   * The last section, sending the customer into the menu. It uses the Opening’s button and link words.
+   */
+  closing: {
+    /**
+     * “Tell Jana what the day is for”.
+     */
+    heading: string;
+    /**
+     * One or two sentences.
+     */
+    body: string;
+  };
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "cross-contamination".
  */
 export interface CrossContamination {
@@ -981,6 +1112,75 @@ export interface FooterSelect<T extends boolean = true> {
         label?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "home_select".
+ */
+export interface HomeSelect<T extends boolean = true> {
+  hero?:
+    | T
+    | {
+        headline?: T;
+        intro?: T;
+        photograph?: T;
+        cakesLabel?: T;
+        nibblesLabel?: T;
+      };
+  facts?:
+    | T
+    | {
+        pickupTitle?: T;
+        pickupDetail?: T;
+        priceDetail?: T;
+      };
+  menu?:
+    | T
+    | {
+        heading?: T;
+      };
+  about?:
+    | T
+    | {
+        heading?: T;
+        body?: T;
+        linkLabel?: T;
+        photograph?: T;
+      };
+  allergens?:
+    | T
+    | {
+        heading?: T;
+        intro?: T;
+      };
+  quote?:
+    | T
+    | {
+        text?: T;
+        attribution?: T;
+      };
+  faq?:
+    | T
+    | {
+        heading?: T;
+        questions?:
+          | T
+          | {
+              question?: T;
+              answer?: T;
+              id?: T;
+            };
+      };
+  closing?:
+    | T
+    | {
+        heading?: T;
+        body?: T;
+      };
+  _status?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

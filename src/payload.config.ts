@@ -21,6 +21,7 @@ import { ClosedUntil } from './globals/ClosedUntil'
 import { CrossContamination } from './globals/CrossContamination'
 import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
+import { Home } from './globals/Home'
 import { LeadTimeGlobal } from './globals/LeadTimeGlobal'
 
 const filename = fileURLToPath(import.meta.url)
@@ -40,7 +41,7 @@ export default buildConfig({
      */
     livePreview: {
       collections: [Items.slug],
-      globals: [CrossContamination.slug, LeadTimeGlobal.slug, ClosedUntil.slug],
+      globals: [Home.slug, CrossContamination.slug, LeadTimeGlobal.slug, ClosedUntil.slug],
       url: ({ collectionConfig, globalConfig, data, locale }) => {
         const id: unknown = data['id']
 
@@ -54,7 +55,7 @@ export default buildConfig({
     },
   },
   collections: [Items, Categories, Occasions, Sponges, Fillings, Allergens, Media, Users],
-  globals: [Header, Footer, CrossContamination, LeadTimeGlobal, ClosedUntil],
+  globals: [Header, Footer, Home, CrossContamination, LeadTimeGlobal, ClosedUntil],
   /**
    * Content locales. `fallback: true` is the site-wide default, so a missing Dutch value
    * falls back to English unless a request says otherwise.

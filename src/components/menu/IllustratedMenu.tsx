@@ -1,11 +1,10 @@
-import Image from 'next/image'
 import type { ReactNode } from 'react'
 
+import { Photograph } from '@/components/site/Photograph'
+import { Reveal } from '@/components/site/Reveal'
 import { categoryPrice, itemPrice, menuSpans, type MenuSpan } from '@/domain/menu'
 import { itemPath, type Locale } from '@/domain/routes'
-import type { Category, Item, Media } from '@/payload-types'
-
-import { Reveal } from './Reveal'
+import type { Category, Item } from '@/payload-types'
 
 /** One Category and the Items listed under it. */
 export type MenuSection = { category: Category; items: Item[] }
@@ -41,6 +40,7 @@ export const IllustratedMenu = ({
   sections,
   categoryHref,
   preloadFirst = false,
+  headingLevel = 2,
 }: {
   locale: Locale
   sections: readonly MenuSection[]
@@ -48,6 +48,8 @@ export const IllustratedMenu = ({
   categoryHref?: (category: Category) => string
   /** Preload the first photograph, when the menu is what the page opens on (its LCP). */
   preloadFirst?: boolean
+  /** 2 on a catalogue page, where each Category is a section; 3 under a heading of its own. */
+  headingLevel?: 2 | 3
 }) => {
   const spans = menuSpans(sections.length)
 
@@ -71,6 +73,7 @@ export const IllustratedMenu = ({
               span={span}
               href={categoryHref?.(category)}
               preload={preloadFirst && index === 0}
+              headingLevel={headingLevel}
             />
           </Reveal>
         )
@@ -86,6 +89,7 @@ const Entry = ({
   span,
   href,
   preload,
+  headingLevel,
 }: {
   locale: Locale
   category: Category
@@ -93,7 +97,9 @@ const Entry = ({
   span: MenuSpan
   href: string | undefined
   preload: boolean
+  headingLevel: 2 | 3
 }) => {
+  const Heading = headingLevel === 2 ? 'h2' : 'h3'
   const price = categoryPrice(category, locale)
   const band = span === 'band'
 
@@ -113,9 +119,9 @@ const Entry = ({
   const words = (
     <div className={band ? '' : 'pt-5'}>
       <div className="flex items-baseline justify-between gap-x-4">
-        <h2 className="min-w-0 font-display text-[34px] leading-tight font-semibold">
+        <Heading className="min-w-0 font-display text-[34px] leading-tight font-semibold">
           {category.name}
-        </h2>
+        </Heading>
         {price ? (
           <p className="shrink-0 font-sans text-sm tracking-wide whitespace-nowrap tabular-nums">
             {price}
@@ -203,37 +209,3 @@ const ItemList = ({
     })}
   </ul>
 )
-
-/**
- * A Category's photograph at its real dimensions, cropped around the focal point Jana set
- * on it. Lazy unless it is the page's LCP.
- */
-const Photograph = ({
-  media,
-  sizes,
-  preload,
-  className,
-}: {
-  media: number | Media | null | undefined
-  sizes: string
-  preload: boolean
-  className: string
-}) => {
-  if (!media || typeof media === 'number' || !media.url) {
-    // Unpopulated or missing: hold the space rather than collapse the cell.
-    return <div className={className} aria-hidden="true" />
-  }
-
-  return (
-    <Image
-      src={media.url}
-      alt={media.alt ?? ''}
-      width={media.width ?? 1600}
-      height={media.height ?? 1200}
-      sizes={sizes}
-      preload={preload}
-      className={className}
-      style={{ objectPosition: `${media.focalX ?? 50}% ${media.focalY ?? 50}%` }}
-    />
-  )
-}

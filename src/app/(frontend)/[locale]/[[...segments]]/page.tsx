@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { locale } from 'next/root-params'
 import { getPayload, type Payload } from 'payload'
 
+import { HomePage } from '@/components/home/HomePage'
 import { CataloguePage } from '@/components/menu/CataloguePage'
 import { PageShell } from '@/components/site/PageShell'
 import { Placeholder } from '@/components/site/Placeholder'
@@ -85,7 +86,9 @@ export default async function Page(props: Props) {
 
   return (
     <PageShell locale={current} page={page} header={header} footer={footer}>
-      {isCatalogue(page) ? (
+      {page === 'home' ? (
+        <HomePage locale={current} {...await fetchHome(payload, current)} />
+      ) : isCatalogue(page) ? (
         <CataloguePage
           locale={current}
           catalogue={page}
@@ -130,4 +133,26 @@ const fetchCatalogue = async (payload: Payload, page: Catalogue, current: Locale
   })
 
   return { categories, items }
+}
+
+/**
+ * The homepage's words, and the three things it states that are kept elsewhere: every
+ * Category (the menu and the starting price), the Lead time, and the cross-contamination
+ * statement. Globals are read as published — the static page is what customers see.
+ */
+const fetchHome = async (payload: Payload, current: Locale) => {
+  const [home, { docs: categories }, leadTime, crossContamination] = await Promise.all([
+    payload.findGlobal({ slug: 'home', locale: current, depth: 1 }),
+    payload.find({
+      collection: 'categories',
+      sort: 'order',
+      depth: 1,
+      locale: current,
+      pagination: false,
+    }),
+    payload.findGlobal({ slug: 'lead-time', depth: 0 }),
+    payload.findGlobal({ slug: 'cross-contamination', locale: current, depth: 0 }),
+  ])
+
+  return { home, categories, leadTime, statement: crossContamination.statement }
 }
