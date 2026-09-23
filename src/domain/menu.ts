@@ -40,7 +40,7 @@ export const categoryPrice = (
 }
 
 /** A figure, prefixed `from` when it is a floor rather than the price. */
-const priced = (amount: number, isFloor: boolean, locale: Locale): string => {
+export const priced = (amount: number, isFloor: boolean, locale: Locale): string => {
   const figure = formatEuros(amount, locale)
 
   return isFloor ? `${DICTIONARY[locale].priceFrom} ${figure}` : figure
