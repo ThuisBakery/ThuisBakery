@@ -4,21 +4,23 @@ import { notFound } from 'next/navigation'
 import { locale } from 'next/root-params'
 import { getPayload, type Payload } from 'payload'
 
+import { AboutPage } from '@/components/about/AboutPage'
+import { ContactPage } from '@/components/contact/ContactPage'
+import { CustomOrderPage } from '@/components/contact/CustomOrderPage'
 import { EnquirySent } from '@/components/enquiry/EnquirySent'
 import { HomePage } from '@/components/home/HomePage'
 import { ItemPage } from '@/components/item/ItemPage'
 import { MarketingPage } from '@/components/page/MarketingPage'
 import { CataloguePage } from '@/components/menu/CataloguePage'
 import { PageShell } from '@/components/site/PageShell'
-import { Placeholder } from '@/components/site/Placeholder'
+import { PrivacyPage } from '@/components/privacy/PrivacyPage'
 import { alternates } from '@/domain/alternates'
-import { DICTIONARY, documentTitle } from '@/domain/dictionary'
+import { documentTitle } from '@/domain/dictionary'
 import { linkTargets, occasionPages } from '@/domain/page'
 import {
   LOCALES,
   CODED_PAGES,
   cataloguePath,
-  isCatalogue,
   isLocale,
   itemSegments,
   marketingPageSegments,
@@ -204,25 +206,48 @@ export default async function Page(props: Props) {
 
   return (
     <PageShell locale={current} page={page} header={header} footer={footer}>
-      {page === 'home' ? (
-        <HomePage locale={current} {...await fetchHome(payload, current)} />
-      ) : page === 'enquirySent' ? (
-        <EnquirySent
-          locale={current}
-          contactPath={pagePath('contact', current)}
-          {...await fetchEnquirySent(payload)}
-        />
-      ) : isCatalogue(page) ? (
+      {await codedPage(payload, page, current)}
+    </PageShell>
+  )
+}
+
+/** A coded page's content, fetched and handed to the component that renders it. */
+const codedPage = async (payload: Payload, page: CodedPage, current: Locale) => {
+  switch (page) {
+    case 'home':
+      return <HomePage locale={current} {...await fetchHome(payload, current)} />
+    case 'cakes':
+    case 'nibbles':
+      return (
         <CataloguePage
           locale={current}
           catalogue={page}
           {...await fetchCatalogue(payload, page, current)}
         />
-      ) : (
-        <Placeholder title={DICTIONARY[current].pageTitles[page]} />
-      )}
-    </PageShell>
-  )
+      )
+    case 'customOrder':
+      return <CustomOrderPage locale={current} {...await fetchCustomOrder(payload, current)} />
+    case 'about':
+      return <AboutPage locale={current} {...await fetchAbout(payload, current)} />
+    case 'contact':
+      return (
+        <ContactPage
+          locale={current}
+          origin={siteOrigin()}
+          {...await fetchContact(payload, current)}
+        />
+      )
+    case 'privacy':
+      return <PrivacyPage locale={current} {...await fetchPrivacy(payload, current)} />
+    case 'enquirySent':
+      return (
+        <EnquirySent
+          locale={current}
+          contactPath={pagePath('contact', current)}
+          {...await fetchEnquirySent(payload)}
+        />
+      )
+  }
 }
 
 /**
@@ -341,9 +366,7 @@ const fetchMarketingPage = async (payload: Payload, listing: PageListing, curren
       locale: current,
       fallbackLocale: 'none',
     }),
-    Promise.all([itemListings(), pageListings()]).then(([items, pages]) =>
-      linkTargets({ items, pages }, current),
-    ),
+    fetchTargets(current),
     readyItemIds(current),
   ])
 
@@ -417,6 +440,76 @@ const fetchHome = async (payload: Payload, current: Locale) => {
   ])
 
   return { home, categories, leadTime, statement: crossContamination.statement }
+}
+
+/**
+ * Where an editorial link in Jana's rich text leads in this locale: the Items and marketing
+ * pages with a URL here. A link to one without is left unlinked rather than pointed at a 404.
+ */
+const fetchTargets = async (current: Locale) => {
+  const [items, pages] = await Promise.all([itemListings(), pageListings()])
+
+  return linkTargets({ items, pages }, current)
+}
+
+/**
+ * Custom order's words, and the two globals its Requested pickup date is held to: the
+ * site-wide Lead time and Closed until. Globals are read as published, as on every page.
+ */
+const fetchCustomOrder = async (payload: Payload, current: Locale) => {
+  const [customOrder, leadTime, closedUntil] = await Promise.all([
+    payload.findGlobal({ slug: 'custom-order', locale: current, depth: 1 }),
+    payload.findGlobal({ slug: 'lead-time', depth: 0 }),
+    payload.findGlobal({ slug: 'closed-until', locale: current, depth: 0 }),
+  ])
+
+  return { customOrder, leadTime, closedUntil }
+}
+
+/** Jana's story, with its photograph, and where its links lead here. */
+const fetchAbout = async (payload: Payload, current: Locale) => {
+  const [about, targets] = await Promise.all([
+    payload.findGlobal({ slug: 'about', locale: current, depth: 1 }),
+    fetchTargets(current),
+  ])
+
+  return { about, targets }
+}
+
+/**
+ * Contact's words and details, and every price on the menu in this locale — what the price
+ * range it prints and marks up is read from, so the two can never disagree. Only Items with a
+ * URL here count: a price on no page is not one the menu offers.
+ */
+const fetchContact = async (payload: Payload, current: Locale) => {
+  const [contact, ready] = await Promise.all([
+    payload.findGlobal({ slug: 'contact', locale: current, depth: 1 }),
+    readyItemIds(current),
+  ])
+
+  const { docs: items } =
+    ready.length === 0
+      ? { docs: [] }
+      : await payload.find({
+          collection: 'items',
+          where: { id: { in: ready } },
+          depth: 0,
+          locale: current,
+          pagination: false,
+          select: { sizes: true },
+        })
+
+  return { contact, prices: items.flatMap(({ sizes }) => sizes.map(({ price }) => price)) }
+}
+
+/** The privacy policy, and where its links lead here. */
+const fetchPrivacy = async (payload: Payload, current: Locale) => {
+  const [privacy, targets] = await Promise.all([
+    payload.findGlobal({ slug: 'privacy', locale: current, depth: 0 }),
+    fetchTargets(current),
+  ])
+
+  return { privacy, targets }
 }
 
 /**

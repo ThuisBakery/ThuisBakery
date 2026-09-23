@@ -10,6 +10,8 @@ import * as migration_20260923_055735_submission_reference from './20260923_0557
 import * as migration_20260923_061024_marketing_pages from './20260923_061024_marketing_pages';
 import * as migration_20260923_182011_seo_meta from './20260923_182011_seo_meta';
 import * as migration_20260923_183830_enquiry_delivery from './20260923_183830_enquiry_delivery';
+import * as migration_20260923_191002_about_contact_privacy_pages from './20260923_191002_about_contact_privacy_pages';
+import * as migration_20260923_191019_seed_about_contact_privacy from './20260923_191019_seed_about_contact_privacy';
 
 export const migrations = [
   {
@@ -70,6 +72,16 @@ export const migrations = [
   {
     up: migration_20260923_183830_enquiry_delivery.up,
     down: migration_20260923_183830_enquiry_delivery.down,
-    name: '20260923_183830_enquiry_delivery'
+    name: '20260923_183830_enquiry_delivery',
+  },
+  {
+    up: migration_20260923_191002_about_contact_privacy_pages.up,
+    down: migration_20260923_191002_about_contact_privacy_pages.down,
+    name: '20260923_191002_about_contact_privacy_pages',
+  },
+  {
+    up: migration_20260923_191019_seed_about_contact_privacy.up,
+    down: migration_20260923_191019_seed_about_contact_privacy.down,
+    name: '20260923_191019_seed_about_contact_privacy'
   },
 ];

@@ -1,3 +1,5 @@
+import { pagePath, type CodedPage, type Locale } from './routes'
+
 /**
  * Live Preview's entry point.
  *
@@ -24,3 +26,21 @@ export const previewUrl = (target: PreviewTarget, locale: string): string => {
 
   return `${PREVIEW_ROUTE}?${params.toString()}`
 }
+
+/**
+ * The coded pages whose words live in a global of their own — the page-content singletons of
+ * ADR-0003 — by the global's slug.
+ */
+const PAGE_GLOBALS: Readonly<Record<string, CodedPage>> = {
+  about: 'about',
+  contact: 'contact',
+  'custom-order': 'customOrder',
+  privacy: 'privacy',
+}
+
+/**
+ * Where a global is previewed: a page's own global on that page, and a site-wide one — the
+ * Lead time, Closed until, the homepage's words — on the front page.
+ */
+export const globalPreviewPath = (slug: string, locale: Locale): string =>
+  pagePath(Object.hasOwn(PAGE_GLOBALS, slug) ? (PAGE_GLOBALS[slug] ?? 'home') : 'home', locale)

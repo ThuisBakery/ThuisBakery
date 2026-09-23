@@ -113,6 +113,10 @@ export interface Config {
     header: Header;
     footer: Footer;
     home: Home;
+    about: About;
+    contact: Contact;
+    'custom-order': CustomOrder;
+    privacy: Privacy;
     'cross-contamination': CrossContamination;
     'lead-time': LeadTime;
     'closed-until': ClosedUntil;
@@ -121,6 +125,10 @@ export interface Config {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
     home: HomeSelect<false> | HomeSelect<true>;
+    about: AboutSelect<false> | AboutSelect<true>;
+    contact: ContactSelect<false> | ContactSelect<true>;
+    'custom-order': CustomOrderSelect<false> | CustomOrderSelect<true>;
+    privacy: PrivacySelect<false> | PrivacySelect<true>;
     'cross-contamination': CrossContaminationSelect<false> | CrossContaminationSelect<true>;
     'lead-time': LeadTimeSelect<false> | LeadTimeSelect<true>;
     'closed-until': ClosedUntilSelect<false> | ClosedUntilSelect<true>;
@@ -1347,7 +1355,7 @@ export interface Home {
      */
     intro: string;
     /**
-     * The photograph along the foot of the opening screen, cut by the bottom edge so it leads down into the menu. A wide shot works best. Set its focal point on the photograph itself, so the cake stays in frame when the page crops it.
+     * The photograph along the foot of the opening screen, cut by the bottom edge so it leads down into the menu. A wide shot works best. Set its focal point on the photograph itself, so the subject stays in frame when the page crops it.
      */
     photograph?: (number | null) | Media;
     /**
@@ -1399,7 +1407,7 @@ export interface Home {
      */
     linkLabel: string;
     /**
-     * A photograph of Jana, or of her kitchen. Tall rather than wide. Set its focal point on the photograph itself, so the cake stays in frame when the page crops it.
+     * A photograph of Jana, or of her kitchen. Tall rather than wide. Set its focal point on the photograph itself, so the subject stays in frame when the page crops it.
      */
     photograph?: (number | null) | Media;
   };
@@ -1456,6 +1464,194 @@ export interface Home {
      */
     body: string;
   };
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "about".
+ */
+export interface About {
+  id: number;
+  /**
+   * The page’s heading — “One kitchen, one pair of hands”.
+   */
+  heading: string;
+  /**
+   * Jana’s story, in her own words. Subheadings are welcome; the page heading is above.
+   */
+  story: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * A photograph of Jana. Tall rather than wide. Set its focal point on the photograph itself, so the subject stays in frame when the page crops it.
+   */
+  photograph?: (number | null) | Media;
+  /**
+   * The link to the cakes at the foot of the page — “See what Jana bakes”.
+   */
+  cakesLabel: string;
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contact".
+ */
+export interface Contact {
+  id: number;
+  /**
+   * The page’s heading — “Get in touch”.
+   */
+  heading: string;
+  /**
+   * One or two sentences under the heading.
+   */
+  intro: string;
+  /**
+   * Printed on the page and given to search engines. Leave one empty to leave it out.
+   */
+  details?: {
+    /**
+     * The address customers write to.
+     */
+    email?: string | null;
+    /**
+     * Optional. As it should be dialled — +31 6 1234 5678.
+     */
+    telephone?: string | null;
+    /**
+     * The Instagram username — thuisbakery.
+     */
+    instagram?: string | null;
+    /**
+     * Optional. A photograph beside the details — the kitchen, or a finished cake. Search engines show it with the bakery. Set its focal point on the photograph itself, so the subject stays in frame when the page crops it.
+     */
+    photograph?: (number | null) | Media;
+  };
+  hours?: {
+    /**
+     * Optional. A line under the hours — “Outside these hours by arrangement.”
+     */
+    note?: string | null;
+    /**
+     * When customers can collect or call. One row per set of days sharing the same hours.
+     */
+    rows?:
+      | {
+          days: ('Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday')[];
+          opens: string;
+          closes: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
+   * Where pickup is — Uithoorn, by arrangement, the address sent on confirmation — is printed by the site itself. Write the rest here.
+   */
+  collection: {
+    /**
+     * “Collecting your cake”.
+     */
+    heading: string;
+    /**
+     * How collection works. Leave a blank line between paragraphs.
+     */
+    policy: string;
+  };
+  faq: {
+    /**
+     * “Questions people ask”.
+     */
+    heading: string;
+    questions: {
+      /**
+       * The question, as a customer would ask it.
+       */
+      question: string;
+      /**
+       * The answer.
+       */
+      answer: string;
+      id?: string | null;
+    }[];
+  };
+  /**
+   * The heading above the form — “Ask a question”.
+   */
+  formHeading: string;
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "custom-order".
+ */
+export interface CustomOrder {
+  id: number;
+  /**
+   * The page’s heading — “Something of your own”.
+   */
+  heading: string;
+  /**
+   * A few sentences on what Jana will make to order. Leave a blank line between paragraphs.
+   */
+  intro: string;
+  /**
+   * Optional. A cake Jana made to order, beside the introduction. Set its focal point on the photograph itself, so the subject stays in frame when the page crops it.
+   */
+  photograph?: (number | null) | Media;
+  /**
+   * The heading above the form — “Tell Jana what you’re imagining”.
+   */
+  formHeading: string;
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "privacy".
+ */
+export interface Privacy {
+  id: number;
+  /**
+   * The whole policy. Keep the sections on Resend, how long things are kept, where the site is hosted, and analytics: the law requires each one.
+   */
+  body: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * Shown under the heading. Change it whenever the policy changes.
+   */
+  lastUpdated: string;
   _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1614,6 +1810,98 @@ export interface HomeSelect<T extends boolean = true> {
         heading?: T;
         body?: T;
       };
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "about_select".
+ */
+export interface AboutSelect<T extends boolean = true> {
+  heading?: T;
+  story?: T;
+  photograph?: T;
+  cakesLabel?: T;
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contact_select".
+ */
+export interface ContactSelect<T extends boolean = true> {
+  heading?: T;
+  intro?: T;
+  details?:
+    | T
+    | {
+        email?: T;
+        telephone?: T;
+        instagram?: T;
+        photograph?: T;
+      };
+  hours?:
+    | T
+    | {
+        note?: T;
+        rows?:
+          | T
+          | {
+              days?: T;
+              opens?: T;
+              closes?: T;
+              id?: T;
+            };
+      };
+  collection?:
+    | T
+    | {
+        heading?: T;
+        policy?: T;
+      };
+  faq?:
+    | T
+    | {
+        heading?: T;
+        questions?:
+          | T
+          | {
+              question?: T;
+              answer?: T;
+              id?: T;
+            };
+      };
+  formHeading?: T;
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "custom-order_select".
+ */
+export interface CustomOrderSelect<T extends boolean = true> {
+  heading?: T;
+  intro?: T;
+  photograph?: T;
+  formHeading?: T;
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "privacy_select".
+ */
+export interface PrivacySelect<T extends boolean = true> {
+  body?: T;
+  lastUpdated?: T;
   _status?: T;
   updatedAt?: T;
   createdAt?: T;

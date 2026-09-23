@@ -17,6 +17,7 @@ const receipt: Receipt = {
   filling: 'Salted Caramel',
   requestedPickupDate: '2026-09-26',
   specialRequests: 'Happy 40th, Marco',
+  message: null,
   estimate: {
     lines: [
       { label: 'Large', unitAmount: 62.5, quantity: 2, amount: 125 },
@@ -84,6 +85,27 @@ describe('EnquirySent', () => {
     const estimate = within(sent).getByRole('region', { name: /Estimate/ })
     expect(within(estimate).getByText('Provisional')).toBeTruthy()
     expect(within(estimate).getByText('€130')).toBeTruthy()
+  })
+
+  it('shows back the message of an Enquiry sent from Custom order', () => {
+    renderSent({
+      ...receipt,
+      enquiryType: 'custom-order',
+      itemTitle: null,
+      size: null,
+      quantity: null,
+      sponge: null,
+      filling: null,
+      specialRequests: null,
+      message: 'A cake shaped like a tulip field.',
+      estimate: null,
+    })
+
+    const sent = screen.getByRole('region', { name: 'What you sent' })
+
+    expect(within(sent).getByText('Your message')).toBeTruthy()
+    expect(within(sent).getByText('A cake shaped like a tulip field.')).toBeTruthy()
+    expect(within(sent).queryByRole('region', { name: /Estimate/ })).toBeNull()
   })
 
   it('shows no receipt when none was kept', () => {

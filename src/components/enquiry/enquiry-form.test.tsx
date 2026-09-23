@@ -34,6 +34,7 @@ const receipt: Receipt = {
   filling: 'Salted Caramel',
   requestedPickupDate: '2026-09-26',
   specialRequests: null,
+  message: null,
   estimate: null,
   leadTimeDays: 3,
 }

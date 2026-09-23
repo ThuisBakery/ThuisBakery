@@ -87,6 +87,8 @@ export type Receipt = {
   /** `YYYY-MM-DD`. */
   requestedPickupDate: string | null
   specialRequests: string | null
+  /** What the customer wrote on Custom order or Contact. */
+  message: string | null
   estimate: Estimate | null
   /** The Lead time's days that applied, which is how long to wait before following up. */
   leadTimeDays: number | null
@@ -345,6 +347,7 @@ export const submitEnquiry = async (
       filling: data.filling,
       requestedPickupDate: data.requestedPickupDate?.slice(0, 10) ?? null,
       specialRequests: data.specialRequests,
+      message: data.message,
       estimate: data.estimate,
       leadTimeDays: context.leadTime?.days ?? null,
     },

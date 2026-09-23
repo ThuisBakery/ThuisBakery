@@ -124,6 +124,7 @@ describe('submitEnquiry', () => {
         filling: 'Salted Caramel',
         requestedPickupDate: '2026-09-26',
         specialRequests: 'Happy 40th, Marco',
+        message: null,
         estimate: expect.objectContaining({ total: 130, provisional: true }),
         leadTimeDays: 3,
       },
@@ -224,7 +225,7 @@ describe('submitEnquiry', () => {
       load: async () => ({ ...context, item: null }),
     })
 
-    await submit({
+    const outcome = await submit({
       enquiryType: 'contact',
       locale: 'en',
       name: 'Sanne',
@@ -232,6 +233,11 @@ describe('submitEnquiry', () => {
       message: 'Is there parking?',
     })
 
+    // What they wrote is on their receipt: it is all a Contact Enquiry sends.
+    expect(outcome).toEqual({
+      status: 'accepted',
+      receipt: expect.objectContaining({ enquiryType: 'contact', message: 'Is there parking?' }),
+    })
     expect(load).toHaveBeenCalledWith({ item: null, locale: 'en' })
     expect(store).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -458,6 +464,7 @@ describe('httpReply', () => {
     filling: null,
     requestedPickupDate: null,
     specialRequests: null,
+    message: null,
     estimate: null,
     leadTimeDays: null,
   } as const
@@ -502,6 +509,7 @@ describe('parseReceipt', () => {
     filling: null,
     requestedPickupDate: '2026-09-26',
     specialRequests: null,
+    message: null,
     estimate: {
       lines: [{ label: 'Large', unitAmount: 62.5, quantity: 2, amount: 125 }],
       total: 125,

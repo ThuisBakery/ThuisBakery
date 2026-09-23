@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { breadcrumbMarkup, productMarkup } from './structured-data'
+import {
+  bakeryMarkup,
+  type BakeryInput,
+  breadcrumbMarkup,
+  organizationMarkup,
+  productMarkup,
+  websiteMarkup,
+} from './structured-data'
 
 const origin = 'https://thuisbakery.nl'
 
@@ -86,6 +93,108 @@ describe('breadcrumbMarkup', () => {
           item: 'https://thuisbakery.nl/nl/taarten/appeltaart',
         },
       ],
+    })
+  })
+})
+
+const bakery: BakeryInput = {
+  path: '/contact',
+  email: 'hallo@thuisbakery.com',
+  telephone: '+31 6 12345678',
+  images: ['https://blob.example.com/kitchen.jpg'],
+  openingHours: [
+    { days: ['Friday', 'Saturday'], opens: '10:00', closes: '16:00' },
+    { days: ['Sunday'], opens: '11:00', closes: '13:00' },
+  ],
+  priceRange: '€3 – €110',
+  areaServed: 'Uithoorn',
+  sameAs: ['https://www.instagram.com/thuisbakery'],
+}
+
+describe('bakeryMarkup', () => {
+  it('marks up the bakery with the values the Contact page prints', () => {
+    expect(bakeryMarkup(bakery, origin)).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'Bakery',
+      name: 'ThuisBakery',
+      url: 'https://thuisbakery.nl/contact',
+      email: 'hallo@thuisbakery.com',
+      telephone: '+31 6 12345678',
+      image: ['https://blob.example.com/kitchen.jpg'],
+      openingHoursSpecification: [
+        {
+          '@type': 'OpeningHoursSpecification',
+          dayOfWeek: ['Friday', 'Saturday'],
+          opens: '10:00',
+          closes: '16:00',
+        },
+        {
+          '@type': 'OpeningHoursSpecification',
+          dayOfWeek: ['Sunday'],
+          opens: '11:00',
+          closes: '13:00',
+        },
+      ],
+      priceRange: '€3 – €110',
+      areaServed: { '@type': 'City', name: 'Uithoorn' },
+      sameAs: ['https://www.instagram.com/thuisbakery'],
+    })
+  })
+
+  it('never carries an address, a rating or a review (ADR-0002)', () => {
+    expect(JSON.stringify(bakeryMarkup(bakery, origin))).not.toMatch(
+      /address|aggregateRating|review/i,
+    )
+  })
+
+  it('leaves out every value the page has nothing to print for', () => {
+    expect(
+      bakeryMarkup(
+        {
+          path: '/nl/contact',
+          email: null,
+          telephone: null,
+          images: [],
+          openingHours: [],
+          priceRange: null,
+          areaServed: 'Uithoorn',
+          sameAs: [],
+        },
+        origin,
+      ),
+    ).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'Bakery',
+      name: 'ThuisBakery',
+      url: 'https://thuisbakery.nl/nl/contact',
+      areaServed: { '@type': 'City', name: 'Uithoorn' },
+    })
+  })
+})
+
+describe('organizationMarkup', () => {
+  it('names the business at the site root', () => {
+    expect(organizationMarkup(origin)).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'ThuisBakery',
+      url: 'https://thuisbakery.nl/',
+    })
+  })
+})
+
+describe('websiteMarkup', () => {
+  it('names the site at its home in the page’s language', () => {
+    expect(websiteMarkup('nl', origin)).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'ThuisBakery',
+      url: 'https://thuisbakery.nl/nl',
+      inLanguage: 'nl',
+    })
+    expect(websiteMarkup('en', origin)).toMatchObject({
+      url: 'https://thuisbakery.nl/',
+      inLanguage: 'en',
     })
   })
 })
