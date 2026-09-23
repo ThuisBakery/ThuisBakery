@@ -14,10 +14,13 @@ import { resolveLinks } from '@/domain/links'
 export const SiteFooter = ({
   locale,
   page,
+  alternate,
   footer,
 }: {
   locale: Locale
   page: CodedPage
+  /** The language switcher's target, when it is not `page` in the other locale. */
+  alternate?: string | undefined
   footer: Footer
 }) => {
   const links = resolveLinks(footer.links, locale, page)
@@ -48,7 +51,12 @@ export const SiteFooter = ({
               ))}
             </ul>
           </nav>
-          <LanguageSwitcher locale={locale} page={page} className="justify-self-start" />
+          <LanguageSwitcher
+            locale={locale}
+            page={page}
+            alternate={alternate}
+            className="justify-self-start"
+          />
         </div>
       </div>
     </footer>

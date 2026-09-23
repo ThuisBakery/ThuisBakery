@@ -50,6 +50,16 @@ describe('SiteHeader', () => {
     expect(switcher.getAttribute('lang')).toBe('en')
   })
 
+  it('lands on the path it is given, where the page is not a coded one', () => {
+    render(
+      <SiteHeader locale="en" page="cakes" alternate="/nl/taarten/appeltaart" header={header} />,
+    )
+
+    expect(screen.getByRole('link', { name: 'In het Nederlands' }).getAttribute('href')).toBe(
+      '/nl/taarten/appeltaart',
+    )
+  })
+
   it('links the navigation from the global, in the page’s own locale', () => {
     render(<SiteHeader locale="nl" page="home" header={dutchHeader} />)
 

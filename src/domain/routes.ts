@@ -155,3 +155,32 @@ export const isCatalogue = (value: unknown): value is Catalogue =>
 /** Whether a value read back from Payload is a locale this site is published in. */
 export const isLocale = (value: unknown): value is Locale =>
   typeof value === 'string' && (LOCALES as readonly string[]).includes(value)
+
+/**
+ * An Item's segments after the locale prefix — its catalogue's localized segment, then its
+ * slug. The `[[...segments]]` value `generateStaticParams` returns for it.
+ */
+export const itemSegments = (catalogue: Catalogue, locale: Locale, slug: string): string[] => [
+  ROUTE_MAP[catalogue][locale],
+  slug,
+]
+
+/**
+ * The Item a path's segments name in a locale — a catalogue segment in *that* locale's
+ * words, then one slug — or `null`. Whether such an Item exists is the caller's question:
+ * this only reads the shape of the path.
+ */
+export const resolveItem = (
+  locale: Locale,
+  segments: readonly string[],
+): { catalogue: Catalogue; slug: string } | null => {
+  const [segment, slug, ...rest] = segments
+
+  if (slug === undefined || rest.length > 0) {
+    return null
+  }
+
+  const catalogue = CATALOGUES.find((each) => ROUTE_MAP[each][locale] === segment)
+
+  return catalogue ? { catalogue, slug } : null
+}

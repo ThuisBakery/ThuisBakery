@@ -16,10 +16,13 @@ import { Wordmark } from './Wordmark'
 export const SiteHeader = ({
   locale,
   page,
+  alternate,
   header,
 }: {
   locale: Locale
   page: CodedPage
+  /** The language switcher's target, when it is not `page` in the other locale. */
+  alternate?: string | undefined
   header: Header
 }) => {
   const words = DICTIONARY[locale]
@@ -65,7 +68,7 @@ export const SiteHeader = ({
           </a>
         </nav>
         <div className="flex items-center gap-2">
-          <LanguageSwitcher locale={locale} page={page} />
+          <LanguageSwitcher locale={locale} page={page} alternate={alternate} />
           <MobileMenu
             links={links}
             callToAction={callToAction}

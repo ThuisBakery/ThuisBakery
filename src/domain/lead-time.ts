@@ -25,6 +25,9 @@ export type LeadTime = {
   cutoff: TimeOfDay
 }
 
+/** A Lead time as Payload stores it: days, and a time of day as `HH:MM` text. */
+export type StoredLeadTime = { days: number; timeOfDay: string }
+
 export type ArrivalMoment = {
   date: CalendarDate
   time: TimeOfDay
