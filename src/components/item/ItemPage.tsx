@@ -5,10 +5,17 @@ import { CakeStand } from '@/components/site/CakeStand'
 import { Photograph } from '@/components/site/Photograph'
 import { DICTIONARY } from '@/domain/dictionary'
 import { leadTimeFact } from '@/domain/home'
-import { itemLeadTime, occasionLinks, plainText, siblingItems, surcharge } from '@/domain/item'
+import {
+  itemLeadTime,
+  occasionLinks,
+  offeredChoices,
+  plainText,
+  siblingItems,
+  surcharge,
+} from '@/domain/item'
 import { formatEuros } from '@/domain/menu'
 import { cataloguePath, itemPath, pagePath, type Catalogue, type Locale } from '@/domain/routes'
-import { breadcrumbList, product } from '@/domain/structured-data'
+import { breadcrumbMarkup, productMarkup } from '@/domain/structured-data'
 import type { Filling, Item, LeadTime, Media, Sponge } from '@/payload-types'
 
 /** The one secondary link style, as the homepage sets it. */
@@ -73,7 +80,7 @@ export const ItemPage = ({
   ]
 
   const structuredData = [
-    product(
+    productMarkup(
       {
         name: item.title,
         description,
@@ -83,7 +90,7 @@ export const ItemPage = ({
       },
       origin,
     ),
-    breadcrumbList(trail, origin),
+    breadcrumbMarkup(trail, origin),
   ]
 
   const figures = itemLeadTime(leadTime, item.leadTime)
@@ -158,21 +165,24 @@ export const ItemPage = ({
               />
             ) : null}
 
-            <Sizes locale={locale} sizes={item.sizes} label={words.item.sizes} />
+            <Sizes locale={locale} sizes={item.sizes} />
 
             {item.configurable ? (
               <>
                 <Choices
                   label={words.item.sponge}
-                  choices={offered(item.sponges, sponges).map(({ id, name }) => ({ id, name }))}
+                  choices={offeredChoices(item.sponges, sponges).map(({ id, name }) => ({
+                    id,
+                    name,
+                  }))}
                 />
                 <Choices
                   label={words.item.filling}
-                  choices={offered(item.fillings, fillings).map(
-                    ({ id, name, surcharge: extra }) => ({
+                  choices={offeredChoices(item.fillings, fillings).map(
+                    ({ id, name, surcharge: amount }) => ({
                       id,
                       name,
-                      extra: surcharge(extra, locale),
+                      surcharge: surcharge(amount, locale),
                     }),
                   )}
                 />
@@ -261,19 +271,6 @@ const candidate = (item: Item, catalogue: Catalogue) => ({
   item,
 })
 
-/**
- * The Sponges or Fillings a customer may choose: the Item's own list, or every one when it
- * names none — "Leave empty to offer every Sponge", as the admin tells Jana.
- */
-const offered = <T extends { id: number }>(
-  own: readonly (number | T)[] | null | undefined,
-  every: readonly T[],
-): T[] => {
-  const chosen = (own ?? []).flatMap((each) => (typeof each === 'object' ? [each] : []))
-
-  return chosen.length > 0 ? chosen : [...every]
-}
-
 const Photographs = ({ photographs }: { photographs: Media[] }) => {
   const [first, ...rest] = photographs
 
@@ -306,22 +303,14 @@ const Photographs = ({ photographs }: { photographs: Media[] }) => {
 }
 
 /** Every Size, printed: the price is visible because `offers` marks it up (ADR-0002). */
-const Sizes = ({
-  locale,
-  sizes,
-  label,
-}: {
-  locale: Locale
-  sizes: Item['sizes']
-  label: string
-}) => {
+const Sizes = ({ locale, sizes }: { locale: Locale; sizes: Item['sizes'] }) => {
   const words = DICTIONARY[locale].item
   const headingId = 'sizes-heading'
 
   return (
     <section className="mt-10">
       <h2 id={headingId} className={LABEL}>
-        {label}
+        {words.sizes}
       </h2>
       <ul aria-labelledby={headingId} className="mt-2 border-t border-rule">
         {sizes.map((size) => {
@@ -358,7 +347,7 @@ const Choices = ({
   choices,
 }: {
   label: string
-  choices: { id: number; name: string; extra?: string | null }[]
+  choices: { id: number; name: string; surcharge?: string | null }[]
 }) => {
   if (choices.length === 0) {
     return null
@@ -375,8 +364,8 @@ const Choices = ({
         {choices.map((choice) => (
           <li key={choice.id} className="border border-rule px-3 py-1.5 text-sm">
             {choice.name}
-            {choice.extra ? (
-              <span className="ml-1.5 text-ink-muted tabular-nums">{choice.extra}</span>
+            {choice.surcharge ? (
+              <span className="ml-1.5 text-ink-muted tabular-nums">{choice.surcharge}</span>
             ) : null}
           </li>
         ))}

@@ -26,7 +26,7 @@ export type ProductInput = {
   sizes: readonly { label: string; price: number }[]
 }
 
-export const product = (
+export const productMarkup = (
   { name, description, path, images, sizes }: ProductInput,
   origin: string,
 ): Thing => {
@@ -49,7 +49,7 @@ export const product = (
   }
 }
 
-export const breadcrumbList = (
+export const breadcrumbMarkup = (
   trail: readonly { name: string; path: string }[],
   origin: string,
 ): Thing => ({

@@ -1,4 +1,4 @@
-import { parseTimeOfDay } from './lead-time'
+import { parseTimeOfDay, type StoredLeadTime } from './lead-time'
 import { priced } from './menu'
 import type { Locale } from './routes'
 
@@ -51,7 +51,7 @@ const LEAD_TIME_WORDS: Record<
  * that does not parse is left out rather than printed as Jana typed it.
  */
 export const leadTimeFact = (
-  { days, timeOfDay }: { days: number; timeOfDay: string },
+  { days, timeOfDay }: StoredLeadTime,
   locale: Locale,
 ): { title: string; detail: string | null } => {
   const words = LEAD_TIME_WORDS[locale]

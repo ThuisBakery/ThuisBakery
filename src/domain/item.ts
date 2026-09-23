@@ -1,3 +1,4 @@
+import type { StoredLeadTime } from './lead-time'
 import { formatEuros } from './menu'
 import { LOCALES, itemPath, type Catalogue, type Locale } from './routes'
 
@@ -30,8 +31,8 @@ const children = (node: Node): Node[] =>
 const inlineText = (node: Node): string =>
   typeof node['text'] === 'string' ? node['text'] : children(node).map(inlineText).join('')
 
-/** An Item's localized fields as read in one locale with `fallbackLocale: 'none'`. */
-export type LocaleState = {
+/** The localized fields readiness is decided on, as read in one locale with `fallbackLocale: 'none'`. */
+export type LocalizedFields = {
   title?: string | null
   slug?: string | null
   description?: unknown
@@ -45,7 +46,7 @@ const filled = (value: string | null | undefined): boolean =>
  * locale (ADR-0002). Everything else may fall back. The state must be read without locale
  * fallback, or an untranslated field would read as the other locale's and pass.
  */
-export const isReady = (state: LocaleState | null | undefined): boolean =>
+export const isReady = (state: LocalizedFields | null | undefined): boolean =>
   Boolean(state) &&
   filled(state?.title) &&
   filled(state?.slug) &&
@@ -58,7 +59,7 @@ export const isReady = (state: LocaleState | null | undefined): boolean =>
  */
 export const itemPaths = (
   catalogue: Catalogue,
-  states: Partial<Record<Locale, LocaleState | null>>,
+  states: Partial<Record<Locale, LocalizedFields | null>>,
 ): Partial<Record<Locale, string>> => {
   const paths: Partial<Record<Locale, string>> = {}
 
@@ -71,6 +72,54 @@ export const itemPaths = (
   }
 
   return paths
+}
+
+/**
+ * A Published Item's slug, title and path in each locale it is ready in, and in no other.
+ * A locale missing here is one the Item has no URL in: no page, no hreflang alternate, no
+ * catalogue entry. Published is one state for the whole document; readiness is per locale.
+ */
+export type ItemListing = {
+  id: number
+  catalogue: Catalogue
+  paths: Partial<Record<Locale, string>>
+  slugs: Partial<Record<Locale, string>>
+  titles: Partial<Record<Locale, string>>
+}
+
+export const itemListing = (
+  id: number,
+  catalogue: Catalogue,
+  states: Partial<Record<Locale, LocalizedFields | null>>,
+): ItemListing => {
+  const paths = itemPaths(catalogue, states)
+  const slugs: ItemListing['slugs'] = {}
+  const titles: ItemListing['titles'] = {}
+
+  for (const locale of LOCALES) {
+    const { slug, title } = states[locale] ?? {}
+
+    if (paths[locale] !== undefined && slug && title) {
+      slugs[locale] = slug
+      titles[locale] = title
+    }
+  }
+
+  return { id, catalogue, paths, slugs, titles }
+}
+
+/**
+ * The Sponges or Fillings a customer may choose: the Item's own list, or every one when it
+ * names none — "Leave empty to offer every Sponge", as the admin tells Jana. Unpopulated
+ * entries (bare ids) are skipped.
+ */
+export const offeredChoices = <T extends { id: number | string }>(
+  own: readonly (number | string | T)[] | null | undefined,
+  every: readonly T[],
+): T[] => {
+  const chosen = (own ?? []).filter((each): each is T => typeof each === 'object')
+
+  return chosen.length > 0 ? chosen : [...every]
 }
 
 /** What choosing an Item's siblings needs of each Item: its Category by id, and its catalogue. */
@@ -94,7 +143,6 @@ const byTitle = (a: { title: string }, b: { title: string }): number =>
 export const siblingItems = <T extends SiblingCandidate>(
   current: T,
   candidates: readonly T[],
-  limit = 3,
 ): T[] => {
   const catalogue = candidates.filter((each) => each.catalogue === current.catalogue)
   const category = catalogue.filter((each) => each.category === current.category).sort(byTitle)
@@ -102,11 +150,8 @@ export const siblingItems = <T extends SiblingCandidate>(
   const wrapped = [...category.slice(position + 1), ...category.slice(0, Math.max(position, 0))]
   const rest = catalogue.filter((each) => each.category !== current.category).sort(byTitle)
 
-  return [...wrapped, ...rest].filter((each) => each.id !== current.id).slice(0, limit)
+  return [...wrapped, ...rest].filter((each) => each.id !== current.id).slice(0, 3)
 }
-
-/** A Lead time as Payload stores it: days, and a time of day as `HH:MM`. */
-export type StoredLeadTime = { days: number; timeOfDay: string }
 
 /**
  * The Lead time an Item page states: the Item's own override when it sets both halves,

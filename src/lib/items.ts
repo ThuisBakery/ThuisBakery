@@ -2,23 +2,13 @@ import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { cache } from 'react'
 
-import { itemPaths, type LocaleState } from '@/domain/item'
+import { itemListing, type ItemListing, type LocalizedFields } from '@/domain/item'
 import { LOCALES, isCatalogue, type Catalogue, type Locale } from '@/domain/routes'
 
-/**
- * A Published Item, and its slug, title and path in each locale it is ready in — and in no
- * other. A locale missing here is one the Item has no URL in.
- */
-export type ItemListing = {
-  id: number
-  catalogue: Catalogue
-  paths: Partial<Record<Locale, string>>
-  slugs: Partial<Record<Locale, string>>
-  titles: Partial<Record<Locale, string>>
-}
+export type { ItemListing }
 
 /**
- * Every Published Item and where it lives, read once per build (and once per render, by
+ * Every Published Item and the locales it has a URL in, read once per build (and once per render, by
  * `cache`) — the one place that decides which Items have a URL in which locale.
  *
  * Readiness is read with `fallbackLocale: 'none'` (ADR-0002): with fallback on, an Item
@@ -47,7 +37,7 @@ export const itemListings = cache(async (): Promise<ItemListing[]> => {
 
   const listings = new Map<
     number,
-    { catalogue: Catalogue; states: Partial<Record<Locale, LocaleState>> }
+    { catalogue: Catalogue; states: Partial<Record<Locale, LocalizedFields>> }
   >()
 
   for (const { locale, docs } of byLocale) {
@@ -65,22 +55,7 @@ export const itemListings = cache(async (): Promise<ItemListing[]> => {
     }
   }
 
-  return [...listings].map(([id, { catalogue, states }]) => {
-    const paths = itemPaths(catalogue, states)
-    const slugs: Partial<Record<Locale, string>> = {}
-    const titles: Partial<Record<Locale, string>> = {}
-
-    for (const locale of LOCALES) {
-      const { slug, title } = states[locale] ?? {}
-
-      if (paths[locale] !== undefined && slug && title) {
-        slugs[locale] = slug
-        titles[locale] = title
-      }
-    }
-
-    return { id, catalogue, paths, slugs, titles }
-  })
+  return [...listings].map(([id, { catalogue, states }]) => itemListing(id, catalogue, states))
 })
 
 /** The ids of the Items with a URL in a locale, optionally in one catalogue only. */

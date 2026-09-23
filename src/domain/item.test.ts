@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { alternates } from './alternates'
 import {
   isReady,
+  itemListing,
+  offeredChoices,
   itemLeadTime,
   itemPaths,
   occasionLinks,
@@ -240,5 +242,35 @@ describe('surcharge', () => {
     expect(surcharge(0, 'en')).toBeNull()
     expect(surcharge(null, 'en')).toBeNull()
     expect(surcharge(undefined, 'en')).toBeNull()
+  })
+})
+
+describe('itemListing', () => {
+  it('records slug, title and path in each locale the Item is ready in, and no other', () => {
+    expect(itemListing(7, 'cakes', { en: english, nl: { ...dutch, description: null } })).toEqual({
+      id: 7,
+      catalogue: 'cakes',
+      paths: { en: '/cakes/apple-pie' },
+      slugs: { en: 'apple-pie' },
+      titles: { en: 'Apple pie' },
+    })
+  })
+})
+
+describe('offeredChoices', () => {
+  const chocolate = { id: 1, name: 'Chocolate' }
+  const vanilla = { id: 2, name: 'Vanilla' }
+
+  it('is the Item’s own list when it names one', () => {
+    expect(offeredChoices([vanilla], [chocolate, vanilla])).toEqual([vanilla])
+  })
+
+  it('is every one when the Item names none', () => {
+    expect(offeredChoices([], [chocolate, vanilla])).toEqual([chocolate, vanilla])
+    expect(offeredChoices(null, [chocolate, vanilla])).toEqual([chocolate, vanilla])
+  })
+
+  it('ignores entries that were not populated', () => {
+    expect(offeredChoices([1, vanilla], [chocolate, vanilla])).toEqual([vanilla])
   })
 })

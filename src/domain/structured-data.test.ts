@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { breadcrumbList, product } from './structured-data'
+import { breadcrumbMarkup, productMarkup } from './structured-data'
 
 const origin = 'https://thuisbakery.nl'
 
@@ -15,9 +15,9 @@ const applePie = {
   ],
 }
 
-describe('product', () => {
+describe('productMarkup', () => {
   it('marks up the Item with one euro Offer per Size, named as the page names it', () => {
-    expect(product(applePie, origin)).toEqual({
+    expect(productMarkup(applePie, origin)).toEqual({
       '@context': 'https://schema.org',
       '@type': 'Product',
       name: 'Apple pie',
@@ -47,20 +47,20 @@ describe('product', () => {
   })
 
   it('never carries a rating or a review (ADR-0002)', () => {
-    const markup = JSON.stringify(product(applePie, origin))
+    const markup = JSON.stringify(productMarkup(applePie, origin))
 
     expect(markup).not.toMatch(/aggregateRating|review/i)
   })
 
   it('leaves out an image list the page has no photographs for', () => {
-    expect(product({ ...applePie, images: [] }, origin)).not.toHaveProperty('image')
+    expect(productMarkup({ ...applePie, images: [] }, origin)).not.toHaveProperty('image')
   })
 })
 
-describe('breadcrumbList', () => {
+describe('breadcrumbMarkup', () => {
   it('lists the trail in order, fully qualified, positions from one', () => {
     expect(
-      breadcrumbList(
+      breadcrumbMarkup(
         [
           { name: 'Home', path: '/nl' },
           { name: 'Taarten', path: '/nl/taarten' },
