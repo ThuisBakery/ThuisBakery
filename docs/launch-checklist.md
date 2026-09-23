@@ -75,6 +75,12 @@ Nothing here is optional. The site does not go live with any of it outstanding.
       on the `send.` subdomain. All additive; the root SPF stays as Google wrote it.
 - [ ] **Set the Resend region to `eu-west-1` at setup.** Region is chosen per domain and is awkward
       to change afterwards — getting this wrong is expensive to undo.
+- [ ] Resend API key, sending address and Jana's inbox set in Vercel for Production and Preview:
+      `RESEND_API_KEY`, `EMAIL_FROM_ADDRESS`, `ENQUIRY_INBOX` (see `.env.example`).
+- [ ] Resend webhook created, pointing at `https://thuisbakery.com/next/resend-webhook`, subscribed
+      to `email.sent`, `email.delivered`, `email.delivery_delayed`, `email.bounced`,
+      `email.complained`, `email.failed` and `email.suppressed`. Its signing secret goes in Vercel as
+      `RESEND_WEBHOOK_SECRET`.
 - [ ] Publish DMARC at **`p=none`** with `rua=mailto:<Jana's Workspace address>`.
       There is no DMARC record on the domain today, so this is new, not an edit.
       Note for Jana: **the reports are unreadable XML and you should ignore them.** Their purpose
@@ -88,7 +94,13 @@ Nothing here is optional. The site does not go live with any of it outstanding.
       delivery-status webhook writes back to the Submission.
 - [ ] BotID (`checkBotId()`) live on the Enquiry route, honeypot field present.
 - [ ] Vercel WAF rate-limit rule live on the Enquiry route, in **Log** action — not Block.
-      Real traffic is observed for a week first (ADR-0006).
+      Real traffic is observed for a week first (ADR-0006). The rule: path equals `/next/enquiry`,
+      method `POST`, fixed window of **10 minutes**, **5 requests**, keyed on **IP**, action Log.
+      WAF counters are per region, so the real ceiling is a multiple of 5.
+- [ ] A **second Blob store** for Inspiration photos, created with **Private** access — a store's
+      access mode cannot be changed after creation — and its read-write token set in Vercel as
+      `INSPIRATION_BLOB_READ_WRITE_TOKEN`. Never the Media store: different access, lifetime and
+      trust (ADR-0006).
 
 ### Content and legal
 

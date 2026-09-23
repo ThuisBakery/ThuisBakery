@@ -149,6 +149,7 @@ export type EnquiryField =
   | 'requestedPickupDate'
   | 'specialRequests'
   | 'message'
+  | 'photo'
 
 export type EnquiryProblem =
   | 'required'
@@ -159,6 +160,10 @@ export type EnquiryProblem =
   | 'invalidDate'
   | 'tooSoon'
   | 'closed'
+  /** An Inspiration photo over the size limit, even after the browser shrank it. */
+  | 'tooLarge'
+  /** An Inspiration photo that is not a JPEG, PNG or WebP, whatever it claimed to be. */
+  | 'notAnImage'
 
 export type EnquiryProblems = Partial<Record<EnquiryField, EnquiryProblem>>
 

@@ -93,11 +93,26 @@ const codedSegments = (locale: Locale): string[] =>
   CODED_PAGES.map((page) => ROUTE_MAP[page][locale]).filter((segment) => segment !== '')
 
 /**
+ * The first segment of the paths BotID's client script calls, fixed by the `botid` package
+ * and rewritten to Vercel by `withBotId` in `next.config.ts`. `proxy.ts` must not rewrite
+ * them onto the English tree first, or the challenge never reaches Vercel.
+ */
+const BOTID_SEGMENT = '149e9513-01fa-4fb0-aad4-566afd725d1b'
+
+/**
  * Segments that belong to the framework rather than to a page: Payload's admin and
  * REST/GraphQL trees, the `next` segment where the draft-mode preview route lives, and the
  * paths Next and Vercel serve their own assets from. `proxy.ts` leaves these alone.
  */
-export const FRAMEWORK_SEGMENTS: readonly string[] = ['admin', 'api', 'next', '_next', '_vercel']
+export const FRAMEWORK_SEGMENTS: readonly string[] = [
+  'admin',
+  'api',
+  'next',
+  '_next',
+  '_vercel',
+  // BotID's challenge script and proxy, which `withBotId` rewrites to Vercel (ADR-0006).
+  BOTID_SEGMENT,
+]
 
 /** Framework segments plus the Dutch locale prefix itself. */
 const INFRASTRUCTURE_SEGMENTS = ['nl', ...FRAMEWORK_SEGMENTS]

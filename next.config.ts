@@ -1,4 +1,5 @@
 import { withPayload } from '@payloadcms/next/withPayload'
+import { withBotId } from 'botid/next/config'
 import type { NextConfig } from 'next'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -30,4 +31,6 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withPayload(nextConfig, { devBundleServerPackages: false })
+// `withBotId` rewrites BotID's challenge paths to Vercel (ADR-0006); `src/domain/routes.ts`
+// keeps `proxy.ts` off them.
+export default withBotId(withPayload(nextConfig, { devBundleServerPackages: false }))

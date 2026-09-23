@@ -50,10 +50,12 @@ afterEach(() => {
 })
 
 const renderForm = (overrides: Partial<Parameters<typeof EnquiryForm>[0]> = {}) => {
-  const submit = vi.fn(async (_: Record<string, unknown>): Promise<EnquiryReply> => ({
-    status: 'accepted',
-    receipt,
-  }))
+  const submit = vi.fn(
+    async (_: Record<string, unknown>, __: Blob | null): Promise<EnquiryReply> => ({
+      status: 'accepted',
+      receipt,
+    }),
+  )
   const onSent = vi.fn()
 
   render(
@@ -214,21 +216,24 @@ describe('EnquiryForm — sending', () => {
     fillIn('Special requests', 'Happy 40th, Marco')
     await send()
 
-    expect(submit).toHaveBeenCalledWith({
-      enquiryType: 'item',
-      locale: 'en',
-      item: 10,
-      size: 'large',
-      quantity: '2',
-      sponge: '3',
-      filling: '2',
-      requestedPickupDate: '2026-09-26',
-      specialRequests: 'Happy 40th, Marco',
-      name: 'Sanne de Vries',
-      email: 'sanne@example.nl',
-      phone: '',
-      website: '',
-    })
+    expect(submit).toHaveBeenCalledWith(
+      {
+        enquiryType: 'item',
+        locale: 'en',
+        item: 10,
+        size: 'large',
+        quantity: '2',
+        sponge: '3',
+        filling: '2',
+        requestedPickupDate: '2026-09-26',
+        specialRequests: 'Happy 40th, Marco',
+        name: 'Sanne de Vries',
+        email: 'sanne@example.nl',
+        phone: '',
+        website: '',
+      },
+      null,
+    )
     expect(onSent).toHaveBeenCalledWith(receipt)
   })
 
@@ -265,5 +270,86 @@ describe('EnquiryForm — sending', () => {
 
     expect(honeypot?.getAttribute('tabindex')).toBe('-1')
     expect(honeypot?.closest('[aria-hidden="true"]')).toBeTruthy()
+  })
+})
+
+describe('EnquiryForm — the Inspiration photo', () => {
+  const photoFile = new File([new Uint8Array(8_000_000)], 'IMG_2041.HEIC', { type: 'image/heic' })
+  const downscaled = new Blob([new Uint8Array(900_000)], { type: 'image/jpeg' })
+
+  const attach = async (file: File) => {
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText(/Inspiration photo/), { target: { files: [file] } })
+    })
+  }
+
+  it('sends the photo as downscaled in the browser, never the file as chosen', async () => {
+    const downscale = vi.fn(async () => downscaled)
+    const { submit } = renderForm({ downscale })
+
+    fillWhole()
+    await attach(photoFile)
+    await send()
+
+    expect(downscale).toHaveBeenCalledWith(photoFile)
+    expect(submit).toHaveBeenCalledWith(expect.objectContaining({ item: 10 }), downscaled)
+  })
+
+  it('says so when a chosen file cannot be read as a photo, and sends none', async () => {
+    const { submit } = renderForm({
+      downscale: async () => {
+        throw new Error('The source image could not be decoded.')
+      },
+    })
+
+    fillWhole()
+    await attach(photoFile)
+
+    expect(
+      screen.getByText('This does not look like a photo. Please choose a JPEG or PNG.'),
+    ).toBeTruthy()
+
+    await send()
+
+    expect(submit).not.toHaveBeenCalled()
+  })
+
+  it('refuses a photo still over 5 MB once downscaled', async () => {
+    const { submit } = renderForm({
+      downscale: async () => new Blob([new Uint8Array(5 * 1024 * 1024 + 1)]),
+    })
+
+    fillWhole()
+    await attach(photoFile)
+    await send()
+
+    expect(screen.getByText('This photo is too large. Please choose a smaller one.')).toBeTruthy()
+    expect(submit).not.toHaveBeenCalled()
+  })
+
+  it('lets a chosen photo be taken off again', async () => {
+    const { submit } = renderForm({ downscale: async () => downscaled })
+
+    fillWhole()
+    await attach(photoFile)
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }))
+    await send()
+
+    expect(submit).toHaveBeenCalledWith(expect.anything(), null)
+  })
+
+  it('shows the problem the server names for the photo', async () => {
+    renderForm({
+      downscale: async () => downscaled,
+      submit: async () => ({ status: 'invalid', problems: { photo: 'notAnImage' } }),
+    })
+
+    fillWhole()
+    await attach(photoFile)
+    await send()
+
+    expect(
+      screen.getByText('This does not look like a photo. Please choose a JPEG or PNG.'),
+    ).toBeTruthy()
   })
 })

@@ -50,6 +50,12 @@ describe('resolveLocale', () => {
     },
   )
 
+  it('leaves BotID’s proxied paths alone, so its rewrite to Vercel still matches', () => {
+    expect(
+      resolveLocale('/149e9513-01fa-4fb0-aad4-566afd725d1b/2d206a39-8ed7-437e-a3be-862e0f06eea3/x'),
+    ).toEqual({ kind: 'framework' })
+  })
+
   it('only reserves a framework segment when it is the whole segment', () => {
     expect(resolveLocale('/apple-pie')).toMatchObject({ kind: 'page', locale: 'en' })
     expect(resolveLocale('/administratie')).toMatchObject({ kind: 'page', locale: 'en' })

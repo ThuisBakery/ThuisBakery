@@ -1,4 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { resendAdapter } from '@payloadcms/email-resend'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { en } from '@payloadcms/translations/languages/en'
@@ -120,6 +121,23 @@ export default buildConfig({
     migrationDir: path.resolve(dirname, 'migrations'),
   }),
   sharp,
+  /**
+   * Resend (ADR-0006), for the two Enquiry emails. Set in Vercel for Production and Preview
+   * only, so it is unset locally and in CI, where Payload
+   * falls back to logging each email instead — which the Enquiry route records as not sent.
+   *
+   * The sending domain's region is `eu-west-1`. It is chosen per domain in Resend's dashboard
+   * when the domain is added, not here, and is awkward to change afterwards.
+   */
+  ...(process.env.RESEND_API_KEY
+    ? {
+        email: resendAdapter({
+          apiKey: process.env.RESEND_API_KEY,
+          defaultFromAddress: process.env.EMAIL_FROM_ADDRESS || '',
+          defaultFromName: 'ThuisBakery',
+        }),
+      }
+    : {}),
   plugins: [
     /**
      * Uploaded photographs live in Vercel Blob (ADR-0001), because a Vercel function's disk
