@@ -26,6 +26,7 @@ import { Header } from './globals/Header'
 import { Home } from './globals/Home'
 import { LeadTimeGlobal } from './globals/LeadTimeGlobal'
 import { revalidatingCollection, revalidatingGlobal } from './hooks/revalidateSite'
+import { seo } from './plugins/seo'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -140,5 +141,7 @@ export default buildConfig({
       clientUploads: true,
       alwaysInsertFields: true,
     }),
+    // Editable titles and descriptions on Items and marketing pages. See `src/plugins/seo.ts`.
+    seo,
   ],
 })

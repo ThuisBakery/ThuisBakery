@@ -8,6 +8,7 @@ import * as migration_20260923_041950_seed_home from './20260923_041950_seed_hom
 import * as migration_20260923_050411_submissions from './20260923_050411_submissions';
 import * as migration_20260923_055735_submission_reference from './20260923_055735_submission_reference';
 import * as migration_20260923_061024_marketing_pages from './20260923_061024_marketing_pages';
+import * as migration_20260923_182011_seo_meta from './20260923_182011_seo_meta';
 
 export const migrations = [
   {
@@ -58,6 +59,11 @@ export const migrations = [
   {
     up: migration_20260923_061024_marketing_pages.up,
     down: migration_20260923_061024_marketing_pages.down,
-    name: '20260923_061024_marketing_pages'
+    name: '20260923_061024_marketing_pages',
+  },
+  {
+    up: migration_20260923_182011_seo_meta.up,
+    down: migration_20260923_182011_seo_meta.down,
+    name: '20260923_182011_seo_meta'
   },
 ];

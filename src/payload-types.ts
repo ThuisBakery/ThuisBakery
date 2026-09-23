@@ -246,6 +246,10 @@ export interface Item {
      */
     timeOfDay?: string | null;
   };
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -526,6 +530,10 @@ export interface Page {
    * Optional. Makes this the page for an Occasion: it lists every Item tagged with it, and each of those Items links back here. One page per Occasion.
    */
   occasion?: (number | null) | Occasion;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -869,6 +877,12 @@ export interface ItemsSelect<T extends boolean = true> {
         days?: T;
         timeOfDay?: T;
       };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -910,6 +924,12 @@ export interface PagesSelect<T extends boolean = true> {
       };
   slug?: T;
   occasion?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

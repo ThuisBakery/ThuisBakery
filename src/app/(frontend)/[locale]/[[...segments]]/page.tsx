@@ -12,7 +12,7 @@ import { CataloguePage } from '@/components/menu/CataloguePage'
 import { PageShell } from '@/components/site/PageShell'
 import { Placeholder } from '@/components/site/Placeholder'
 import { alternates } from '@/domain/alternates'
-import { DICTIONARY, documentTitle, itemTitle } from '@/domain/dictionary'
+import { DICTIONARY, documentTitle } from '@/domain/dictionary'
 import { linkTargets, occasionPages } from '@/domain/page'
 import {
   LOCALES,
@@ -32,6 +32,7 @@ import {
   type Locale,
   type CodedPage,
 } from '@/domain/routes'
+import { isIndexed, metaDescription, metaTitle, pageRichTexts, summary } from '@/domain/seo'
 import { itemListings, readyItemIds, type ItemListing } from '@/lib/items'
 import { pageListings, type PageListing } from '@/lib/pages'
 import { siteOrigin } from '@/lib/site'
@@ -120,8 +121,11 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
   const { locale: current } = resolved
 
   if (resolved.kind === 'item' || resolved.kind === 'marketing') {
+    const { title, description } = await fetchMeta(resolved, current)
+
     return {
-      title: itemTitle(resolved.listing.titles[current] ?? ''),
+      title,
+      ...(description === undefined ? {} : { description }),
       // Built from the locales the Item is ready in only: a missing one is omitted, never
       // pointed at a 404.
       alternates: alternates(resolved.listing.paths, current, siteOrigin()),
@@ -130,8 +134,9 @@ export const generateMetadata = async (props: Props): Promise<Metadata> => {
 
   return {
     title: documentTitle(resolved.page, current),
-    // A receipt reached only by sending an Enquiry: nothing for a search engine to list.
-    ...(resolved.page === 'enquirySent' ? { robots: { index: false } } : {}),
+    // A receipt reached only by sending an Enquiry: nothing for a search engine to list,
+    // and left out of the sitemap by the same rule.
+    ...(isIndexed(resolved.page) ? {} : { robots: { index: false } }),
     alternates: alternates(
       { en: pagePath(resolved.page, 'en'), nl: pagePath(resolved.page, 'nl') },
       current,
@@ -218,6 +223,52 @@ export default async function Page(props: Props) {
       )}
     </PageShell>
   )
+}
+
+/**
+ * An Item or marketing page's `<title>` and description: what Jana wrote in the SEO fields,
+ * or the computed fallback (`src/domain/seo.ts`).
+ *
+ * Read with locale fallback **off**, like readiness: with it on, an English title Jana
+ * wrote would head the Dutch search result, and a blank Dutch description would be cut
+ * from the English text rather than the Dutch.
+ */
+const fetchMeta = async (
+  resolved: Extract<Resolved, { kind: 'item' | 'marketing' }>,
+  current: Locale,
+): Promise<{ title: string; description: string | undefined }> => {
+  const payload = await getPayload({ config: configPromise })
+  const name = resolved.listing.titles[current] ?? ''
+  const read = {
+    id: resolved.listing.id,
+    depth: 0,
+    locale: current,
+    fallbackLocale: 'none',
+  } as const
+
+  if (resolved.kind === 'item') {
+    const item = await payload.findByID({
+      ...read,
+      collection: 'items',
+      select: { meta: true, description: true },
+    })
+
+    return {
+      title: metaTitle(item.meta, name),
+      description: metaDescription(item.meta, summary([item.description])),
+    }
+  }
+
+  const page = await payload.findByID({
+    ...read,
+    collection: 'pages',
+    select: { meta: true, hero: true, layout: true },
+  })
+
+  return {
+    title: metaTitle(page.meta, name),
+    description: metaDescription(page.meta, summary(pageRichTexts(page))),
+  }
 }
 
 /**
