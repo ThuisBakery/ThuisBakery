@@ -80,6 +80,10 @@ Two structural rules make that workable:
 
 Collection configs are not tested.
 
+One carve-out: `src/lib/cron.test.ts`. The cron secret check needs `node:crypto` for a constant-time
+comparison, which the domain boundary forbids, and hand-rolling one in pure code to get it past
+the boundary would be the worse trade. It is still a function of its arguments, and needs no mock.
+
 ## CI
 
 One GitHub Actions workflow on pull requests: install, `vitest run --coverage` (reporting only, no
@@ -91,6 +95,37 @@ running them twice buys nothing.
 One step beyond that list is unavoidable: `next typegen` runs before `tsc`, because `tsconfig.json`
 includes `next-env.d.ts` and `.next/types`, which only a Next build or typegen produces. Without it
 the typecheck fails on missing files rather than on real type errors.
+
+## Cookies
+
+**No non-essential cookie is shipped anywhere on the site.** A standing constraint, set in issue
+#28: it is what makes the privacy page's no-consent-banner position true rather than merely
+convenient, and a banner would cost a conversion step on a site whose entire job is one form.
+Anything added later that sets one — an embed, a chat widget, a second analytics tool — re-opens the
+banner question, and has to be decided as that, not slipped in.
+
+Visits are counted by **Vercel Web Analytics**, which sets no cookie and no cross-site identifier.
+Google Analytics 4 was rejected on exactly this basis, not on capability.
+
+The cookies that do exist are all strictly necessary, and only Jana ever gets them: Payload's login
+session (`payload-token`) and Next's draft-mode cookie, which the preview route sets. A customer
+browsing and sending an Enquiry is given none.
+
+## Scheduled jobs
+
+One **Vercel Cron** job, the retention run: daily at 03:00 UTC (Vercel schedules in UTC only), on
+`GET /next/retention`, per ADR-0006. It is the project's only scheduled infrastructure, and a
+deliberate exception to the no-job-queue rule that turned `schedulePublish` off (issue #10).
+
+Vercel Cron calls **production deployments only**, and sends the project's `CRON_SECRET` as a bearer
+token; the route answers 401 to anything without it. Until `CRON_SECRET` is set in Vercel, every
+run is turned away and nothing is deleted — the cron log in the Vercel dashboard is where that
+shows.
+
+Two steps live in the Vercel dashboard rather than in the repo: setting `CRON_SECRET` for
+Production, and switching on **Web Analytics** for the project, without which `<Analytics />`
+sends to an endpoint that is not listening. The rules it applies are pure functions in
+`src/domain/retention.ts`; the route and `src/lib/retention.ts` are the I/O around them.
 
 ## Environment variables
 

@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/next'
 import type { Metadata } from 'next'
 import { Cormorant_Garamond, Geist, Parisienne } from 'next/font/google'
 import { notFound } from 'next/navigation'
@@ -55,6 +56,12 @@ export const dynamicParams = false
  *
  * `Organization` and `WebSite` are, being sitewide (ADR-0002). Each names only what every
  * page shows: the business's name, in the header's wordmark, and the site's home.
+ *
+ * Vercel Web Analytics counts visits here, on the public site only — Jana's own time in the
+ * admin is not a visit. It sets no cookie and no cross-site identifier, which is what makes
+ * the privacy page's no-consent-banner position true (ADR-0006). Google Analytics was
+ * rejected on exactly that basis. Nothing added to the site may set a non-essential cookie:
+ * see `docs/agents/build-conventions.md`.
  */
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const current = await locale()
@@ -71,6 +78,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body className="bg-ground font-sans text-ink antialiased">
         <JsonLd data={[organizationMarkup(siteOrigin()), websiteMarkup(current, siteOrigin())]} />
         {children}
+        <Analytics />
       </body>
     </html>
   )

@@ -132,6 +132,12 @@ into a customer who follows up.
 - Submission **anonymised at 24 months** — name, email, phone and photo stripped; Item, Size, date
   and Estimate kept.
 
+Built in issue #28, anonymising strips a little more than those four. The customer's own words,
+Special requests and the message, go too, because free text is as likely as anything to name
+someone. So does the reference, because Jana's copy of the email carries it next to the customer's
+name and would link the row straight back to them. The Sponge, Filling and quantity stay with the
+Item and Size.
+
 Anonymising rather than deleting holds the same GDPR position, since what remains is no longer
 personal data, while preserving the only genuinely valuable thing in that table: what sold, at what
 size, in which month. Cron is effectively free — Pro allows 100 jobs at per-minute precision, and the
