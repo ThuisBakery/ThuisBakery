@@ -8,15 +8,7 @@ import { Photograph } from '@/components/site/Photograph'
 import { DICTIONARY } from '@/domain/dictionary'
 import { itemOffer } from '@/domain/enquiry'
 import { leadTimeFact } from '@/domain/home'
-import {
-  itemLeadTime,
-  occasionLinks,
-  offeredChoices,
-  plainText,
-  siblingItems,
-  surcharge,
-} from '@/domain/item'
-import { formatEuros } from '@/domain/menu'
+import { itemLeadTime, occasionLinks, plainText, siblingItems } from '@/domain/item'
 import { cataloguePath, itemPath, pagePath, type Catalogue, type Locale } from '@/domain/routes'
 import { breadcrumbMarkup, productMarkup } from '@/domain/structured-data'
 import type { ClosedUntil, Filling, Item, LeadTime, Media, Sponge } from '@/payload-types'
@@ -25,21 +17,20 @@ import type { ClosedUntil, Filling, Item, LeadTime, Media, Sponge } from '@/payl
 const TEXT_LINK =
   'inline-flex min-h-11 items-center text-sm tracking-wide underline underline-offset-4 transition-colors duration-200 hover:text-accent'
 
-/** The Enquiry section's anchor, which the call to action near the top jumps to. */
-const ENQUIRY_ID = 'enquire'
-
 /** A section's small heading down the details column. */
 const LABEL = 'font-sans text-[13px] tracking-wide text-ink-muted'
 
 /**
  * `/cakes/<slug>` and `/nl/taarten/<slug>` (ADR-0003): everything a customer needs to
- * decide — the photographs, every Size with its price, the Sponges and Fillings with any
- * Surcharge, the Allergens beside the cross-contamination statement, and how far ahead to
- * ask. Item pages are the SEO destinations, so this is also where `Product`/`offers` and
- * `BreadcrumbList` are carried, and every value they mark up is printed here (ADR-0002).
+ * decide — the photographs, how far ahead to ask, the Allergens beside the
+ * cross-contamination statement — and then the choosing itself. Item pages are the SEO
+ * destinations, so this is also where `Product`/`offers` and `BreadcrumbList` are carried,
+ * and every value they mark up is printed here (ADR-0002).
  *
- * It ends at the Enquiry, which ADR-0003 keeps welded to the Item it prices: the form is
- * scoped to this Item's Sizes and choices, with a running Estimate.
+ * The Enquiry, which ADR-0003 keeps welded to the Item it prices, is part of the details
+ * column: its Size, Sponge and Filling choices are the only place the page shows the offer,
+ * every Size's price included, so there is one copy of it and it is the one that can be
+ * pressed. The offer comes from `itemOffer`, the same derivation the route handler checks.
  *
  * The links are the ones ADR-0003 specifies for an Item: its Category's section, two or
  * three siblings computed from Item data, its Occasion pages, and Custom order.
@@ -170,30 +161,6 @@ export const ItemPage = ({
               />
             ) : null}
 
-            <Sizes locale={locale} sizes={item.sizes} />
-
-            {item.configurable ? (
-              <>
-                <Choices
-                  label={words.item.sponge}
-                  choices={offeredChoices(item.sponges, sponges).map(({ id, name }) => ({
-                    id,
-                    name,
-                  }))}
-                />
-                <Choices
-                  label={words.item.filling}
-                  choices={offeredChoices(item.fillings, fillings).map(
-                    ({ id, name, surcharge: amount }) => ({
-                      id,
-                      name,
-                      surcharge: surcharge(amount, locale),
-                    }),
-                  )}
-                />
-              </>
-            ) : null}
-
             {fact ? (
               <section className="mt-10">
                 <h2 className={LABEL}>{words.item.leadTime}</h2>
@@ -201,13 +168,6 @@ export const ItemPage = ({
                 {fact.detail ? <p className="mt-1 text-sm text-ink-muted">{fact.detail}</p> : null}
               </section>
             ) : null}
-
-            <a
-              href={`#${ENQUIRY_ID}`}
-              className="mt-8 inline-flex min-h-12 items-center bg-accent px-8 py-3.5 text-sm tracking-wide text-accent-ink motion-safe:transition-transform motion-safe:duration-200 motion-safe:active:translate-y-px"
-            >
-              {words.enquiry.heading}
-            </a>
 
             <Allergens
               label={words.item.allergens}
@@ -217,8 +177,26 @@ export const ItemPage = ({
               statement={statement}
             />
 
+            <section aria-labelledby="enquiry-heading" className="mt-12 border-t border-rule pt-10">
+              <h2
+                id="enquiry-heading"
+                className="font-display text-[28px] leading-tight font-semibold"
+              >
+                {words.enquiry.heading}
+              </h2>
+              <p className="mt-3 leading-relaxed text-ink-muted">{words.enquiry.intro}</p>
+              <EnquiryForm
+                locale={locale}
+                offer={itemOffer(item, sponges, fillings)}
+                leadTime={figures}
+                closedUntil={closedUntil.date}
+                closedNotice={closedUntil.notice}
+                contactPath={pagePath('contact', locale)}
+              />
+            </section>
+
             {occasions.length > 0 ? (
-              <section className="mt-10">
+              <section className="mt-12">
                 <h2 className={LABEL}>{words.item.occasions}</h2>
                 <ul className="mt-1 flex flex-wrap gap-x-5">
                   {occasions.map((occasion) => (
@@ -233,32 +211,6 @@ export const ItemPage = ({
             ) : null}
           </div>
         </div>
-
-        <section
-          id={ENQUIRY_ID}
-          aria-labelledby={`${ENQUIRY_ID}-heading`}
-          className="mt-20 grid scroll-mt-24 gap-6 border-t border-rule pt-12 md:mt-28 md:grid-cols-12 md:gap-x-12"
-        >
-          <div className="md:col-span-5">
-            <h2
-              id={`${ENQUIRY_ID}-heading`}
-              className="font-display text-[34px] leading-tight font-semibold"
-            >
-              {words.enquiry.heading}
-            </h2>
-            <p className="mt-3 leading-relaxed text-ink-muted">{words.enquiry.intro}</p>
-          </div>
-          <div className="md:col-span-7">
-            <EnquiryForm
-              locale={locale}
-              offer={itemOffer(item, sponges, fillings)}
-              leadTime={figures}
-              closedUntil={closedUntil.date}
-              closedNotice={closedUntil.notice}
-              contactPath={pagePath('contact', locale)}
-            />
-          </div>
-        </section>
 
         {siblings.length > 0 ? (
           <nav aria-label={words.item.siblings} className="mt-20 md:mt-28">
@@ -337,78 +289,6 @@ const Photographs = ({ photographs }: { photographs: Media[] }) => {
         </div>
       ) : null}
     </div>
-  )
-}
-
-/** Every Size, printed: the price is visible because `offers` marks it up (ADR-0002). */
-const Sizes = ({ locale, sizes }: { locale: Locale; sizes: Item['sizes'] }) => {
-  const words = DICTIONARY[locale].item
-  const headingId = 'sizes-heading'
-
-  return (
-    <section className="mt-10">
-      <h2 id={headingId} className={LABEL}>
-        {words.sizes}
-      </h2>
-      <ul aria-labelledby={headingId} className="mt-2 border-t border-rule">
-        {sizes.map((size) => {
-          const details = [
-            typeof size.diameter === 'number' ? words.diameter(size.diameter) : null,
-            typeof size.layers === 'number' ? words.layers(size.layers) : null,
-            typeof size.servings === 'number' ? words.servings(size.servings) : null,
-          ].filter((detail) => detail !== null)
-
-          return (
-            <li
-              key={size.id ?? size.label}
-              className="flex items-baseline justify-between gap-4 border-b border-rule py-3"
-            >
-              <span>
-                <span className="font-display text-xl">{size.label}</span>
-                {details.length > 0 ? (
-                  <span className="block text-sm text-ink-muted">{details.join(' · ')}</span>
-                ) : null}
-              </span>
-              <span className="shrink-0 text-sm tracking-wide tabular-nums">
-                {formatEuros(size.price, locale)}
-              </span>
-            </li>
-          )
-        })}
-      </ul>
-    </section>
-  )
-}
-
-const Choices = ({
-  label,
-  choices,
-}: {
-  label: string
-  choices: { id: number; name: string; surcharge?: string | null }[]
-}) => {
-  if (choices.length === 0) {
-    return null
-  }
-
-  const headingId = `choices-${label.toLowerCase()}`
-
-  return (
-    <section className="mt-8">
-      <h2 id={headingId} className={LABEL}>
-        {label}
-      </h2>
-      <ul aria-labelledby={headingId} className="mt-2 flex flex-wrap gap-2">
-        {choices.map((choice) => (
-          <li key={choice.id} className="border border-rule px-3 py-1.5 text-sm">
-            {choice.name}
-            {choice.surcharge ? (
-              <span className="ml-1.5 text-ink-muted tabular-nums">{choice.surcharge}</span>
-            ) : null}
-          </li>
-        ))}
-      </ul>
-    </section>
   )
 }
 

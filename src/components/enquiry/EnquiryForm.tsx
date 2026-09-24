@@ -68,6 +68,11 @@ const FIELD_ORDER: readonly EnquiryField[] = [
  * Estimate, a Requested pickup date held to the Lead time and Closed until, Special requests,
  * and how to reach the customer.
  *
+ * It is the one place the Item page shows its offer and the only place a customer chooses
+ * from it. Every Size is printed with its price, a single one included (ADR-0002), and the
+ * first Size, Sponge and Filling in Jana's order start chosen, so the Estimate has a figure
+ * from the first render.
+ *
  * It validates with the same function the route handler does, so the customer is told what
  * is wrong before anything is sent — and the server still decides. Takes the Item's offer as
  * plain data, so a test renders it with no network and no Payload. What it shares with the
@@ -106,8 +111,8 @@ export const EnquiryForm = ({
   const [values, setValues] = useState<Values>({
     size: offer.sizes[0]?.id ?? '',
     quantity: '1',
-    sponge: '',
-    filling: '',
+    sponge: offer.sponges[0] ? String(offer.sponges[0].id) : '',
+    filling: offer.fillings[0] ? String(offer.fillings[0].id) : '',
     requestedPickupDate: '',
     specialRequests: '',
     name: '',
@@ -192,23 +197,28 @@ export const EnquiryForm = ({
     <form ref={formRef} noValidate onSubmit={onSubmit} className="relative mt-6 grid gap-8">
       <ClosedNotice locale={locale} calendar={calendar} notice={closedNotice} />
 
-      {offer.sizes.length > 1 ? (
-        <Choice
-          field="size"
-          legend={words.size}
-          options={offer.sizes.map(({ id, label, price }) => ({
-            value: id,
-            label,
-            aside: formatEuros(price, locale),
-          }))}
-          value={values.size}
-          onChange={(value) => change('size', value)}
-          fieldProps={fieldProps}
-          problem={problemFor('size')}
-        />
-      ) : (
-        <input type="hidden" name="size" value={values.size} />
-      )}
+      <Choice
+        field="size"
+        legend={words.size}
+        stacked
+        options={offer.sizes.map(({ id, label, price, diameter, layers, servings }) => ({
+          value: id,
+          label,
+          aside: formatEuros(price, locale),
+          detail:
+            [
+              typeof diameter === 'number' ? itemWords.diameter(diameter) : null,
+              typeof layers === 'number' ? itemWords.layers(layers) : null,
+              typeof servings === 'number' ? itemWords.servings(servings) : null,
+            ]
+              .filter((each) => each !== null)
+              .join(' · ') || undefined,
+        }))}
+        value={values.size}
+        onChange={(value) => change('size', value)}
+        fieldProps={fieldProps}
+        problem={problemFor('size')}
+      />
 
       <div>
         <label htmlFor="enquiry-quantity" className={LEGEND}>
@@ -323,11 +333,13 @@ export const EnquiryForm = ({
 
 /**
  * One choice from a few — a Size, Sponge or Filling — as radio buttons. The label is the
- * option's name alone; a price or Surcharge sits beside it as its description.
+ * option's name alone; a price or Surcharge sits beside it, and what a Size is beneath it,
+ * as its description. `stacked` gives each option its own full-width row.
  */
 const Choice = ({
   field,
   legend,
+  stacked = false,
   options,
   value,
   onChange,
@@ -336,7 +348,13 @@ const Choice = ({
 }: {
   field: EnquiryField
   legend: string
-  options: { value: string; label: string; aside?: string | undefined }[]
+  stacked?: boolean
+  options: {
+    value: string
+    label: string
+    aside?: string | undefined
+    detail?: string | undefined
+  }[]
   value: string
   onChange: (value: string) => void
   fieldProps: FieldProps
@@ -350,9 +368,13 @@ const Choice = ({
       aria-describedby={problem ? `enquiry-${field}-problem` : undefined}
     >
       <legend className={LEGEND}>{legend}</legend>
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className={stacked ? 'mt-2 grid gap-2' : 'mt-2 flex flex-wrap gap-2'}>
         {options.map((option) => {
           const id = `enquiry-${field}-${option.value}`
+          const describedBy = [
+            option.aside ? `${id}-aside` : null,
+            option.detail ? `${id}-detail` : null,
+          ].filter((each) => each !== null)
 
           return (
             <div key={option.value} className="relative">
@@ -364,16 +386,27 @@ const Choice = ({
                 checked={value === option.value}
                 onChange={() => onChange(option.value)}
                 onBlur={onBlur}
-                aria-describedby={option.aside ? `${id}-aside` : undefined}
+                aria-describedby={describedBy.length > 0 ? describedBy.join(' ') : undefined}
                 className="peer absolute inset-0 opacity-0"
               />
-              <div className="flex min-h-11 items-center gap-1.5 border border-rule px-3 py-2 text-sm peer-checked:border-ink peer-checked:bg-ink peer-checked:text-ground peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent">
-                <label htmlFor={id} className="cursor-pointer">
+              <div className="flex min-h-11 flex-wrap items-center gap-x-1.5 border border-rule px-3 py-2 text-sm peer-checked:border-ink peer-checked:bg-ink peer-checked:text-ground peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent">
+                <label
+                  htmlFor={id}
+                  className={stacked ? 'cursor-pointer text-base' : 'cursor-pointer'}
+                >
                   {option.label}
                 </label>
                 {option.aside ? (
-                  <span id={`${id}-aside`} className="tabular-nums opacity-75">
+                  <span
+                    id={`${id}-aside`}
+                    className={stacked ? 'ml-auto tabular-nums' : 'tabular-nums opacity-75'}
+                  >
                     {option.aside}
+                  </span>
+                ) : null}
+                {option.detail ? (
+                  <span id={`${id}-detail`} className="basis-full opacity-75">
+                    {option.detail}
                   </span>
                 ) : null}
               </div>

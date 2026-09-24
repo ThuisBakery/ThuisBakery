@@ -26,11 +26,22 @@ export const isQuantity = (count: number): boolean =>
 export const isEnquiryType = (value: unknown): value is EnquiryType =>
   typeof value === 'string' && (ENQUIRY_TYPES as readonly string[]).includes(value)
 
-export /** What an Item offers an Enquiry: its Sizes, and its Sponges and Fillings if configurable. */
-type ItemOffer = {
+/**
+ * What an Item offers an Enquiry: its Sizes, and its Sponges and Fillings if configurable.
+ * The Item page shows and takes choices from this alone, so what a customer chooses from is
+ * what the route handler validates against.
+ */
+export type ItemOffer = {
   id: number
   title: string
-  sizes: { id: string; label: string; price: number }[]
+  sizes: {
+    id: string
+    label: string
+    price: number
+    diameter?: number | null
+    layers?: number | null
+    servings?: number | null
+  }[]
   configurable: boolean
   sponges: { id: number; name: string }[]
   fillings: { id: number; name: string; surcharge?: number | null }[]
@@ -40,7 +51,14 @@ type ItemOffer = {
 export type OfferedItem = {
   id: number
   title: string
-  sizes: readonly { id?: string | null; label: string; price: number }[]
+  sizes: readonly {
+    id?: string | null
+    label: string
+    price: number
+    diameter?: number | null
+    layers?: number | null
+    servings?: number | null
+  }[]
   configurable?: boolean | null
   sponges?: readonly (number | { id: number; name: string })[] | null
   fillings?: readonly (number | { id: number; name: string; surcharge?: number | null })[] | null
@@ -63,10 +81,13 @@ export const itemOffer = (
     title: item.title,
     // Payload gives every saved array row an id; the position is the fallback for one that
     // somehow has none, and is unique within the Item all the same.
-    sizes: item.sizes.map(({ id, label, price }, index) => ({
+    sizes: item.sizes.map(({ id, label, price, diameter, layers, servings }, index) => ({
       id: id ?? String(index),
       label,
       price,
+      diameter: diameter ?? null,
+      layers: layers ?? null,
+      servings: servings ?? null,
     })),
     configurable,
     sponges: configurable

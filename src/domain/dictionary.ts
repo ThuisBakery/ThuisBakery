@@ -29,7 +29,6 @@ export type Dictionary = {
   item: {
     breadcrumb: string
     home: string
-    sizes: string
     /** How a Size reads beside its label — diameter, layers, servings — each optional. */
     diameter: (centimetres: number) => string
     layers: (count: number) => string
@@ -171,7 +170,6 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
     item: {
       breadcrumb: 'Breadcrumb',
       home: 'Home',
-      sizes: 'Sizes',
       diameter: (centimetres) => `${centimetres} cm`,
       layers: (count) => (count === 1 ? '1 layer' : `${count} layers`),
       servings: (count) => `serves ${count}`,
@@ -299,7 +297,6 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
     item: {
       breadcrumb: 'Kruimelpad',
       home: 'Home',
-      sizes: 'Maten',
       diameter: (centimetres) => `${centimetres} cm`,
       layers: (count) => (count === 1 ? '1 laag' : `${count} lagen`),
       servings: (count) => `voor ${count} personen`,

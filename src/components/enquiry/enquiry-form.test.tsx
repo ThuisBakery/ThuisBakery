@@ -10,8 +10,8 @@ const cheesecake: ItemOffer = {
   id: 10,
   title: 'Burnt Basque Cheesecake',
   sizes: [
-    { id: 'small', label: 'Small', price: 45 },
-    { id: 'large', label: 'Large', price: 62.5 },
+    { id: 'small', label: 'Small', price: 45, diameter: 15, layers: 1, servings: 8 },
+    { id: 'large', label: 'Large', price: 62.5, diameter: 20, layers: 2, servings: 14 },
   ],
   configurable: true,
   sponges: [
@@ -78,6 +78,13 @@ const renderForm = (overrides: Partial<Parameters<typeof EnquiryForm>[0]> = {}) 
 
 const estimatePanel = () => screen.getByRole('region', { name: /Estimate/ })
 
+/** Which option in a named radio group starts checked. */
+const checkedIn = (group: string) =>
+  within(screen.getByRole('group', { name: group }))
+    .getAllByRole('radio')
+    .filter((radio) => (radio as HTMLInputElement).checked)
+    .map((radio) => radio.getAttribute('value'))
+
 const fillIn = (label: RegExp | string, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } })
 
@@ -97,6 +104,38 @@ const send = async () => {
   })
 }
 
+describe('EnquiryForm — the choices', () => {
+  it('starts on the first Size, Sponge and Filling, in Jana’s order', () => {
+    renderForm()
+
+    expect(checkedIn('Size')).toEqual(['small'])
+    expect(checkedIn('Sponge')).toEqual(['1'])
+    expect(checkedIn('Filling')).toEqual(['1'])
+  })
+
+  it('prints each Size’s price, and what it is beneath', () => {
+    renderForm()
+
+    const sizes = within(screen.getByRole('group', { name: 'Size' }))
+
+    expect(sizes.getByText('€62.50')).toBeTruthy()
+    expect(sizes.getByText('15 cm · 1 layer · serves 8')).toBeTruthy()
+    expect(sizes.getByText('20 cm · 2 layers · serves 14')).toBeTruthy()
+  })
+
+  it('shows an Item’s single Size as already chosen, with its price', () => {
+    renderForm({
+      offer: { ...cheesecake, sizes: [{ id: 'whole', label: 'Whole', price: 40 }] },
+    })
+
+    const sizes = within(screen.getByRole('group', { name: 'Size' }))
+
+    expect(sizes.getAllByRole('radio')).toHaveLength(1)
+    expect(checkedIn('Size')).toEqual(['whole'])
+    expect(sizes.getByText('€40')).toBeTruthy()
+  })
+})
+
 describe('EnquiryForm — the running Estimate', () => {
   it('starts from the first Size, one of it, and is labelled provisional', () => {
     renderForm()
@@ -106,6 +145,15 @@ describe('EnquiryForm — the running Estimate', () => {
     expect(within(panel).getByText('Provisional')).toBeTruthy()
     expect(within(panel).getByText('Small × 1')).toBeTruthy()
     expect(within(panel).getAllByText('€45')).toHaveLength(2)
+  })
+
+  it('carries a first Filling’s Surcharge from the start', () => {
+    renderForm({ offer: { ...cheesecake, fillings: [...cheesecake.fillings].reverse() } })
+
+    const panel = estimatePanel()
+
+    expect(within(panel).getByText('Salted Caramel × 1')).toBeTruthy()
+    expect(within(panel).getByText('€47.50')).toBeTruthy()
   })
 
   it('follows the Size, the quantity and a surcharging Filling', () => {
@@ -156,18 +204,36 @@ describe('EnquiryForm — telling the customer what is wrong', () => {
     expect(submit).not.toHaveBeenCalled()
     expect(screen.getByRole('alert').textContent).toMatch('A few details need another look.')
     expect(screen.getByLabelText('Your name').getAttribute('aria-invalid')).toBe('true')
-    // Name, email and the date are typed; Sponge and Filling are chosen, and say so.
+    // Name, email and the date are typed; the choices start made, so none is missing.
     expect(screen.getAllByText('Please fill this in.')).toHaveLength(3)
-    expect(screen.getAllByText('Please choose one of the options.')).toHaveLength(2)
+    expect(screen.queryByText('Please choose one of the options.')).toBeNull()
   })
 
-  it('moves focus to the first field to fix', async () => {
+  it('moves focus to the first field to fix, in the order they appear', async () => {
     renderForm()
 
+    fillIn('How many', '0')
     await send()
 
-    // Size and quantity start filled in, so the Sponge is the first thing missing.
-    expect(document.activeElement).toBe(screen.getByLabelText('Chocolate'))
+    expect(document.activeElement).toBe(screen.getByLabelText('How many'))
+
+    fillIn('How many', '1')
+    await send()
+
+    // The choices and quantity are made, so the date is the first thing missing.
+    expect(document.activeElement).toBe(screen.getByLabelText(/Pickup date/))
+  })
+
+  it('asks for a choice the server could not match, as a choice', async () => {
+    renderForm({
+      submit: async () => ({ status: 'invalid', problems: { sponge: 'required' } }),
+    })
+
+    fillWhole()
+    await send()
+
+    expect(screen.getByText('Please choose one of the options.')).toBeTruthy()
+    expect(document.activeElement).toBe(screen.getByLabelText('Red Velvet'))
   })
 
   it('says how early a pickup can be, and rejects a date inside the Lead time', () => {

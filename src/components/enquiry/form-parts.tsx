@@ -188,7 +188,13 @@ export const useProblems = ({
     const field = order.find((each) => found[each])
 
     if (field) {
-      formRef.current?.querySelector<HTMLElement>(`[name="${field}"]`)?.focus()
+      // A choice is focused on the option already chosen, where the arrow keys start from.
+      const form = formRef.current
+      const target =
+        form?.querySelector<HTMLElement>(`[name="${field}"]:checked`) ??
+        form?.querySelector<HTMLElement>(`[name="${field}"]`)
+
+      target?.focus()
     }
   }
 

@@ -260,7 +260,7 @@ describe('itemOffer', () => {
   ]
   const everyFilling = [{ id: 7, name: 'Ganache', surcharge: 3, ...stamps }]
 
-  it('offers the Item’s Sizes, keyed by their row ids, and only the names and figures', () => {
+  it('offers the Item’s Sizes, keyed by their row ids, with the names and figures it prints', () => {
     // As Payload returns it: a Size carries more than the offer needs.
     const cheesecakeDocument = {
       id: 10,
@@ -280,9 +280,10 @@ describe('itemOffer', () => {
       id: 10,
       title: 'Cheesecake',
       // A row saved without an id falls back to its position, which is still unique.
+      // What a Size is — diameter, layers, servings — rides along for the form to print.
       sizes: [
-        { id: 'abc', label: 'Small', price: 45 },
-        { id: '1', label: 'Large', price: 62.5 },
+        { id: 'abc', label: 'Small', price: 45, diameter: 15, layers: null, servings: null },
+        { id: '1', label: 'Large', price: 62.5, diameter: null, layers: null, servings: null },
       ],
       configurable: true,
       sponges: [{ id: 2, name: 'Vanilla' }],
