@@ -1,6 +1,6 @@
 # Design direction
 
-Status: accepted (2026-09-21)
+Status: accepted (2026-09-21). Partly superseded by ADR-0007: buy buttons, Category cells, display serif, sharp corners and the missing theme toggle. The palette stands.
 
 The site is built in **Jana's own identity, extracted from the printed menu card she made**, and
 laid out as an **illustrated menu**: every Category is a photograph carrying its own name, line and
