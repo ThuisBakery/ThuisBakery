@@ -1,5 +1,6 @@
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import Image from 'next/image'
+import type { CSSProperties } from 'react'
 
 import { EnquiryForm } from '@/components/enquiry/EnquiryForm'
 import { CakeStand } from '@/components/site/CakeStand'
@@ -261,33 +262,45 @@ const candidate = (item: Item, catalogue: Catalogue) => ({
   item,
 })
 
+/**
+ * The main photograph and the rest two to a row. From `md` up they stay in view beside
+ * the details column, or only the main one does when all of them would not fit the
+ * viewport, or none does when even the main one would not; `.item-photographs` in the
+ * stylesheet decides which, from the row count. Its height formula copies the aspect
+ * ratios, the gap and the two columns here: change one and change the other.
+ */
 const Photographs = ({ photographs }: { photographs: Media[] }) => {
   const [first, ...rest] = photographs
+  const style = { '--secondary-rows': Math.ceil(rest.length / 2) } as CSSProperties
 
   return (
-    <div className="grid gap-4 md:col-span-7">
-      <div className="overflow-hidden bg-raised">
-        <Photograph
-          media={first}
-          sizes="(min-width: 768px) 58vw, 100vw"
-          preload
-          className="aspect-[4/5] w-full object-cover md:aspect-[4/3]"
-        />
-      </div>
-      {rest.length > 0 ? (
-        <div className="grid grid-cols-2 gap-4">
-          {rest.map((photograph) => (
-            <div key={photograph.id} className="overflow-hidden bg-raised">
-              <Photograph
-                media={photograph}
-                sizes="(min-width: 768px) 29vw, 50vw"
-                preload={false}
-                className="aspect-square w-full object-cover"
-              />
-            </div>
-          ))}
+    <div className="item-photographs md:col-span-7" style={style}>
+      <div className="item-photographs-stack flex flex-col gap-4">
+        <div className="item-photographs-lead">
+          <div className="overflow-hidden bg-raised">
+            <Photograph
+              media={first}
+              sizes="(min-width: 768px) 58vw, 100vw"
+              preload
+              className="aspect-[4/5] w-full object-cover md:aspect-[4/3]"
+            />
+          </div>
         </div>
-      ) : null}
+        {rest.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4">
+            {rest.map((photograph) => (
+              <div key={photograph.id} className="overflow-hidden bg-raised">
+                <Photograph
+                  media={photograph}
+                  sizes="(min-width: 768px) 29vw, 50vw"
+                  preload={false}
+                  className="aspect-square w-full object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
     </div>
   )
 }
