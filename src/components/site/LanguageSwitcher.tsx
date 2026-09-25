@@ -17,6 +17,7 @@ export const LanguageSwitcher = ({
   locale,
   page,
   alternate,
+  compact = false,
   className,
 }: {
   locale: Locale
@@ -26,18 +27,37 @@ export const LanguageSwitcher = ({
    * Item untranslated there has no such path, and the caller passes where it should land.
    */
   alternate?: string | undefined
+  /**
+   * Below `md`, show only the language's code: the header's phone row holds the wordmark,
+   * the theme control and Menu beside it, and the full label pushes it off the screen. The
+   * full label stays its accessible name.
+   */
+  compact?: boolean
   className?: string
 }) => {
   const target = otherLocale(locale)
+  const label = DICTIONARY[locale].switchLanguage
 
   return (
     <a
       href={alternate ?? pagePath(page ?? 'home', target)}
       lang={target}
       hrefLang={target}
+      aria-label={compact ? label : undefined}
       className={cn(BUTTON_OUTLINE, className)}
     >
-      {DICTIONARY[locale].switchLanguage}
+      {compact ? (
+        <>
+          <span aria-hidden="true" className="md:hidden">
+            {target.toUpperCase()}
+          </span>
+          <span aria-hidden="true" className="hidden md:inline">
+            {label}
+          </span>
+        </>
+      ) : (
+        label
+      )}
     </a>
   )
 }

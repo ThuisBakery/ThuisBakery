@@ -48,8 +48,11 @@ export const SiteHeader = ({
       >
         {words.skipToContent}
       </a>
-      <div className="mx-auto flex h-[72px] max-w-[1400px] items-center justify-between gap-4 px-4 md:px-10">
-        <a href={pagePath('home', locale)} className={`text-[26px] md:text-[28px] ${NAV_LINK}`}>
+      <div className="mx-auto flex h-[72px] max-w-[1400px] items-center justify-between gap-3 px-4 md:gap-4 md:px-10">
+        <a
+          href={pagePath('home', locale)}
+          className={`text-[24px] sm:text-[26px] md:text-[28px] ${NAV_LINK}`}
+        >
           <Wordmark />
         </a>
         <nav aria-label={words.mainNav} className="hidden items-center gap-8 md:flex">
@@ -84,9 +87,9 @@ export const SiteHeader = ({
             </a>
           )}
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <ThemeToggle locale={locale} />
-          <LanguageSwitcher locale={locale} page={page} alternate={alternate} />
+          <LanguageSwitcher locale={locale} page={page} alternate={alternate} compact />
           <MobileMenu
             links={links}
             callToAction={callToAction}
