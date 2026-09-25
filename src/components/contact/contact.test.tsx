@@ -1,12 +1,19 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import type { ReactNode } from 'react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { Contact, CustomOrder, Media } from '@/payload-types'
+import { CustomOrderHost } from '@/components/enquiry/CustomOrderHost'
+import { SiteHeader } from '@/components/site/SiteHeader'
+import type { Contact, CustomOrder, Header, Media } from '@/payload-types'
 
 import { ContactPage } from './ContactPage'
 import { CustomOrderPage } from './CustomOrderPage'
 
-afterEach(cleanup)
+afterEach(() => {
+  vi.useRealTimers()
+  vi.unstubAllGlobals()
+  cleanup()
+})
 
 const stamps = { updatedAt: '2026-09-23T00:00:00.000Z', createdAt: '2026-09-23T00:00:00.000Z' }
 
@@ -207,15 +214,60 @@ const customOrder: CustomOrder = {
   ...stamps,
 }
 
-const renderCustomOrder = (locale: 'en' | 'nl' = 'en') =>
+/**
+ * A page inside the site-wide sheet host, as the frontend layout renders it: the Lead time
+ * and Closed until the layout fetched once, for a Custom order from anywhere.
+ */
+const withHost = (
+  page: ReactNode,
+  {
+    locale = 'en',
+    closedUntil = null,
+    closedNotice = null,
+  }: {
+    locale?: 'en' | 'nl'
+    closedUntil?: string | null
+    closedNotice?: string | null
+  } = {},
+) =>
   render(
-    <CustomOrderPage
+    <CustomOrderHost
       locale={locale}
-      customOrder={customOrder}
       leadTime={{ days: 3, timeOfDay: '17:00' }}
-      closedUntil={{ date: null, notice: null }}
-    />,
+      closedUntil={closedUntil}
+      closedNotice={closedNotice}
+    >
+      {page}
+    </CustomOrderHost>,
   )
+
+const renderCustomOrder = (locale: 'en' | 'nl' = 'en') =>
+  withHost(<CustomOrderPage locale={locale} customOrder={customOrder} />, { locale })
+
+/** Only the clock is faked: 21 September 2026, 09:00 in Amsterdam. */
+const monday21September = () => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-09-21T07:00:00Z'))
+}
+
+/** The route handler, faked at the network: it accepts whatever it is sent. */
+const acceptingRoute = () => {
+  const fetch = vi.fn(async (_: string, __: RequestInit) =>
+    Response.json({ status: 'accepted', receipt: null }),
+  )
+
+  vi.stubGlobal('fetch', fetch)
+
+  return fetch
+}
+
+const press = async (name: string | RegExp) => {
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name }))
+  })
+}
+
+const day = (name: string) => screen.getByRole('radio', { name }) as HTMLInputElement
 
 describe('CustomOrderPage', () => {
   it('introduces the bespoke path in Jana’s words', () => {
@@ -224,22 +276,180 @@ describe('CustomOrderPage', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Something of your own')
     expect(screen.getByText('Tell Jana about it.')).toBeTruthy()
     expect(screen.getByAltText('A three-tier wedding cake')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Tell Jana what you’re imagining' })).toBeTruthy()
   })
 
-  it('ends at the Estimate-free form, with a date and a photo', () => {
+  it('offers the Custom order sheet at the top, as a link that still works without scripts', () => {
+    renderCustomOrder('nl')
+
+    expect(screen.getByRole('link', { name: 'Vertel Jana je idee' }).getAttribute('href')).toBe(
+      '/nl/maatwerk',
+    )
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('opens the sheet in place and sends a Custom order Enquiry from it', async () => {
+    monday21September()
+    const fetch = acceptingRoute()
     renderCustomOrder()
 
-    const form = screen.getByRole('region', { name: 'Tell Jana what you’re imagining' })
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true })
+    act(() => {
+      screen.getByRole('link', { name: 'Tell Jana your idea' }).dispatchEvent(click)
+    })
 
-    expect(within(form).getByLabelText(/What you’re imagining/)).toBeTruthy()
-    expect(within(form).getByLabelText(/Pickup date/)).toBeTruthy()
-    expect(within(form).getByLabelText(/Inspiration photo/)).toBeTruthy()
-    expect(within(form).queryByRole('region', { name: /Estimate/ })).toBeNull()
+    // Opened in place: the browser does not follow the link.
+    expect(click.defaultPrevented).toBe(true)
+    const sheet = screen.getByRole('dialog', { name: 'Tell Jana your idea' })
+    expect(
+      within(within(sheet).getByRole('list', { name: 'Steps' }))
+        .getAllByRole('listitem')
+        .map((step) => step.textContent),
+    ).toEqual(['Idea', 'When', 'Photo', 'You'])
+
+    fireEvent.click(screen.getByLabelText('Just because'))
+    fireEvent.change(screen.getByLabelText('What do you have in mind?'), {
+      target: { value: 'A cake shaped like our dog.' },
+    })
+    await press('Next')
+    fireEvent.click(day('Saturday 26 September'))
+    await press('Next')
+    await press('Next')
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Sanne de Vries' } })
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'sanne@example.nl' } })
+    await press('Send to Jana')
+
+    expect(fetch).toHaveBeenCalledOnce()
+    const [endpoint, init] = fetch.mock.calls[0]!
+    const sent = init.body as FormData
+    expect(endpoint).toBe('/next/enquiry')
+    expect(sent.get('enquiryType')).toBe('custom-order')
+    expect(sent.get('requestedPickupDate')).toBe('2026-09-26')
+    expect(sent.get('message')).toBe(
+      'For: Just because\nAbout 12 people\n\nA cake shaped like our dog.',
+    )
+    expect(screen.getByRole('dialog', { name: 'Sent to Jana' })).toBeTruthy()
   })
 
   it('offers Contact for a question that is not an order', () => {
     renderCustomOrder('nl')
 
     expect(screen.getByRole('link', { name: 'Contact' }).getAttribute('href')).toBe('/nl/contact')
+  })
+})
+
+const header: Header = {
+  id: 1,
+  links: [
+    { page: 'cakes', label: 'Cakes' },
+    { page: 'nibbles', label: 'Nibbles' },
+    { page: 'about', label: 'About' },
+    { page: 'contact', label: 'Contact' },
+  ],
+  callToAction: { page: 'customOrder', label: 'Custom order' },
+}
+
+describe('Custom order from anywhere', () => {
+  /** The header's Custom order control on a wide screen: the one outside the phone menu. */
+  const headerControl = () =>
+    within(screen.getByRole('navigation', { name: 'Main menu' })).getByRole('link', {
+      name: 'Custom order',
+    })
+
+  it('is a link to Custom order in the header of another page', () => {
+    withHost(<SiteHeader locale="en" page="about" header={header} />)
+
+    expect(headerControl().getAttribute('href')).toBe('/custom-order')
+  })
+
+  it('opens the Custom order sheet in place from the header, and gives focus back on closing', async () => {
+    monday21September()
+    withHost(<SiteHeader locale="en" page="about" header={header} />)
+
+    const control = headerControl()
+    control.focus()
+    fireEvent.click(control)
+
+    expect(screen.getByRole('dialog', { name: 'Tell Jana your idea' })).toBeTruthy()
+
+    await press('Close')
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    await waitFor(() => expect(document.activeElement).toBe(control))
+  })
+
+  it('opens from the phone menu, which closes as the sheet opens', async () => {
+    withHost(<SiteHeader locale="en" page="about" header={header} />)
+
+    await press('Menu')
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'Menu' })).getByRole('link', {
+        name: 'Custom order',
+      }),
+    )
+
+    expect(screen.queryByRole('dialog', { name: 'Menu' })).toBeNull()
+    expect(screen.getByRole('dialog', { name: 'Tell Jana your idea' })).toBeTruthy()
+  })
+
+  it('starts a new Custom order when reopened after one was sent', async () => {
+    monday21September()
+    acceptingRoute()
+    withHost(<SiteHeader locale="en" page="about" header={header} />)
+
+    fireEvent.click(headerControl())
+    fireEvent.change(screen.getByLabelText('What do you have in mind?'), {
+      target: { value: 'A cake shaped like our dog.' },
+    })
+    await press('Next')
+    fireEvent.click(day('Saturday 26 September'))
+    await press('Next')
+    await press('Next')
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Sanne de Vries' } })
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'sanne@example.nl' } })
+    await press('Send to Jana')
+    await press('Done')
+
+    fireEvent.click(headerControl())
+
+    expect(screen.getByRole('dialog', { name: 'Tell Jana your idea' })).toBeTruthy()
+    expect((screen.getByLabelText('What do you have in mind?') as HTMLTextAreaElement).value).toBe(
+      '',
+    )
+  })
+
+  it('holds the date to the Lead time and Closed until the layout fetched', async () => {
+    monday21September()
+    withHost(<SiteHeader locale="en" page="about" header={header} />, {
+      closedUntil: '2026-10-05T12:00:00.000Z',
+      closedNotice: 'On holiday — back soon!',
+    })
+
+    fireEvent.click(headerControl())
+    fireEvent.change(screen.getByLabelText('What do you have in mind?'), {
+      target: { value: 'A cake shaped like our dog.' },
+    })
+    await press('Next')
+
+    expect(screen.getByText('On holiday — back soon!')).toBeTruthy()
+    expect(day('Friday 2 October').disabled).toBe(true)
+    expect(day('Monday 5 October').disabled).toBe(false)
+  })
+
+  it('leaves a click with a modifier key to the browser, to open the page in a new tab', () => {
+    withHost(<SiteHeader locale="en" page="about" header={header} />)
+
+    fireEvent.click(headerControl(), { metaKey: true })
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('is a plain link where no sheet host is running', () => {
+    render(<SiteHeader locale="en" page="about" header={header} />)
+
+    fireEvent.click(headerControl())
+
+    expect(headerControl().getAttribute('href')).toBe('/custom-order')
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 })

@@ -53,6 +53,21 @@ export const parseTimeOfDay = (value: string): TimeOfDay | null => {
 }
 
 /**
+ * The Lead time global as Payload returns it, as a stored Lead time; `null` when the global
+ * has never been saved, or holds only half of the pair.
+ */
+export const storedLeadTime = ({
+  days,
+  timeOfDay,
+}: {
+  days?: number | null
+  timeOfDay?: string | null
+}): StoredLeadTime | null =>
+  typeof days === 'number' && typeof timeOfDay === 'string' && timeOfDay !== ''
+    ? { days, timeOfDay }
+    : null
+
+/**
  * A stored Lead time as the arithmetic reads it, or `null` when there is none — or when its
  * time of day does not parse, which validation on save means only old data can do.
  */

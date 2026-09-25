@@ -5,8 +5,9 @@ import { DRAFTS_WITH_AUTOSAVE } from '@/versions'
 
 /**
  * The Custom order page's words (ADR-0003's page-content singleton for `/custom-order` and
- * `/nl/maatwerk`) — the bespoke path. The form beneath is the Estimate-free Enquiry form, in
- * code: it has no Item and no Estimate, only "tell me what you're imagining".
+ * `/nl/maatwerk`) — the bespoke path. The form is the Custom order sheet, in code: it has no
+ * Item and no Estimate, only "tell me what you're imagining". `formHeading` heads the way
+ * into it at the top of the page (ADR-0007).
  */
 export const CustomOrder: GlobalConfig = {
   slug: 'custom-order',

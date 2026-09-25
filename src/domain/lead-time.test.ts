@@ -6,6 +6,7 @@ import {
   isRequestedPickupDateAllowed,
   leadTimeOf,
   parseTimeOfDay,
+  storedLeadTime,
   type LeadTime,
 } from './lead-time'
 
@@ -114,6 +115,21 @@ describe('isWholeLeadTimeOverride', () => {
     expect(isWholeLeadTimeOverride({ days: 5 })).toBe(false)
     expect(isWholeLeadTimeOverride({ timeOfDay: '12:00' })).toBe(false)
     expect(isWholeLeadTimeOverride({ days: 0, timeOfDay: '' })).toBe(false)
+  })
+})
+
+describe('storedLeadTime', () => {
+  it('takes the Lead time global as Payload returns it, both halves set', () => {
+    expect(storedLeadTime({ days: 3, timeOfDay: '17:00' })).toEqual({
+      days: 3,
+      timeOfDay: '17:00',
+    })
+  })
+
+  it('is null for a global that was never saved, or is missing a half', () => {
+    expect(storedLeadTime({})).toBeNull()
+    expect(storedLeadTime({ days: 3, timeOfDay: null })).toBeNull()
+    expect(storedLeadTime({ days: null, timeOfDay: '17:00' })).toBeNull()
   })
 })
 

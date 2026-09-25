@@ -1,3 +1,4 @@
+import { SomethingCustom } from '@/components/enquiry/CustomOrderHost'
 import { DICTIONARY } from '@/domain/dictionary'
 import { pagePath, type Locale, type CodedPage } from '@/domain/routes'
 import type { Header } from '@/payload-types'
@@ -11,7 +12,8 @@ import { Wordmark } from './Wordmark'
 
 /**
  * The site header: the wordmark, the four nav links and the Custom order button from the
- * Header global (ADR-0003), and the language switcher beside them. The switcher stays
+ * Header global (ADR-0003), and the language switcher beside them. The button is a link to
+ * Custom order that opens its sheet in place once scripts run (ADR-0007). The switcher stays
  * visible at every width, because it is load-bearing (ADR-0002), and so does the theme control
  * (ADR-0007); only the nav folds into a menu on a phone.
  */
@@ -34,6 +36,9 @@ export const SiteHeader = ({
   if (!callToAction) {
     throw new Error('The Header global has no Custom order button.')
   }
+
+  // The button leads to Custom order by design, and then opens its sheet in place (ADR-0007).
+  const opensCustomOrder = callToAction.href === pagePath('customOrder', locale)
 
   return (
     <header className="relative z-20 text-ink">
@@ -61,13 +66,23 @@ export const SiteHeader = ({
               </li>
             ))}
           </ul>
-          <a
-            href={callToAction.href}
-            aria-current={callToAction.current ? 'page' : undefined}
-            className={BUTTON_SMALL}
-          >
-            {callToAction.label}
-          </a>
+          {opensCustomOrder ? (
+            <SomethingCustom
+              locale={locale}
+              current={callToAction.current}
+              className={BUTTON_SMALL}
+            >
+              {callToAction.label}
+            </SomethingCustom>
+          ) : (
+            <a
+              href={callToAction.href}
+              aria-current={callToAction.current ? 'page' : undefined}
+              className={BUTTON_SMALL}
+            >
+              {callToAction.label}
+            </a>
+          )}
         </nav>
         <div className="flex items-center gap-2">
           <ThemeToggle locale={locale} />
@@ -75,6 +90,8 @@ export const SiteHeader = ({
           <MobileMenu
             links={links}
             callToAction={callToAction}
+            opensCustomOrder={opensCustomOrder}
+            locale={locale}
             labels={{ menu: words.menu, close: words.close, nav: words.mainNav }}
           />
         </div>

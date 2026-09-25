@@ -16,7 +16,6 @@ import {
   amsterdamArrival,
   closedUntilDate,
   earliestPickupDate,
-  formatCalendarDate,
   formatDisplayDate,
   isClosed,
 } from '@/domain/pickup-date'
@@ -325,46 +324,6 @@ export const ClosedNotice = ({
       <p>{DICTIONARY[locale].enquiry.closedUntil(calendar.display(calendar.until))}</p>
     </div>
   ) : null
-
-export const RequestedPickupDateField = ({
-  locale,
-  calendar,
-  value,
-  onChange,
-  fieldProps,
-  problem,
-}: {
-  locale: Locale
-  calendar: RequestedPickupCalendar
-  value: string
-  onChange: (value: string) => void
-  fieldProps: FieldProps
-  problem: ReactNode
-}) => {
-  const words = DICTIONARY[locale].enquiry
-  const { earliest, display } = calendar
-
-  return (
-    <div>
-      <label htmlFor="enquiry-requestedPickupDate" className={LEGEND}>
-        {words.requestedPickupDate}
-      </label>
-      <input
-        {...fieldProps('requestedPickupDate', ['enquiry-requestedPickupDate-hint'])}
-        type="date"
-        min={earliest ? formatCalendarDate(earliest) : undefined}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className={`${INPUT} max-w-60`}
-      />
-      <div id="enquiry-requestedPickupDate-hint" className="mt-1.5 text-sm text-ink-muted">
-        {earliest ? <p>{words.earliest(display(earliest))}</p> : null}
-        <p>{words.requestedPickupDateHint}</p>
-      </div>
-      {problem}
-    </div>
-  )
-}
 
 export const PhotoField = ({
   locale,

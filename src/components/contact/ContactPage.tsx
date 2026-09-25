@@ -167,10 +167,6 @@ export const ContactPage = ({
           <div className="md:col-span-7">
             <MessageForm
               locale={locale}
-              enquiryType="contact"
-              leadTime={null}
-              closedUntil={null}
-              closedNotice={null}
               // Sending from Contact itself failed: the direct route is Jana's inbox.
               contactHref={email ? `mailto:${email}` : pagePath('contact', locale)}
             />

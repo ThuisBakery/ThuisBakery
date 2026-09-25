@@ -466,18 +466,12 @@ const fetchTargets = async (current: Locale) => {
 }
 
 /**
- * Custom order's words, and the two globals its Requested pickup date is held to: the
- * site-wide Lead time and Closed until. Globals are read as published, as on every page.
+ * Custom order's words. The sheet it offers is the layout's, which fetches the Lead time and
+ * Closed until its Requested pickup date is held to. Read as published, as on every page.
  */
-const fetchCustomOrder = async (payload: Payload, current: Locale) => {
-  const [customOrder, leadTime, closedUntil] = await Promise.all([
-    payload.findGlobal({ slug: 'custom-order', locale: current, depth: 1 }),
-    payload.findGlobal({ slug: 'lead-time', depth: 0 }),
-    payload.findGlobal({ slug: 'closed-until', locale: current, depth: 0 }),
-  ])
-
-  return { customOrder, leadTime, closedUntil }
-}
+const fetchCustomOrder = async (payload: Payload, current: Locale) => ({
+  customOrder: await payload.findGlobal({ slug: 'custom-order', locale: current, depth: 1 }),
+})
 
 /** Jana's story, with its photograph, and where its links lead here. */
 const fetchAbout = async (payload: Payload, current: Locale) => {

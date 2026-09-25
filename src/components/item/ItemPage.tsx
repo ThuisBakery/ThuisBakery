@@ -1,6 +1,7 @@
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import Image from 'next/image'
 
+import { SomethingCustom } from '@/components/enquiry/CustomOrderHost'
 import { JsonLd } from '@/components/site/JsonLd'
 import { Photograph } from '@/components/site/Photograph'
 import {
@@ -283,9 +284,9 @@ export const ItemPage = ({
                     ))}
                   </ul>
                 ) : null}
-                <a href={pagePath('customOrder', locale)} className={CHIP_LINK}>
+                <SomethingCustom locale={locale} className={CHIP_LINK}>
                   {words.somethingCustom}
-                </a>
+                </SomethingCustom>
               </div>
             </div>
 

@@ -1,5 +1,6 @@
 import type { EnquiryProblem } from './enquiry'
-import type { ItemEnquiryStep } from './enquiry-steps'
+import type { CustomOrderOccasion } from './custom-order'
+import type { CustomOrderStep, ItemEnquiryStep } from './enquiry-steps'
 import type { Locale, CodedPage } from './routes'
 import type { Theme } from './theme'
 
@@ -94,10 +95,7 @@ export type Dictionary = {
     estimateNote: string
     /** An Estimate line's label: `Large × 2`. */
     line: (label: string, quantity: number) => string
-    send: string
-    /** The Estimate-free forms (ADR-0003): Custom order's bespoke brief, Contact's question. */
-    customOrderMessage: string
-    customOrderMessageHint: string
+    /** Contact's Estimate-free form (ADR-0003): a question. */
     contactMessage: string
     /** Contact's button: its Enquiry is a question, so it reads as sending a message. */
     sendMessage: string
@@ -113,10 +111,11 @@ export type Dictionary = {
       closed: (until: string | null) => string
     }
     /**
-     * The stepped sheet (ADR-0007): each step's short name, in the progress indicator, and
-     * its title, the sheet's heading while it is on that step.
+     * The stepped sheets (ADR-0007), an Item's and Custom order's: each step's short name, in
+     * the progress indicator, and its title, the sheet's heading while it is on that step.
+     * Both end on You, which reads the same in each.
      */
-    steps: Record<ItemEnquiryStep, { name: string; title: string }>
+    steps: Record<ItemEnquiryStep | CustomOrderStep, { name: string; title: string }>
     /** The Size step's title when there is only one Size, so the step is only how many. */
     howManyTitle: string
     /** The progress indicator's accessible name. */
@@ -151,10 +150,32 @@ export type Dictionary = {
     /** The line before the link to Custom order (ADR-0003: Contact → Custom order). */
     somethingBespoke: string
   }
-  /** The Custom order page's labels. */
+  /** The Custom order page's labels, and its stepped sheet's (ADR-0007). */
   customOrder: {
     /** The line before the link to Contact, for a question rather than an order. */
     justAQuestion: string
+    /** The page's button that opens the sheet. */
+    start: string
+    /** The Idea step: the Occasion chips, and the customer's own words. */
+    occasion: string
+    occasions: Record<CustomOrderOccasion, string>
+    idea: string
+    ideaHint: string
+    /** The When step's head count, a stepper that moves two at a time. */
+    people: string
+    peopleHint: string
+    fewerPeople: string
+    morePeople: string
+    photoHint: string
+    /** The lines written above the customer's words in the message Jana receives. */
+    occasionLine: (occasion: string) => string
+    peopleLine: (people: number) => string
+    /** The confirmation's summary. */
+    for: string
+    howManyPeople: string
+    yourIdea: string
+    /** The confirmation's button, which closes the sheet wherever it was opened. */
+    done: string
   }
   /** The privacy policy's labels. */
   privacy: {
@@ -257,10 +278,6 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       estimateNote:
         'Size, quantity and Filling only. Jana confirms the figure in her reply, with anything personal.',
       line: (label, quantity) => `${label} × ${quantity}`,
-      send: 'Send enquiry',
-      customOrderMessage: 'What you’re imagining',
-      customOrderMessageHint:
-        'The occasion, how many people, flavours, colours, a theme — whatever you already know.',
       contactMessage: 'Your question',
       sendMessage: 'Send message',
       sending: 'Sending…',
@@ -289,6 +306,9 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
         flavour: { name: 'Flavour', title: 'Choose your flavours' },
         date: { name: 'Date', title: 'When do you need it?' },
         you: { name: 'You', title: 'Where should Jana reply?' },
+        idea: { name: 'Idea', title: 'Tell Jana your idea' },
+        when: { name: 'When', title: 'When, and for how many?' },
+        photo: { name: 'Photo', title: 'Got a picture?' },
       },
       howManyTitle: 'How many?',
       progress: 'Steps',
@@ -317,6 +337,29 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
     },
     customOrder: {
       justAQuestion: 'Just a question?',
+      start: 'Tell Jana your idea',
+      occasion: 'What is it for?',
+      occasions: {
+        birthday: 'Birthday',
+        wedding: 'Wedding',
+        babyShower: 'Baby shower',
+        justBecause: 'Just because',
+        somethingElse: 'Something else',
+      },
+      idea: 'What do you have in mind?',
+      ideaHint:
+        'For example: two tiers with dried flowers, not too sweet. Flavours, colours, a theme — a sentence or two is enough.',
+      people: 'How many people?',
+      peopleHint: 'A rough number is fine. It tells Jana how big to go.',
+      fewerPeople: 'Fewer people',
+      morePeople: 'More people',
+      photoHint: 'Skip this if you have nothing to show. Words are enough.',
+      occasionLine: (occasion) => `For: ${occasion}`,
+      peopleLine: (people) => `About ${people} people`,
+      for: 'For',
+      howManyPeople: 'People',
+      yourIdea: 'Your idea',
+      done: 'Done',
     },
     privacy: {
       lastUpdated: (date) => `Last updated ${date}`,
@@ -414,10 +457,6 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       estimateNote:
         'Alleen maat, aantal en vulling. Jana bevestigt het bedrag in haar antwoord, met alles wat persoonlijk is.',
       line: (label, quantity) => `${label} × ${quantity}`,
-      send: 'Verstuur je vraag',
-      customOrderMessage: 'Wat je in gedachten hebt',
-      customOrderMessageHint:
-        'De gelegenheid, voor hoeveel mensen, smaken, kleuren, een thema — wat je al weet.',
       contactMessage: 'Je vraag',
       sendMessage: 'Verstuur je bericht',
       sending: 'Versturen…',
@@ -445,6 +484,9 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
         flavour: { name: 'Smaak', title: 'Kies je smaken' },
         date: { name: 'Datum', title: 'Wanneer heb je hem nodig?' },
         you: { name: 'Jij', title: 'Waar mag Jana naar antwoorden?' },
+        idea: { name: 'Idee', title: 'Vertel Jana je idee' },
+        when: { name: 'Wanneer', title: 'Wanneer, en voor hoeveel?' },
+        photo: { name: 'Foto', title: 'Heb je een foto?' },
       },
       howManyTitle: 'Hoeveel?',
       progress: 'Stappen',
@@ -471,8 +513,32 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       prices: 'Prijzen',
       somethingBespoke: 'Iets op maat in gedachten?',
     },
+    // The Custom order sheet's words are draft Dutch until Jana sets them (ADR-0007).
     customOrder: {
       justAQuestion: 'Alleen een vraag?',
+      start: 'Vertel Jana je idee',
+      occasion: 'Waar is het voor?',
+      occasions: {
+        birthday: 'Verjaardag',
+        wedding: 'Bruiloft',
+        babyShower: 'Babyshower',
+        justBecause: 'Zomaar',
+        somethingElse: 'Iets anders',
+      },
+      idea: 'Wat heb je in gedachten?',
+      ideaHint:
+        'Bijvoorbeeld: twee lagen met gedroogde bloemen, niet te zoet. Smaken, kleuren, een thema — een zin of twee is genoeg.',
+      people: 'Voor hoeveel personen?',
+      peopleHint: 'Een schatting is prima. Zo weet Jana hoe groot het moet worden.',
+      fewerPeople: 'Minder personen',
+      morePeople: 'Meer personen',
+      photoHint: 'Sla dit over als je niets te laten zien hebt. Woorden zijn genoeg.',
+      occasionLine: (occasion) => `Voor: ${occasion}`,
+      peopleLine: (people) => `Ongeveer ${people} personen`,
+      for: 'Voor',
+      howManyPeople: 'Personen',
+      yourIdea: 'Je idee',
+      done: 'Klaar',
     },
     privacy: {
       lastUpdated: (date) => `Laatst bijgewerkt op ${date}`,
