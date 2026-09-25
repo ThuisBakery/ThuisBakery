@@ -1,4 +1,4 @@
-import { IllustratedMenu } from '@/components/menu/IllustratedMenu'
+import { ItemTiles } from '@/components/menu/ItemTiles'
 import { CakeStand } from '@/components/site/CakeStand'
 import { Paragraphs } from '@/components/site/Paragraphs'
 import { Photograph } from '@/components/site/Photograph'
@@ -6,22 +6,27 @@ import { Questions } from '@/components/site/Questions'
 import {
   BUTTON,
   BUTTON_ON_ACCENT,
+  BUTTON_OUTLINE_LARGE,
   TEXT_LINK,
   TEXT_LINK_ON_ACCENT,
 } from '@/components/site/pressable'
 import { Reveal } from '@/components/site/Reveal'
+import { DICTIONARY } from '@/domain/dictionary'
 import { fromPrice, leadTimeFact } from '@/domain/home'
 import { catalogueSections } from '@/domain/menu'
-import { CATALOGUES, cataloguePath, pagePath, type Locale } from '@/domain/routes'
-import type { Category, Home, LeadTime } from '@/payload-types'
+import { pagePath, type Locale } from '@/domain/routes'
+import type { Category, Home, Item, LeadTime } from '@/payload-types'
 
 /** The Lead time global as read: empty when it has never been saved. */
 type LeadTimeFigures = Partial<Pick<LeadTime, 'days' | 'timeOfDay'>>
 
 /**
  * `/` and `/nl` (ADR-0004): eight sections, eight layout families, no eyebrow labels, and
- * no Enquiry — the homepage sends the customer into the menu, and the Enquiry starts on an
- * Item page (ADR-0003). The wordmark is the header's; this page does not set it again.
+ * no Enquiry — the homepage sends the customer to an Item, and the Enquiry starts on its
+ * page (ADR-0003). The wordmark is the header's; this page does not set it again.
+ *
+ * The menu comes straight after a short hero, and it is the cakes themselves, not their
+ * Categories (ADR-0007): on a phone the first tile begins on the opening screen.
  *
  * Jana writes the words, through the Home global; the order and the layouts are fixed here.
  * The fact band's figures are read from where they are kept rather than written twice: the
@@ -31,6 +36,7 @@ export const HomePage = ({
   locale,
   home,
   categories,
+  items,
   leadTime,
   statement,
 }: {
@@ -38,6 +44,8 @@ export const HomePage = ({
   home: Home
   /** Every Category, from both catalogues. */
   categories: readonly Category[]
+  /** The cake Items with a page in this locale; the menu files them under their Categories. */
+  items: readonly Item[]
   /** When the Lead time global has never been saved, its fact is left out. */
   leadTime: LeadTimeFigures
   /** The cross-contamination statement, which is written once, on its own global. */
@@ -48,9 +56,9 @@ export const HomePage = ({
 
   return (
     <div>
-      <Hero hero={home.hero} cakes={cakes} nibbles={nibbles} />
+      <Hero locale={locale} hero={home.hero} cakes={cakes} />
+      <Menu locale={locale} heading={home.menu.heading} categories={categories} items={items} />
       <FactBand locale={locale} facts={home.facts} categories={categories} leadTime={leadTime} />
-      <Menu locale={locale} heading={home.menu.heading} categories={categories} />
       <About locale={locale} about={home.about} />
       <AllergenNotice allergens={home.allergens} statement={statement} />
       <Quote quote={home.quote} />
@@ -62,41 +70,42 @@ export const HomePage = ({
 }
 
 /**
- * 1. Editorial hero. The photograph runs along the foot of the opening screen and is cut by
- * the bottom edge of the viewport: it is the threshold into the menu, half seen, which is
- * the reason it is there. A photograph in a slot beside the headline was rejected in
- * ADR-0004 as arbitrary placement.
+ * 1. A short hero: the headline, one line, and the two ways in — a cake from the menu, or
+ * something of the customer's own. Short enough that the menu starts on a phone's first
+ * screen, so the photograph stands beside the words on a wide screen and is left out on a
+ * phone rather than pushing the cakes down.
  */
-const Hero = ({ hero, cakes, nibbles }: { hero: Home['hero']; cakes: string; nibbles: string }) => (
-  // Taller than the screen below the header by 14svh, so that much of the photograph sits
-  // under the fold whatever the phone.
-  <section className="flex min-h-[calc(114svh-72px)] flex-col">
-    <div className="flex flex-1 flex-col items-center justify-center px-4 pt-6 pb-10 text-center md:px-10 md:pt-12 md:pb-16">
-      <h1 className="max-w-[16ch] font-display text-[40px] leading-[1.05] font-medium md:text-[84px]">
-        {hero.headline}
-      </h1>
-      <p className="mt-6 max-w-[46ch] text-[15px] leading-relaxed text-ink-muted md:text-base">
-        {hero.intro}
-      </p>
-      <div className="mt-9 flex flex-col items-center gap-2 sm:flex-row sm:gap-6">
-        <a href={cakes} className={BUTTON}>
-          {hero.cakesLabel}
-        </a>
-        <a href={nibbles} className={TEXT_LINK}>
-          {hero.nibblesLabel}
-        </a>
+const Hero = ({ locale, hero, cakes }: { locale: Locale; hero: Home['hero']; cakes: string }) => (
+  <section className="px-4 pt-8 pb-4 md:px-10 md:pt-12 md:pb-8">
+    <div className="mx-auto grid max-w-[1400px] items-center gap-10 md:grid-cols-[1.05fr_1fr] md:gap-16">
+      <div>
+        <h1 className="max-w-[16ch] font-display text-[40px] leading-[1.05] font-medium md:text-[72px]">
+          {hero.headline}
+        </h1>
+        <p className="mt-4 max-w-[46ch] text-[15px] leading-relaxed text-ink-muted md:mt-6 md:text-base">
+          {hero.intro}
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3 md:mt-9">
+          <a href={cakes} className={BUTTON}>
+            {hero.cakesLabel}
+          </a>
+          {/* A plain link until the Custom order sheet can open in place (ADR-0007). */}
+          <a href={pagePath('customOrder', locale)} className={BUTTON_OUTLINE_LARGE}>
+            {DICTIONARY[locale].somethingCustom}
+          </a>
+        </div>
       </div>
+      <Photograph
+        media={hero.photograph}
+        sizes="(min-width: 768px) 48vw, 100vw"
+        preload={false}
+        className="hidden aspect-[5/4] w-full rounded-card bg-raised object-cover md:block"
+      />
     </div>
-    <Photograph
-      media={hero.photograph}
-      sizes="100vw"
-      preload
-      className="h-[36svh] w-full shrink-0 rounded-card bg-raised object-cover md:h-[42svh]"
-    />
   </section>
 )
 
-/** 2. Fact band: Lead time, pickup, and the starting price, ruled apart like the card. */
+/** 3. Fact band: Lead time, pickup, and the starting price, ruled apart like the card. */
 const FactBand = ({
   locale,
   facts,
@@ -146,35 +155,33 @@ const FactBand = ({
 }
 
 /**
- * 3. The illustrated menu, the same component as `/cakes` and `/nibbles`: every Category,
- * cakes first, each entry one link to its section of its catalogue page.
+ * 2. The menu: every cake, as an Item tile, in Jana's Category order. A tile leads to its
+ * Item page; nothing here leads to a Category (ADR-0007). Nibbles are the closing band's
+ * link, bought as a quantity on their own page.
  */
 const Menu = ({
   locale,
   heading,
   categories,
+  items,
 }: {
   locale: Locale
   heading: string
   categories: readonly Category[]
+  items: readonly Item[]
 }) => {
-  const sections = CATALOGUES.flatMap((catalogue) => catalogueSections(catalogue, categories, []))
+  const entries = catalogueSections('cakes', categories, items).flatMap(({ category, items }) =>
+    items.map((item) => ({ item, category })),
+  )
 
   return (
-    <section className="px-4 py-20 md:px-10 md:py-28">
+    <section className="px-4 pt-8 pb-20 md:px-10 md:pt-16 md:pb-28">
       <div className="mx-auto max-w-[1400px]">
-        <h2 className="text-center font-display text-[34px] leading-tight font-medium md:text-5xl">
+        <h2 className="font-display text-[30px] leading-tight font-medium md:text-5xl">
           {heading}
         </h2>
-        <div className="mt-12 md:mt-16">
-          <IllustratedMenu
-            locale={locale}
-            sections={sections}
-            headingLevel={3}
-            categoryHref={(category) =>
-              `${cataloguePath(category.catalogue, locale)}#${category.slug}`
-            }
-          />
+        <div className="mt-6 md:mt-12">
+          <ItemTiles locale={locale} entries={entries} preloadFirst />
         </div>
         <div className="mt-16 flex justify-center">
           <CakeStand className="w-14 text-ink-muted" />

@@ -1,7 +1,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import type { Category, Home, Media } from '@/payload-types'
+import type { Category, Home, Item, Media } from '@/payload-types'
 
 import { HomePage } from './HomePage'
 
@@ -38,6 +38,7 @@ const categories: Category[] = [
     price: 25,
     priceFrom: true,
   }),
+  category({ id: 3, name: 'Indulgent Cakes', slug: 'indulgent', catalogue: 'cakes', order: 3 }),
   category({
     id: 1,
     name: 'Proefhapjes',
@@ -45,6 +46,43 @@ const categories: Category[] = [
     catalogue: 'cakes',
     order: 1,
     price: 29,
+  }),
+]
+
+const item = (
+  fields: Pick<Item, 'id' | 'title' | 'slug' | 'category' | 'sizes'> & Partial<Item>,
+): Item => ({
+  photographs: [{ ...photograph(fields.id), alt: `${fields.title}, photographed` }],
+  updatedAt: '2026-09-23T00:00:00.000Z',
+  createdAt: '2026-09-23T00:00:00.000Z',
+  ...fields,
+})
+
+// Filed out of Jana's order and titled out of alphabetical order, to show which one wins.
+const items: Item[] = [
+  item({
+    id: 21,
+    title: 'Indulgent Layer Cake',
+    slug: 'indulgent-layer-cake',
+    category: 3,
+    sizes: [
+      { label: '15 cm', price: 52, servings: 10 },
+      { label: '20 cm', price: 72, servings: 20 },
+    ],
+  }),
+  item({
+    id: 20,
+    title: 'Proefhapjes Box',
+    slug: 'proefhapjes-box',
+    category: 1,
+    sizes: [{ label: 'Box of six', price: 29 }],
+  }),
+  item({
+    id: 22,
+    title: 'Cheeky Bento Cake',
+    slug: 'cheeky-bento-cake',
+    category: 2,
+    sizes: [{ label: 'Bento', price: 25, servings: 2 }],
   }),
 ]
 
@@ -93,6 +131,7 @@ const renderHome = (locale: 'en' | 'nl' = 'en') =>
       locale={locale}
       home={home}
       categories={categories}
+      items={items}
       leadTime={{ days: 3, timeOfDay: '17:00' }}
       statement="Jana bakes in a home kitchen, so traces cannot be ruled out."
     />,
@@ -115,6 +154,21 @@ describe('HomePage', () => {
     expect(container.querySelectorAll('section')).toHaveLength(8)
   })
 
+  it('opens on a short hero: the headline, one line, a cake from the menu or something custom', () => {
+    renderHome('nl')
+
+    const hero = screen.getByRole('heading', { level: 1 }).closest('section')!
+    const links = within(hero)
+      .getAllByRole('link')
+      .map((link) => [link.textContent, link.getAttribute('href')])
+
+    expect(within(hero).getByText('One cake at a time, made to order.')).toBeTruthy()
+    expect(links).toEqual([
+      ['See the cakes', '/nl/taarten'],
+      ['Iets op maat', '/nl/maatwerk'],
+    ])
+  })
+
   it('sends the customer into the cakes first, with the nibbles also linked, in each locale', () => {
     renderHome('nl')
 
@@ -125,20 +179,51 @@ describe('HomePage', () => {
     expect(nibbles?.getAttribute('href')).toBe('/nl/lekkernijen')
   })
 
-  it('shows every Category as one link into its section of its own catalogue page', () => {
+  it('lists every cake Item as a tile, in Jana’s Category order, labelled with its Category', () => {
     renderHome()
 
-    expect(screen.getAllByRole('heading', { level: 3 }).map((each) => each.textContent)).toEqual([
-      'Proefhapjes',
-      'Cheeky Bento Cakes',
-      'Nibbles',
+    const titles = screen.getAllByRole('heading', { level: 3 })
+
+    expect(titles.map((each) => each.textContent)).toEqual([
+      'Proefhapjes Box',
+      'Cheeky Bento Cake',
+      'Indulgent Layer Cake',
     ])
-    expect(screen.getByRole('link', { name: /Cheeky Bento Cakes/ }).getAttribute('href')).toBe(
-      '/cakes#bento',
-    )
-    expect(screen.getByRole('link', { name: /Nibbles, tagline/ }).getAttribute('href')).toBe(
-      '/nibbles#nibbles',
-    )
+    expect(within(titles[1]!.closest('a')!).getByText('Cheeky Bento Cakes')).toBeTruthy()
+  })
+
+  it('makes each tile exactly one link, to its Item page, with the photograph inside it', () => {
+    renderHome('nl')
+
+    const tile = screen.getByRole('heading', { name: 'Indulgent Layer Cake' }).closest('li')!
+    const [link, ...others] = within(tile).getAllByRole('link')
+
+    expect(others).toEqual([])
+    expect(link?.getAttribute('href')).toBe('/nl/taarten/indulgent-layer-cake')
+    expect(
+      within(link!).getByRole('img', { name: 'Indulgent Layer Cake, photographed' }),
+    ).toBeTruthy()
+  })
+
+  it('prices a tile from its lowest Size, or at its one price, with servings when every Size has them', () => {
+    renderHome()
+
+    const tile = (title: string) => screen.getByRole('heading', { name: title }).closest('a')!
+
+    expect(within(tile('Indulgent Layer Cake')).getByText('from €52')).toBeTruthy()
+    expect(within(tile('Indulgent Layer Cake')).getByText('serves 10–20')).toBeTruthy()
+    expect(within(tile('Cheeky Bento Cake')).getByText('€25')).toBeTruthy()
+    expect(within(tile('Cheeky Bento Cake')).getByText('serves 2')).toBeTruthy()
+    expect(within(tile('Proefhapjes Box')).getByText('€29')).toBeTruthy()
+    expect(within(tile('Proefhapjes Box')).queryByText(/serves/)).toBeNull()
+  })
+
+  it('never sends the customer to a Category: no link into a section of a catalogue page', () => {
+    renderHome()
+
+    const hrefs = screen.getAllByRole('link').map((link) => link.getAttribute('href') ?? '')
+
+    expect(hrefs.filter((href) => href.includes('#'))).toEqual([])
   })
 
   it('states the facts from where they are kept: Lead time, pickup and the lowest price', () => {
@@ -153,7 +238,14 @@ describe('HomePage', () => {
 
   it('leaves out the Lead time fact rather than inventing one when the global is empty', () => {
     const { container } = render(
-      <HomePage locale="en" home={home} categories={categories} leadTime={{}} statement={null} />,
+      <HomePage
+        locale="en"
+        home={home}
+        categories={categories}
+        items={items}
+        leadTime={{}}
+        statement={null}
+      />,
     )
 
     expect([...container.querySelectorAll('dt')].map((each) => each.textContent)).toEqual([

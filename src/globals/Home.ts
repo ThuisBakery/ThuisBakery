@@ -11,7 +11,7 @@ import { DRAFTS_WITH_AUTOSAVE } from '@/versions'
  * Three facts are deliberately **not** here, because they are kept elsewhere and the
  * homepage must never contradict them: the Lead time comes from the Lead time global, the
  * starting price from the Categories, and the allergen notice's statement from the
- * cross-contamination global. The menu itself is the Categories, in their own order.
+ * cross-contamination global. The menu itself is the cakes, in their Categories’ order.
  */
 export const Home: GlobalConfig = {
   slug: 'home',
@@ -28,15 +28,19 @@ export const Home: GlobalConfig = {
         words('headline', 'The page’s heading — “Baked at home in Uithoorn”.'),
         paragraph('intro', 'One or two sentences under the heading.'),
         photograph(
-          'The photograph along the foot of the opening screen, cut by the bottom edge so it leads down into the menu. A wide shot works best.',
+          'The photograph beside the heading on a wide screen. Left out on a phone, so the cakes start on the first screen.',
         ),
         {
           type: 'row',
           fields: [
-            words('cakesLabel', 'The main button, to the cakes — “See the cakes”.', {
+            words('cakesLabel', 'The main button, to the cakes — “Choose a cake”.', {
               width: '50%',
             }),
-            words('nibblesLabel', 'The link beside it, to the nibbles.', { width: '50%' }),
+            words(
+              'nibblesLabel',
+              'The link to the nibbles, beside the button in the closing band.',
+              { width: '50%' },
+            ),
           ],
         },
       ],
@@ -47,7 +51,7 @@ export const Home: GlobalConfig = {
       label: 'Fact band',
       admin: {
         description:
-          'Three facts under the opening. The notice needed comes from Lead time, and the starting price from the Categories — only pickup and the line under the price are written here.',
+          'Three facts under the menu. The notice needed comes from Lead time, and the starting price from the Categories — only pickup and the line under the price are written here.',
       },
       fields: [
         words('pickupTitle', 'Where cakes are collected — “Pickup in Uithoorn”.'),
@@ -64,7 +68,8 @@ export const Home: GlobalConfig = {
       type: 'group',
       label: 'Menu',
       admin: {
-        description: 'The menu shows every Category, as it does on the catalogue pages.',
+        description:
+          'The menu shows every cake, in the Categories’ order, each linking to its own page.',
       },
       fields: [words('heading', 'The heading above the menu — “The menu”.')],
     },
