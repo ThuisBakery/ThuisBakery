@@ -61,21 +61,16 @@
   --color-accent-ink: var(--accent-ink);
   --color-rule: var(--rule);
 
-  --font-display: var(--font-cormorant), Georgia, serif;
+  /* Type and shape from ADR-0007, which supersedes ADR-0004's serif and square corners. */
+  --font-display: var(--font-bricolage), 'Avenir Next', ui-sans-serif, system-ui, sans-serif;
   --font-script: var(--font-parisienne), cursive;
   --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
 
-  /* Corner radius is 0 everywhere. Print does not round. Every radius utility resolves to
-     zero, so a stray `rounded-*` cannot soften a corner. */
+  /* One radius. Cards, photographs and inputs take `rounded-card`; buttons and chips take
+     `rounded-full`, a pill. Every other radius utility is cleared, so a stray `rounded-md`
+     generates nothing and cannot round a corner differently. */
   --radius-*: initial;
-  --radius-xs: 0;
-  --radius-sm: 0;
-  --radius-md: 0;
-  --radius-lg: 0;
-  --radius-xl: 0;
-  --radius-2xl: 0;
-  --radius-3xl: 0;
-  --radius-4xl: 0;
+  --radius-card: 12px;
 }
 
 /* Native form controls and scrollbars follow the theme, not only the device. */
@@ -96,9 +91,34 @@ body {
   color: var(--ink);
 }
 
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+/*
+ * Everything pressable looks pressable (ADR-0007). The pointer is set here, once, for every
+ * element a customer can press; the hover and press states are in `pressable.ts`, per kind
+ * of control. Tailwind's preflight leaves a button's cursor at the default.
+ */
+@layer base {
+  a[href],
+  button:not(:disabled),
+  summary,
+  select:not(:disabled),
+  label:has(> input:not(:disabled)),
+  input[type='checkbox']:not(:disabled),
+  input[type='radio']:not(:disabled),
+  input[type='file']:not(:disabled) {
+    cursor: pointer;
+  }
+
+  ::file-selector-button {
+    cursor: pointer;
+  }
+
+  /* The ring follows the element's own corners, so a pill gets a pill-shaped ring. It is in
+     the base layer so a utility can recolour it: on the olive band, where an olive ring
+     would vanish, `pressable.ts` turns it `accent-ink`. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 }
 
 /*
@@ -174,7 +194,9 @@ body {
   }
 }
 
-/* The motion budget is small (ADR-0004), and all of it collapses under reduced motion. */
+/* The motion budget is small (ADR-0004, ADR-0007), and all of it collapses under reduced
+   motion. Hover and press movement is also written `motion-safe:` wherever it is set, so
+   it is never applied at all, not merely applied instantly. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

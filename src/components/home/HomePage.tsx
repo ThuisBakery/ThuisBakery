@@ -3,6 +3,12 @@ import { CakeStand } from '@/components/site/CakeStand'
 import { Paragraphs } from '@/components/site/Paragraphs'
 import { Photograph } from '@/components/site/Photograph'
 import { Questions } from '@/components/site/Questions'
+import {
+  BUTTON,
+  BUTTON_ON_ACCENT,
+  TEXT_LINK,
+  TEXT_LINK_ON_ACCENT,
+} from '@/components/site/pressable'
 import { Reveal } from '@/components/site/Reveal'
 import { fromPrice, leadTimeFact } from '@/domain/home'
 import { catalogueSections } from '@/domain/menu'
@@ -11,14 +17,6 @@ import type { Category, Home, LeadTime } from '@/payload-types'
 
 /** The Lead time global as read: empty when it has never been saved. */
 type LeadTimeFigures = Partial<Pick<LeadTime, 'days' | 'timeOfDay'>>
-
-/** The one secondary link style on the page: the nibbles beside the cakes, and Meet Jana. */
-const TEXT_LINK =
-  'inline-flex min-h-11 items-center text-sm tracking-wide underline underline-offset-4 transition-colors duration-200'
-
-/** Pressed feedback on a button-weight link — motion, so only when motion is welcome. */
-const PRESS =
-  'motion-safe:transition-transform motion-safe:duration-200 motion-safe:active:translate-y-px'
 
 /**
  * `/` and `/nl` (ADR-0004): eight sections, eight layout families, no eyebrow labels, and
@@ -81,13 +79,10 @@ const Hero = ({ hero, cakes, nibbles }: { hero: Home['hero']; cakes: string; nib
         {hero.intro}
       </p>
       <div className="mt-9 flex flex-col items-center gap-2 sm:flex-row sm:gap-6">
-        <a
-          href={cakes}
-          className={`bg-accent px-8 py-3.5 text-sm tracking-wide whitespace-nowrap text-accent-ink ${PRESS}`}
-        >
+        <a href={cakes} className={BUTTON}>
           {hero.cakesLabel}
         </a>
-        <a href={nibbles} className={`${TEXT_LINK} decoration-rule hover:decoration-ink`}>
+        <a href={nibbles} className={TEXT_LINK}>
           {hero.nibblesLabel}
         </a>
       </div>
@@ -96,7 +91,7 @@ const Hero = ({ hero, cakes, nibbles }: { hero: Home['hero']; cakes: string; nib
       media={hero.photograph}
       sizes="100vw"
       preload
-      className="h-[36svh] w-full shrink-0 bg-raised object-cover md:h-[42svh]"
+      className="h-[36svh] w-full shrink-0 rounded-card bg-raised object-cover md:h-[42svh]"
     />
   </section>
 )
@@ -119,7 +114,7 @@ const FactBand = ({
       : null
   const price = fromPrice(categories, locale)
 
-  // A price is set in Geist, as everywhere on the site (ADR-0004); the words in her serif.
+  // A price is set in Geist, as everywhere on the site (ADR-0007); the words in display.
   const rows = [
     leadTimeRow && { ...leadTimeRow, price: false },
     { title: facts.pickupTitle, detail: facts.pickupDetail, price: false },
@@ -198,7 +193,7 @@ const About = ({ locale, about }: { locale: Locale; about: Home['about'] }) => (
           media={about.photograph}
           sizes="(min-width: 768px) 45vw, 100vw"
           preload={false}
-          className="aspect-[4/5] w-full bg-ground object-cover md:aspect-auto md:h-[64vh]"
+          className="aspect-[4/5] w-full rounded-card bg-ground object-cover md:aspect-auto md:h-[64vh]"
         />
       </Reveal>
       <Reveal delay={80}>
@@ -209,10 +204,7 @@ const About = ({ locale, about }: { locale: Locale; about: Home['about'] }) => (
           text={about.body}
           className="mt-5 max-w-[48ch] text-[15px] leading-relaxed text-ink-muted"
         />
-        <a
-          href={pagePath('about', locale)}
-          className={`mt-8 ${TEXT_LINK} decoration-rule hover:decoration-ink`}
-        >
+        <a href={pagePath('about', locale)} className={`mt-8 ${TEXT_LINK}`}>
           {about.linkLabel}
         </a>
       </Reveal>
@@ -250,7 +242,7 @@ const Quote = ({ quote }: { quote: Home['quote'] }) => (
   <section className="px-4 pb-20 md:px-10 md:pb-24">
     <Reveal>
       <figure className="mx-auto max-w-[900px] text-center">
-        <blockquote className="font-display text-[26px] leading-[1.35] italic md:text-[40px]">
+        <blockquote className="font-display text-[26px] leading-[1.35] md:text-[40px]">
           <p>“{quote.text}”</p>
         </blockquote>
         <figcaption className="mt-8 text-sm tracking-wide text-ink-muted">
@@ -280,13 +272,10 @@ const Closing = ({
       </h2>
       <p className="mx-auto mt-5 max-w-[52ch] text-[15px] leading-relaxed">{closing.body}</p>
       <div className="mt-10 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-6">
-        <a
-          href={cakes}
-          className={`bg-accent-ink px-8 py-4 text-sm tracking-wide whitespace-nowrap text-accent ${PRESS}`}
-        >
+        <a href={cakes} className={BUTTON_ON_ACCENT}>
           {labels.cakesLabel}
         </a>
-        <a href={nibbles} className={TEXT_LINK}>
+        <a href={nibbles} className={TEXT_LINK_ON_ACCENT}>
           {labels.nibblesLabel}
         </a>
       </div>

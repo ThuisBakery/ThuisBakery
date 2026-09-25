@@ -2,6 +2,7 @@ import { MessageForm } from '@/components/enquiry/MessageForm'
 import { JsonLd } from '@/components/site/JsonLd'
 import { Paragraphs } from '@/components/site/Paragraphs'
 import { Photograph } from '@/components/site/Photograph'
+import { DESCENDANT_LINKS, PHOTO_FRAME, TEXT_LINK } from '@/components/site/pressable'
 import { Questions } from '@/components/site/Questions'
 import {
   AREA_SERVED,
@@ -15,10 +16,6 @@ import { DICTIONARY } from '@/domain/dictionary'
 import { pagePath, type Locale } from '@/domain/routes'
 import { bakeryMarkup } from '@/domain/structured-data'
 import type { Contact, Media } from '@/payload-types'
-
-/** The one secondary link style, as the homepage sets it. */
-const TEXT_LINK =
-  'inline-flex min-h-11 items-center text-sm tracking-wide underline underline-offset-4 transition-colors duration-200 hover:text-accent'
 
 /** The form's anchor. */
 const FORM_ID = 'ask'
@@ -102,9 +99,7 @@ export const ContactPage = ({
                   className="grid gap-1 border-b border-rule py-4 md:grid-cols-3 md:gap-4"
                 >
                   <dt className="text-[13px] tracking-wide text-ink-muted">{term}</dt>
-                  <dd className="md:col-span-2 [&_a]:underline [&_a]:underline-offset-4 [&_a:hover]:text-accent">
-                    {value}
-                  </dd>
+                  <dd className={`md:col-span-2 ${DESCENDANT_LINKS}`}>{value}</dd>
                 </div>
               ))}
               {hours.length > 0 ? (
@@ -141,7 +136,7 @@ export const ContactPage = ({
           </div>
 
           {image ? (
-            <div className="overflow-hidden bg-raised md:col-span-5 md:col-start-8">
+            <div className={`${PHOTO_FRAME} md:col-span-5 md:col-start-8`}>
               <Photograph
                 media={image}
                 sizes="(min-width: 768px) 40vw, 100vw"

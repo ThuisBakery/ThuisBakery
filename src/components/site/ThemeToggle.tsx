@@ -13,6 +13,8 @@ import {
   type Theme,
 } from '@/domain/theme'
 
+import { ICON_BUTTON } from './pressable'
+
 /*
  * The root element's `data-theme` is the one source of truth on the page: the pre-paint
  * script in the layout sets it from storage, the stylesheet's tokens key on it, and this
@@ -91,7 +93,7 @@ export const ThemeToggle = ({ locale }: { locale: Locale }) => {
       type="button"
       onClick={() => choose(next)}
       aria-label={words.toggle(words.names[theme], words.names[next])}
-      className="inline-flex size-9.5 shrink-0 items-center justify-center border border-ink transition-colors duration-300 hover:bg-ink hover:text-ground motion-safe:active:translate-y-px"
+      className={ICON_BUTTON}
     >
       <svg aria-hidden="true" viewBox="0 0 256 256" fill="currentColor" className="size-4.5">
         <path d={ICONS[theme]} />

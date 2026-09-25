@@ -1,6 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata } from 'next'
-import { Cormorant_Garamond, Geist, Parisienne } from 'next/font/google'
+import { Bricolage_Grotesque, Geist, Parisienne } from 'next/font/google'
 import { notFound } from 'next/navigation'
 import { locale } from 'next/root-params'
 import type { ReactNode } from 'react'
@@ -15,16 +15,17 @@ import { siteOrigin } from '@/lib/site'
 import '../styles.css'
 
 /*
- * Type from ADR-0004. Cormorant Garamond carries display and italic, matching the serif on
- * Jana's card; Geist carries everything functional, because a high-contrast serif at 14px
- * on a phone is not readable; Parisienne is the wordmark, once per page. Self-hosted by
- * `next/font` at build time, so no request reaches Google and no cookie is set.
+ * Type from ADR-0007, which replaced ADR-0004's display serif. Bricolage Grotesque carries
+ * display, as the variable font with its optical-size axis, so a 40px heading and a 20px
+ * question are each drawn for their size. It has no italic, and none is synthesised
+ * anywhere. Geist carries body, prices and forms. Parisienne is the wordmark, once per page.
+ * Self-hosted by `next/font` at build time, so no request reaches Google and no cookie is
+ * set.
  */
-const cormorant = Cormorant_Garamond({
+const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  style: ['normal', 'italic'],
-  variable: '--font-cormorant',
+  axes: ['opsz'],
+  variable: '--font-bricolage',
   display: 'swap',
 })
 
@@ -80,7 +81,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html
       lang={current}
-      className={`${cormorant.variable} ${geist.variable} ${parisienne.variable}`}
+      className={`${bricolage.variable} ${geist.variable} ${parisienne.variable}`}
       data-theme={DEFAULT_THEME}
       suppressHydrationWarning
     >

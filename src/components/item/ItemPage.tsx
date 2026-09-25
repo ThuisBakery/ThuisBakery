@@ -6,6 +6,7 @@ import { EnquiryForm } from '@/components/enquiry/EnquiryForm'
 import { CakeStand } from '@/components/site/CakeStand'
 import { JsonLd } from '@/components/site/JsonLd'
 import { Photograph } from '@/components/site/Photograph'
+import { NAV_LINK, PHOTO_FRAME, ROW_LINK, TEXT_LINK } from '@/components/site/pressable'
 import { DICTIONARY } from '@/domain/dictionary'
 import { itemOffer } from '@/domain/enquiry'
 import { leadTimeFact } from '@/domain/home'
@@ -13,10 +14,6 @@ import { itemLeadTime, occasionLinks, plainText, siblingItems } from '@/domain/i
 import { cataloguePath, itemPath, pagePath, type Catalogue, type Locale } from '@/domain/routes'
 import { breadcrumbMarkup, productMarkup } from '@/domain/structured-data'
 import type { ClosedUntil, Filling, Item, LeadTime, Media, Sponge } from '@/payload-types'
-
-/** The one secondary link style, as the homepage sets it. */
-const TEXT_LINK =
-  'inline-flex min-h-11 items-center text-sm tracking-wide underline underline-offset-4 transition-colors duration-200 hover:text-accent'
 
 /** A section's small heading down the details column. */
 const LABEL = 'font-sans text-[13px] tracking-wide text-ink-muted'
@@ -128,7 +125,7 @@ export const ItemPage = ({
                   ) : (
                     <a
                       href={crumb.path}
-                      className="inline-flex min-h-11 items-center hover:text-ink"
+                      className={`inline-flex min-h-11 items-center ${NAV_LINK}`}
                     >
                       {crumb.name}
                     </a>
@@ -158,7 +155,7 @@ export const ItemPage = ({
             {item.description ? (
               <RichText
                 data={item.description}
-                className="mt-6 space-y-4 font-display text-lg leading-relaxed"
+                className="mt-6 space-y-4 text-lg leading-relaxed"
               />
             ) : null}
 
@@ -221,10 +218,7 @@ export const ItemPage = ({
             <ul className="mt-6 border-t border-rule">
               {siblings.map(({ item: sibling }) => (
                 <li key={sibling.id} className="border-b border-rule">
-                  <a
-                    href={itemPath(catalogue, locale, sibling.slug)}
-                    className="flex min-h-12 items-baseline justify-between gap-4 py-3 transition-colors duration-200 hover:text-accent active:bg-raised"
-                  >
+                  <a href={itemPath(catalogue, locale, sibling.slug)} className={ROW_LINK}>
                     <span className="font-display text-xl leading-snug">{sibling.title}</span>
                   </a>
                 </li>
@@ -277,7 +271,7 @@ const Photographs = ({ photographs }: { photographs: Media[] }) => {
     <div className="item-photographs md:col-span-7" style={style}>
       <div className="item-photographs-stack flex flex-col gap-4">
         <div className="item-photographs-lead">
-          <div className="overflow-hidden bg-raised">
+          <div className={PHOTO_FRAME}>
             <Photograph
               media={first}
               sizes="(min-width: 768px) 58vw, 100vw"
@@ -289,7 +283,7 @@ const Photographs = ({ photographs }: { photographs: Media[] }) => {
         {rest.length > 0 ? (
           <div className="grid grid-cols-2 gap-4">
             {rest.map((photograph) => (
-              <div key={photograph.id} className="overflow-hidden bg-raised">
+              <div key={photograph.id} className={PHOTO_FRAME}>
                 <Photograph
                   media={photograph}
                   sizes="(min-width: 768px) 29vw, 50vw"

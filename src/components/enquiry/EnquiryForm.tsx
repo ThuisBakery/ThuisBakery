@@ -2,6 +2,7 @@
 
 import { useRef, useState, type FormEvent, type ReactNode } from 'react'
 
+import { CHIP, CHOICE_CARD } from '@/components/site/pressable'
 import { DICTIONARY } from '@/domain/dictionary'
 import {
   MAX_QUANTITY,
@@ -387,13 +388,10 @@ const Choice = ({
                 onChange={() => onChange(option.value)}
                 onBlur={onBlur}
                 aria-describedby={describedBy.length > 0 ? describedBy.join(' ') : undefined}
-                className="peer absolute inset-0 opacity-0"
+                className="peer absolute inset-0 z-10 opacity-0"
               />
-              <div className="flex min-h-11 flex-wrap items-center gap-x-1.5 border border-rule px-3 py-2 text-sm peer-checked:border-ink peer-checked:bg-ink peer-checked:text-ground peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent">
-                <label
-                  htmlFor={id}
-                  className={stacked ? 'cursor-pointer text-base' : 'cursor-pointer'}
-                >
+              <div className={stacked ? CHOICE_CARD : CHIP}>
+                <label htmlFor={id} className={stacked ? 'text-base' : undefined}>
                   {option.label}
                 </label>
                 {option.aside ? (

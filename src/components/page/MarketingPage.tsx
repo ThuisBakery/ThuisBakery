@@ -1,20 +1,21 @@
 import { CmsRichText } from '@/components/site/CmsRichText'
 import { Photograph } from '@/components/site/Photograph'
+import {
+  BUTTON,
+  BUTTON_OUTLINE_LARGE,
+  PHOTO_FRAME,
+  ROW_LINK,
+  TEXT_LINK,
+} from '@/components/site/pressable'
 import { DICTIONARY } from '@/domain/dictionary'
 import { hasHeading, linkHref, linkTargetKey, type CmsLink } from '@/domain/page'
 import type { Locale } from '@/domain/routes'
 import type { CallToActionBlock, ContentBlock, Item, MediaBlock, Page } from '@/payload-types'
 
-/** The one secondary link style, as the homepage sets it. */
-const TEXT_LINK =
-  'inline-flex min-h-11 items-center text-sm tracking-wide underline underline-offset-4 transition-colors duration-200 hover:text-accent'
-
-/** A call to action, as the Item page sets its own; `outline` is the template's second look. */
-const BUTTON = {
-  default:
-    'inline-flex min-h-12 items-center bg-accent px-8 py-3.5 text-sm tracking-wide text-accent-ink motion-safe:transition-transform motion-safe:duration-200 motion-safe:active:translate-y-px',
-  outline:
-    'inline-flex min-h-12 items-center border border-ink px-8 py-3.5 text-sm tracking-wide transition-colors duration-200 hover:bg-raised motion-safe:active:translate-y-px',
+/** A call to action, as the rest of the site sets it; `outline` is the template's second look. */
+const BUTTONS = {
+  default: BUTTON,
+  outline: BUTTON_OUTLINE_LARGE,
 } as const
 
 /** Where each of the template's column sizes sits on the twelve-column grid. */
@@ -85,10 +86,7 @@ export const MarketingPage = ({
             <ul className="mt-6 border-t border-rule">
               {items.map((item) => (
                 <li key={item.id} className="border-b border-rule">
-                  <a
-                    href={item.href}
-                    className="flex min-h-12 items-baseline justify-between gap-4 py-3 transition-colors duration-200 hover:text-accent active:bg-raised"
-                  >
+                  <a href={item.href} className={ROW_LINK}>
                     <span className="font-display text-xl leading-snug">{item.title}</span>
                   </a>
                 </li>
@@ -137,7 +135,7 @@ const Hero = ({ page, targets }: { page: Page; targets: ReadonlyMap<string, stri
   if (type === 'highImpact') {
     return (
       <header className="grid gap-8">
-        <div className="overflow-hidden bg-raised">
+        <div className={PHOTO_FRAME}>
           <Photograph
             media={media}
             sizes="100vw"
@@ -153,7 +151,7 @@ const Hero = ({ page, targets }: { page: Page; targets: ReadonlyMap<string, stri
   if (type === 'mediumImpact') {
     return (
       <header className="grid items-center gap-10 md:grid-cols-12 md:gap-x-12">
-        <div className="overflow-hidden bg-raised md:col-span-7">
+        <div className={`${PHOTO_FRAME} md:col-span-7`}>
           <Photograph
             media={media}
             sizes="(min-width: 768px) 58vw, 100vw"
@@ -206,7 +204,7 @@ const CallToAction = ({
 )
 
 const MediaFigure = ({ block }: { block: MediaBlock }) => (
-  <figure className="overflow-hidden bg-raised">
+  <figure className={PHOTO_FRAME}>
     <Photograph
       media={block.media}
       sizes="(min-width: 1400px) 1400px, 100vw"
@@ -258,7 +256,7 @@ const CmsLinkView = ({
   button?: boolean
 }) => {
   const href = linkHref(link, targets)
-  const className = button ? BUTTON[link.appearance ?? 'default'] : TEXT_LINK
+  const className = button ? BUTTONS[link.appearance ?? 'default'] : TEXT_LINK
 
   if (href === null) {
     return (

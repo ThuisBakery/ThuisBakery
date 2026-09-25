@@ -102,7 +102,7 @@ describe('CataloguePage', () => {
     })
   })
 
-  it('carries the card’s lines: tagline, the italic note where she wrote one, and the price', () => {
+  it('carries the card’s lines: tagline, her note where she wrote one, and the price', () => {
     render(<CataloguePage locale="nl" catalogue="cakes" categories={categories} items={items} />)
 
     const bento = screen.getByRole('heading', { name: 'Cheeky Bento Cakes' }).closest('li')
@@ -122,7 +122,7 @@ describe('CataloguePage', () => {
     expect(link.textContent).toContain('€56')
   })
 
-  it('has no buttons anywhere — no buy button, no cart', () => {
+  it('is links, not buttons — no buy button, no cart', () => {
     render(<CataloguePage locale="en" catalogue="nibbles" categories={categories} items={items} />)
 
     expect(screen.queryAllByRole('button')).toEqual([])

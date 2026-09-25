@@ -2,6 +2,8 @@ import { DICTIONARY } from '@/domain/dictionary'
 import { otherLocale, pagePath, type Locale, type CodedPage } from '@/domain/routes'
 import { cn } from '@/lib/utils'
 
+import { BUTTON_OUTLINE } from './pressable'
+
 /**
  * The language switcher (ADR-0002). Labelled in the language it leads to, never a flag —
  * a flag is a country, not a language — and landing on the same page in the other locale
@@ -33,10 +35,7 @@ export const LanguageSwitcher = ({
       href={alternate ?? pagePath(page ?? 'home', target)}
       lang={target}
       hrefLang={target}
-      className={cn(
-        'inline-flex items-center border border-ink px-4 py-2 text-[13px] tracking-wide whitespace-nowrap transition-colors duration-300 hover:bg-ink hover:text-ground active:translate-y-px',
-        className,
-      )}
+      className={cn(BUTTON_OUTLINE, className)}
     >
       {DICTIONARY[locale].switchLanguage}
     </a>
