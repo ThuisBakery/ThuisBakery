@@ -1,5 +1,6 @@
 import type { EnquiryProblem } from './enquiry'
 import type { Locale, CodedPage } from './routes'
+import type { Theme } from './theme'
 
 /**
  * The shell's own words, per locale — the few strings that are code rather than content.
@@ -19,6 +20,12 @@ export type Dictionary = {
   footerNav: string
   menu: string
   close: string
+  /** The header's theme control (ADR-0007). */
+  theme: {
+    names: Record<Theme, string>
+    /** Its accessible name, which says both the current theme and the next. */
+    toggle: (current: string, next: string) => string
+  }
   /** Before a starting price, lower case: `from €25`. */
   priceFrom: string
   /** The accessible name of a catalogue page's in-page index of its Categories. */
@@ -155,6 +162,10 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
     footerNav: 'All pages',
     menu: 'Menu',
     close: 'Close',
+    theme: {
+      names: { system: 'System', light: 'Light', dark: 'Dark' },
+      toggle: (current, next) => `Theme: ${current}. Switch to ${next}`,
+    },
     priceFrom: 'from',
     categoryIndex: 'Jump to',
     pageTitles: {
@@ -282,6 +293,10 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
     footerNav: 'Alle pagina’s',
     menu: 'Menu',
     close: 'Sluiten',
+    theme: {
+      names: { system: 'Systeem', light: 'Licht', dark: 'Donker' },
+      toggle: (current, next) => `Thema: ${current}. Wissel naar ${next}`,
+    },
     priceFrom: 'vanaf',
     categoryIndex: 'Ga naar',
     pageTitles: {

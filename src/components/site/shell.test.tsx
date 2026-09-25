@@ -1,12 +1,18 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { Footer, Header } from '@/payload-types'
 
 import { SiteFooter } from './SiteFooter'
 import { SiteHeader } from './SiteHeader'
+import { ThemeScript } from './ThemeScript'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+  localStorage.clear()
+  document.documentElement.removeAttribute('data-theme')
+})
 
 const header: Header = {
   id: 1,
@@ -81,6 +87,120 @@ describe('SiteHeader', () => {
     render(<SiteHeader locale="nl" page="cakes" header={dutchHeader} />)
 
     expect(screen.getByRole('link', { name: 'ThuisBakery' }).getAttribute('href')).toBe('/nl')
+  })
+})
+
+describe('the theme toggle', () => {
+  const theme = () => document.documentElement.getAttribute('data-theme')
+
+  it('starts on System, which follows the device', () => {
+    render(<SiteHeader locale="en" page="home" header={header} />)
+
+    expect(screen.getByRole('button', { name: 'Theme: System. Switch to Light' })).toBeTruthy()
+    expect(theme()).toBe('system')
+  })
+
+  it('cycles System, Light, Dark and back, and the page follows each', () => {
+    render(<SiteHeader locale="en" page="home" header={header} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Theme: System. Switch to Light' }))
+    expect(theme()).toBe('light')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Theme: Light. Switch to Dark' }))
+    expect(theme()).toBe('dark')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Theme: Dark. Switch to System' }))
+    expect(theme()).toBe('system')
+  })
+
+  it('remembers the choice on the next page', () => {
+    render(<SiteHeader locale="en" page="home" header={header} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Theme: System. Switch to Light' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Theme: Light. Switch to Dark' }))
+    cleanup()
+    document.documentElement.removeAttribute('data-theme')
+
+    render(<SiteHeader locale="en" page="cakes" header={header} />)
+
+    expect(screen.getByRole('button', { name: 'Theme: Dark. Switch to System' })).toBeTruthy()
+    expect(theme()).toBe('dark')
+  })
+
+  it('names the themes in Dutch on a Dutch page', () => {
+    localStorage.setItem('thuisbakery-theme', 'light')
+
+    render(<SiteHeader locale="nl" page="home" header={dutchHeader} />)
+
+    expect(screen.getByRole('button', { name: 'Thema: Licht. Wissel naar Donker' })).toBeTruthy()
+  })
+
+  it('falls back to System on a stored value it does not know', () => {
+    localStorage.setItem('thuisbakery-theme', 'sepia')
+
+    render(<SiteHeader locale="en" page="home" header={header} />)
+
+    expect(screen.getByRole('button', { name: 'Theme: System. Switch to Light' })).toBeTruthy()
+    expect(theme()).toBe('system')
+  })
+
+  it('still switches, starting from System, when the browser blocks storage', () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('Blocked', 'SecurityError')
+    })
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Blocked', 'SecurityError')
+    })
+
+    const errors = vi.fn()
+    window.addEventListener('error', errors)
+
+    render(<SiteHeader locale="en" page="home" header={header} />)
+    expect(theme()).toBe('system')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Theme: System. Switch to Light' }))
+    window.removeEventListener('error', errors)
+
+    expect(screen.getByRole('button', { name: 'Theme: Light. Switch to Dark' })).toBeTruthy()
+    expect(theme()).toBe('light')
+    expect(errors).not.toHaveBeenCalled()
+  })
+})
+
+/*
+ * The layout's pre-paint script, run as the browser runs it: once, on its own, before React.
+ * React does not execute a rendered script, so the test does.
+ */
+describe('the pre-paint theme script', () => {
+  const runThemeScript = () => {
+    const { container } = render(<ThemeScript />)
+
+    new Function(container.querySelector('script')?.textContent ?? '')()
+
+    return document.documentElement.getAttribute('data-theme')
+  }
+
+  it('applies the stored choice to the page before it is painted', () => {
+    localStorage.setItem('thuisbakery-theme', 'dark')
+
+    expect(runThemeScript()).toBe('dark')
+  })
+
+  it('leaves a first visit on System', () => {
+    expect(runThemeScript()).toBe('system')
+  })
+
+  it('leaves a stored value it does not know on System', () => {
+    localStorage.setItem('thuisbakery-theme', '"><img>')
+
+    expect(runThemeScript()).toBe('system')
+  })
+
+  it('leaves the page on System, without throwing, when storage is blocked', () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('Blocked', 'SecurityError')
+    })
+
+    expect(runThemeScript()).toBe('system')
   })
 })
 

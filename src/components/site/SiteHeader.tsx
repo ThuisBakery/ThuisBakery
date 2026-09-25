@@ -5,13 +5,14 @@ import type { Header } from '@/payload-types'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { resolveLinks } from '@/domain/links'
 import { MobileMenu } from './MobileMenu'
+import { ThemeToggle } from './ThemeToggle'
 import { Wordmark } from './Wordmark'
 
 /**
  * The site header: the wordmark, the four nav links and the Custom order button from the
  * Header global (ADR-0003), and the language switcher beside them. The switcher stays
- * visible at every width, because it is load-bearing (ADR-0002); only the nav folds into a
- * menu on a phone.
+ * visible at every width, because it is load-bearing (ADR-0002), and so does the theme control
+ * (ADR-0007); only the nav folds into a menu on a phone.
  */
 export const SiteHeader = ({
   locale,
@@ -68,6 +69,7 @@ export const SiteHeader = ({
           </a>
         </nav>
         <div className="flex items-center gap-2">
+          <ThemeToggle locale={locale} />
           <LanguageSwitcher locale={locale} page={page} alternate={alternate} />
           <MobileMenu
             links={links}

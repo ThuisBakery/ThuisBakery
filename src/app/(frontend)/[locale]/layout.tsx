@@ -6,8 +6,10 @@ import { locale } from 'next/root-params'
 import type { ReactNode } from 'react'
 
 import { JsonLd } from '@/components/site/JsonLd'
+import { ThemeScript } from '@/components/site/ThemeScript'
 import { LOCALES, isLocale } from '@/domain/routes'
 import { organizationMarkup, websiteMarkup } from '@/domain/structured-data'
+import { DEFAULT_THEME } from '@/domain/theme'
 import { siteOrigin } from '@/lib/site'
 
 import '../styles.css'
@@ -62,6 +64,11 @@ export const dynamicParams = false
  * the privacy page's no-consent-banner position true (ADR-0006). Google Analytics was
  * rejected on exactly that basis. Nothing added to the site may set a non-essential cookie:
  * see `docs/agents/build-conventions.md`.
+ *
+ * The theme choice (ADR-0007) is applied in `<head>` before first paint, from localStorage
+ * rather than a cookie for the same reason. `<html>` renders System and the script may
+ * change it before React hydrates, hence `suppressHydrationWarning`, which covers that
+ * element's own attributes and nothing below it.
  */
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const current = await locale()
@@ -74,7 +81,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html
       lang={current}
       className={`${cormorant.variable} ${geist.variable} ${parisienne.variable}`}
+      data-theme={DEFAULT_THEME}
+      suppressHydrationWarning
     >
+      <head>
+        <ThemeScript />
+      </head>
       <body className="bg-ground font-sans text-ink antialiased">
         <JsonLd data={[organizationMarkup(siteOrigin()), websiteMarkup(current, siteOrigin())]} />
         {children}
