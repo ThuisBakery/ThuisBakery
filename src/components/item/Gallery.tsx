@@ -5,20 +5,18 @@ import { useState } from 'react'
 
 import { Photograph } from '@/components/site/Photograph'
 import { PHOTO_FRAME, THUMBNAIL } from '@/components/site/pressable'
+import { DICTIONARY } from '@/domain/dictionary'
+import type { Locale } from '@/domain/routes'
 import type { Media } from '@/payload-types'
 
 /**
  * An Item's photographs (ADR-0007): one main photograph, and a thumbnail button for each
  * that swaps it in, marked while it is the one shown. One photograph has no thumbnails.
  */
-export const Gallery = ({
-  photographs,
-  label,
-}: {
-  photographs: Media[]
-  /** A thumbnail's accessible name, from its number. */
-  label: (number: number) => string
-}) => {
+export const Gallery = ({ photographs, locale }: { photographs: Media[]; locale: Locale }) => {
+  // Its words are read here, not passed in: a thumbnail's name is a function of its number,
+  // and a function cannot cross from the server-rendered page to a client component.
+  const label = DICTIONARY[locale].item.showPhotograph
   const [shown, setShown] = useState(0)
   const main = photographs[shown] ?? photographs[0]
 

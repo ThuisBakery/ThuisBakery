@@ -172,7 +172,7 @@ export const ItemPage = ({
 
           <div className="mt-2 grid gap-6 md:mt-4 md:grid-cols-12 md:gap-x-12">
             <div className={`md:col-span-7 ${STICKY}`}>
-              <Gallery photographs={photographs} label={words.item.showPhotograph} />
+              <Gallery photographs={photographs} locale={locale} />
             </div>
 
             <div className={`md:col-span-5 ${STICKY}`}>
