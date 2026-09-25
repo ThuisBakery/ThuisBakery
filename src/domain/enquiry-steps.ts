@@ -6,7 +6,7 @@ import type { EnquiryField, EnquiryProblems, ItemOffer } from './enquiry'
  * a problem the route handler names opens the step that owns its field.
  *
  * The rules are written for any stepped sheet: a sheet is an ordered list of steps and a
- * record of the fields each one owns. The Item's Enquiry is the first such sheet.
+ * record of the fields each one owns. The Item's Enquiry and Custom order are the two.
  */
 
 /** The fields each step owns, in the order they appear on it. */
@@ -38,6 +38,30 @@ export const itemEnquirySteps = (
   'date',
   'you',
 ]
+
+/** The steps of a Custom order, which are always the same four. */
+export type CustomOrderStep = 'idea' | 'when' | 'photo' | 'you'
+
+/**
+ * A Custom order: the Idea in the customer's own words, When (the Requested pickup date, and
+ * roughly how many people), an optional Inspiration photo, then the customer. The Occasion
+ * and the head count are written into the message (`custom-order.ts`), so a problem with any
+ * of the Idea is the message's.
+ */
+export const CUSTOM_ORDER_STEPS: [CustomOrderStep, ...CustomOrderStep[]] = [
+  'idea',
+  'when',
+  'photo',
+  'you',
+]
+
+/** What each step of a Custom order asks for. */
+export const CUSTOM_ORDER_STEP_FIELDS: StepFields<CustomOrderStep> = {
+  idea: ['message'],
+  when: ['requestedPickupDate'],
+  photo: ['photo'],
+  you: ['name', 'email', 'phone'],
+}
 
 /** The problems among `fields`, or `null` when they have none. */
 export const problemsOn = (

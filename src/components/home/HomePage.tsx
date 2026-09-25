@@ -1,3 +1,4 @@
+import { SomethingCustom } from '@/components/enquiry/CustomOrderHost'
 import { ItemTiles } from '@/components/menu/ItemTiles'
 import { CakeStand } from '@/components/site/CakeStand'
 import { Paragraphs } from '@/components/site/Paragraphs'
@@ -89,10 +90,9 @@ const Hero = ({ locale, hero, cakes }: { locale: Locale; hero: Home['hero']; cak
           <a href={cakes} className={BUTTON}>
             {hero.cakesLabel}
           </a>
-          {/* A plain link until the Custom order sheet can open in place (ADR-0007). */}
-          <a href={pagePath('customOrder', locale)} className={BUTTON_OUTLINE_LARGE}>
+          <SomethingCustom locale={locale} className={BUTTON_OUTLINE_LARGE}>
             {DICTIONARY[locale].somethingCustom}
-          </a>
+          </SomethingCustom>
         </div>
       </div>
       <Photograph

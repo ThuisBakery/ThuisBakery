@@ -33,9 +33,10 @@ export const Stepper = ({
   /** The minus and plus buttons' accessible names. */
   fewer: string
   more: string
-  /** The count's field, as `useProblems` gives it. */
-  field: ReturnType<FieldProps>
-  problem: ReactNode
+  /** The count's field, as `useProblems` gives it, or as much of it as a count needs. */
+  field: Pick<ReturnType<FieldProps>, 'id' | 'name' | 'aria-describedby'>
+  /** What is wrong with the count; a count that is never validated has nothing here. */
+  problem?: ReactNode
 }) => {
   const atMin = value - step < min
   const atMax = value + step > max

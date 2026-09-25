@@ -10,6 +10,7 @@ import {
 } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { CustomOrderHost } from '@/components/enquiry/CustomOrderHost'
 import type { Receipt } from '@/domain/submit-enquiry'
 import type { Allergen, Category, Filling, Item, LeadTime, Media, Sponge } from '@/payload-types'
 
@@ -379,6 +380,37 @@ describe('ItemPage — the foot', () => {
     expect(screen.getByRole('link', { name: 'Something custom' }).getAttribute('href')).toBe(
       '/custom-order',
     )
+  })
+
+  it('opens the Custom order sheet in place from its foot, not the Item’s Enquiry', () => {
+    // Inside the site-wide host, as the frontend layout renders every page.
+    render(
+      <CustomOrderHost
+        locale="en"
+        leadTime={{ days: 3, timeOfDay: '17:00' }}
+        closedUntil={null}
+        closedNotice={null}
+      >
+        <ItemPage
+          locale="en"
+          catalogue="cakes"
+          item={cheesecake}
+          items={items}
+          sponges={sponges}
+          fillings={fillings}
+          leadTime={siteLeadTime}
+          closedUntil={{}}
+          statement={statement}
+          occasionPages={new Map()}
+          origin="https://thuisbakery.nl"
+        />
+      </CustomOrderHost>,
+    )
+
+    fireEvent.click(screen.getByRole('link', { name: 'Something custom' }))
+
+    expect(screen.getByRole('dialog', { name: 'Tell Jana your idea' })).toBeTruthy()
+    expect(screen.queryByRole('dialog', { name: 'Choose a size' })).toBeNull()
   })
 
   it('puts the Occasions and the siblings after the details column', () => {

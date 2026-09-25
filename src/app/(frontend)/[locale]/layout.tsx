@@ -1,12 +1,16 @@
+import configPromise from '@payload-config'
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata } from 'next'
 import { Bricolage_Grotesque, Geist, Parisienne } from 'next/font/google'
 import { notFound } from 'next/navigation'
 import { locale } from 'next/root-params'
+import { getPayload } from 'payload'
 import type { ReactNode } from 'react'
 
+import { CustomOrderHost } from '@/components/enquiry/CustomOrderHost'
 import { JsonLd } from '@/components/site/JsonLd'
 import { ThemeScript } from '@/components/site/ThemeScript'
+import { storedLeadTime } from '@/domain/lead-time'
 import { LOCALES, isLocale } from '@/domain/routes'
 import { organizationMarkup, websiteMarkup } from '@/domain/structured-data'
 import { DEFAULT_THEME } from '@/domain/theme'
@@ -66,6 +70,11 @@ export const dynamicParams = false
  * rejected on exactly that basis. Nothing added to the site may set a non-essential cookie:
  * see `docs/agents/build-conventions.md`.
  *
+ * The Custom order sheet is hosted here too (ADR-0007): every **Something custom** control on
+ * every page opens it in place, so the two globals its calendar is held to — the site's Lead
+ * time and Closed until — are fetched once here rather than by each page. Like the pages,
+ * this runs at build time and again when Jana's edits revalidate them.
+ *
  * The theme choice (ADR-0007) is applied in `<head>` before first paint, from localStorage
  * rather than a cookie for the same reason. `<html>` renders System and the script may
  * change it before React hydrates, hence `suppressHydrationWarning`, which covers that
@@ -77,6 +86,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   if (!isLocale(current)) {
     notFound()
   }
+
+  const payload = await getPayload({ config: configPromise })
+  const [leadTime, closedUntil] = await Promise.all([
+    payload.findGlobal({ slug: 'lead-time', depth: 0 }),
+    payload.findGlobal({ slug: 'closed-until', locale: current, depth: 0 }),
+  ])
 
   return (
     <html
@@ -90,7 +105,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body className="bg-ground font-sans text-ink antialiased">
         <JsonLd data={[organizationMarkup(siteOrigin()), websiteMarkup(current, siteOrigin())]} />
-        {children}
+        <CustomOrderHost
+          locale={current}
+          leadTime={storedLeadTime(leadTime)}
+          closedUntil={closedUntil.date}
+          closedNotice={closedUntil.notice}
+        >
+          {children}
+        </CustomOrderHost>
         <Analytics />
       </body>
     </html>

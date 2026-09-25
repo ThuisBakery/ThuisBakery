@@ -1,6 +1,7 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { CustomOrderHost } from '@/components/enquiry/CustomOrderHost'
 import type { Category, Home, Item, Media } from '@/payload-types'
 
 import { HomePage } from './HomePage'
@@ -167,6 +168,32 @@ describe('HomePage', () => {
       ['See the cakes', '/nl/taarten'],
       ['Iets op maat', '/nl/maatwerk'],
     ])
+  })
+
+  it('opens the Custom order sheet in place from the hero, once scripts run', () => {
+    // Inside the site-wide host, as the frontend layout renders every page.
+    render(
+      <CustomOrderHost
+        locale="en"
+        leadTime={{ days: 3, timeOfDay: '17:00' }}
+        closedUntil={null}
+        closedNotice={null}
+      >
+        <HomePage
+          locale="en"
+          home={home}
+          categories={categories}
+          items={items}
+          leadTime={{ days: 3, timeOfDay: '17:00' }}
+          statement="Jana bakes in a home kitchen, so traces cannot be ruled out."
+        />
+      </CustomOrderHost>,
+    )
+
+    const hero = screen.getByRole('heading', { level: 1 }).closest('section')!
+    fireEvent.click(within(hero).getByRole('link', { name: 'Something custom' }))
+
+    expect(screen.getByRole('dialog', { name: 'Tell Jana your idea' })).toBeTruthy()
   })
 
   it('sends the customer into the cakes first, with the nibbles also linked, in each locale', () => {
