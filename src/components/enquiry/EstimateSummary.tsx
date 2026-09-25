@@ -68,20 +68,26 @@ export const EstimateFigure = ({ locale, estimate }: { locale: Locale; estimate:
   const words = DICTIONARY[locale].enquiry
 
   return (
-    <section aria-labelledby="enquiry-estimate-heading" aria-live="polite" className="min-w-0">
+    // One compact row: what it is and what makes it up on the left, the figure on the right,
+    // so the sheet's pinned foot stays two lines high on a phone.
+    <section
+      aria-labelledby="enquiry-estimate-heading"
+      aria-live="polite"
+      className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4"
+    >
       <h3
         id="enquiry-estimate-heading"
-        className="flex items-center gap-2 font-sans text-[12px] tracking-wide text-ink-muted"
+        className="col-start-1 flex items-center gap-2 font-sans text-[12px] tracking-wide text-ink-muted"
       >
         {words.estimate}
         <span className="rounded-full border border-rule px-1.5 text-[11px] uppercase">
           {words.provisional}
         </span>
       </h3>
-      <p className="font-display text-xl leading-tight tabular-nums">
+      <p className="col-start-2 row-span-2 row-start-1 text-right font-display text-2xl leading-none tabular-nums">
         {formatEuros(estimate.total, locale)}
       </p>
-      <ul className="flex flex-wrap gap-x-2 text-xs text-ink-muted">
+      <ul className="col-start-1 flex min-w-0 flex-wrap gap-x-2 text-xs text-ink-muted">
         {estimate.lines.map((line, index) => (
           <li key={`${index}-${line.label}`}>{words.line(line.label, line.quantity)}</li>
         ))}

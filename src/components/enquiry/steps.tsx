@@ -209,10 +209,10 @@ export const StepFooter = ({
       ) : null}
       {/* On a phone the Estimate takes its own line and the buttons share the one beneath:
           all three side by side do not fit the sheet's width, in either language. */}
-      <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-3">
-        {aside ? <div className="mr-auto min-w-0 basis-full sm:basis-auto">{aside}</div> : null}
+      <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-2.5 sm:gap-x-4">
+        {aside ? <div className="min-w-0 basis-full sm:flex-1 sm:basis-auto">{aside}</div> : null}
         {first ? null : (
-          <button type="button" onClick={onBack} className={BUTTON_OUTLINE}>
+          <button type="button" onClick={onBack} className={cn(BUTTON_OUTLINE, 'min-h-12 px-5')}>
             {words.back}
           </button>
         )}
