@@ -196,7 +196,8 @@ describe('ItemPage — deciding', () => {
 
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Burnt Basque Cheesecake')
     expect(screen.getByText('Specialty Cakes')).toBeTruthy()
-    expect(screen.getByText('from €45')).toBeTruthy()
+    // The details column's price; the phone's bar repeats it after.
+    expect(screen.getAllByText('from €45')[0]).toBeTruthy()
     expect(screen.getByText('serves 8–14')).toBeTruthy()
     expect(screen.getByText('Caramelised outside, barely set inside.')).toBeTruthy()
   })
@@ -243,7 +244,7 @@ describe('ItemPage — deciding', () => {
     const order = [
       screen.getByText('Specialty Cakes'),
       screen.getByRole('heading', { level: 1 }),
-      screen.getByText('from €45'),
+      screen.getAllByText('from €45')[0]!,
       screen.getByText('Caramelised outside, barely set inside.'),
       screen.getByRole('region', { name: 'How far ahead to ask' }),
       screen.getByRole('list', { name: 'Sizes' }),
@@ -307,12 +308,13 @@ describe('ItemPage — deciding', () => {
     ).toBeTruthy()
   })
 
-  it('repeats the title and the action in the phone’s bar', () => {
+  it('repeats the title, the price and the action in the phone’s bar', () => {
     renderPage()
 
     const [, bar] = askButtons()
     expect(bar).toBeTruthy()
     expect(bar!.parentElement?.textContent).toContain('Burnt Basque Cheesecake')
+    expect(bar!.parentElement?.textContent).toContain('from €45')
   })
 })
 

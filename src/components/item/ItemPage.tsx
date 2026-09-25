@@ -332,8 +332,17 @@ export const ItemPage = ({
 
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-rule bg-raised/95 px-4 pt-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] backdrop-blur md:hidden">
           <div className="flex items-center gap-3">
-            <p className="min-w-0 flex-1 truncate font-display text-lg">{item.title}</p>
-            <AskJana className={BUTTON_SMALL}>{words.item.ask}</AskJana>
+            {/* The button takes over half a phone's width, so the title wraps to two lines
+                rather than being cut to a word or two, and the price says what it costs. */}
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-2 font-display text-base leading-tight font-medium">
+                {item.title}
+              </p>
+              {price ? (
+                <p className="mt-0.5 text-sm text-ink-muted tabular-nums">{price.price}</p>
+              ) : null}
+            </div>
+            <AskJana className={`${BUTTON_SMALL} shrink-0`}>{words.item.ask}</AskJana>
           </div>
         </div>
       </article>
