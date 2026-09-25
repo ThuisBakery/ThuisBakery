@@ -5,25 +5,13 @@ import { itemPrice, itemServings, menuSpans, type MenuSpan } from '@/domain/menu
 import { itemPath, type Locale } from '@/domain/routes'
 import type { Category, Item } from '@/payload-types'
 
+import { SPAN_CLASS, SPAN_SIZES } from './spans'
+
 /** One Item on the menu, and the Category it is labelled with. */
 export type ItemTileEntry = { item: Item; category: Category }
 
-/** The 12-column span each tile takes from `md` up. One column on a phone. */
-const SPAN_CLASS: Record<MenuSpan, string> = {
-  wide: 'md:col-span-7',
-  narrow: 'md:col-span-5',
-  band: 'md:col-span-12',
-}
-
-/** What each tile's photograph is drawn at, so the browser fetches the right width. */
-const SPAN_SIZES: Record<MenuSpan, string> = {
-  wide: '(min-width: 768px) 58vw, 100vw',
-  narrow: '(min-width: 768px) 42vw, 100vw',
-  band: '(min-width: 768px) 62vw, 100vw',
-}
-
 /**
- * The cakes as Item tiles (ADR-0007): each Item's first photograph, its title, its Category
+ * Items as tiles (ADR-0007): each Item's first photograph, its title, its Category
  * as a label and what it costs, and the whole tile one link to its Item page. A Category is
  * a label here, never a destination on the way to an Item.
  *

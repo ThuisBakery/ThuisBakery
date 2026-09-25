@@ -74,7 +74,10 @@ export const BUTTON_ON_ACCENT = [
 /** A secondary control: the language switcher and the menu's open and close. */
 export const BUTTON_OUTLINE = `${OUTLINED} ${SMALL}`
 
-/** A secondary action at a page's size: a marketing page's outlined call to action. */
+/**
+ * A secondary action at a page's size: a marketing page's outlined call to action, and the
+ * homepage hero's Something custom.
+ */
 export const BUTTON_OUTLINE_LARGE = `${OUTLINED} ${LARGE}`
 
 /** An outlined round button holding only an icon: the theme control. */

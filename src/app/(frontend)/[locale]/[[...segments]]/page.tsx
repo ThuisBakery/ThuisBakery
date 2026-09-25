@@ -432,9 +432,9 @@ const fetchMenuItems = async (payload: Payload, catalogue: Catalogue, current: L
 }
 
 /**
- * The homepage's words, and the three things it states that are kept elsewhere: every
- * Category (the menu and the starting price), the Lead time, and the cross-contamination
- * statement. Globals are read as published — the static page is what customers see.
+ * The homepage's words, and what it states that is kept elsewhere: the cakes for its menu,
+ * every Category (the menu's order and labels, and the starting price), the Lead time, and
+ * the cross-contamination statement. Globals are read as published — the static page is what customers see.
  */
 const fetchHome = async (payload: Payload, current: Locale) => {
   const [home, { docs: categories }, items, leadTime, crossContamination] = await Promise.all([
