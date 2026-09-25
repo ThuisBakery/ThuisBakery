@@ -1,3 +1,5 @@
+import { NAV_LINK } from './pressable'
+
 /** A page's questions, as the Homepage and Contact globals hold them. */
 type Faq = {
   heading: string
@@ -18,7 +20,9 @@ export const Questions = ({ faq }: { faq: Faq }) => (
       <div className="mt-8 border-t border-rule">
         {faq.questions.map(({ id, question, answer }) => (
           <details key={id ?? question} className="group border-b border-rule">
-            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-6 py-4 font-display text-xl leading-snug [&::-webkit-details-marker]:hidden">
+            <summary
+              className={`flex min-h-14 list-none items-center justify-between gap-6 py-4 font-display text-xl leading-snug [&::-webkit-details-marker]:hidden ${NAV_LINK}`}
+            >
               {question}
               <span
                 aria-hidden="true"

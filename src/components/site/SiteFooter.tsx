@@ -4,12 +4,13 @@ import type { Footer } from '@/payload-types'
 
 import { CakeStand } from './CakeStand'
 import { LanguageSwitcher } from './LanguageSwitcher'
+import { NAV_LINK } from './pressable'
 import { resolveLinks } from '@/domain/links'
 
 /**
  * The site footer: every page in the inventory, in the locale's own terms (ADR-0003), and a
- * second language switcher. The name here is set in the display serif, not the script: the
- * Parisienne wordmark appears once per page, and the header already has it (ADR-0004).
+ * second language switcher. The name here is set in the display face, not the script: the
+ * Parisienne wordmark appears once per page, and the header already has it (ADR-0007).
  */
 export const SiteFooter = ({
   locale,
@@ -43,7 +44,7 @@ export const SiteFooter = ({
                   <a
                     href={link.href}
                     aria-current={link.current ? 'page' : undefined}
-                    className="text-ink-muted transition-colors duration-300 hover:text-ink aria-[current=page]:text-ink"
+                    className={`text-ink-muted aria-[current=page]:text-ink ${NAV_LINK}`}
                   >
                     {link.label}
                   </a>

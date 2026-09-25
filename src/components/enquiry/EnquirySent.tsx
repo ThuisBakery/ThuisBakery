@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore, type ReactNode } from 'react'
 
+import { INLINE_LINK } from '@/components/site/pressable'
 import { DICTIONARY } from '@/domain/dictionary'
 import { formatDisplayDate, parseCalendarDate } from '@/domain/pickup-date'
 import type { Locale } from '@/domain/routes'
@@ -53,7 +54,7 @@ export const EnquirySent = ({
       {days !== null ? <p className="mt-4 text-lg">{words.sent.byWhen(days)}</p> : null}
       <p className="mt-4 leading-relaxed text-ink-muted">
         {words.sent.followUp}{' '}
-        <a href={contactPath} className="text-ink underline underline-offset-4 hover:text-accent">
+        <a href={contactPath} className={`text-ink ${INLINE_LINK}`}>
           {words.pageTitles.contact}
         </a>
       </p>

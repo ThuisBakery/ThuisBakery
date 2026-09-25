@@ -1,4 +1,5 @@
 import { CakeStand } from '@/components/site/CakeStand'
+import { NAV_LINK } from '@/components/site/pressable'
 import { DICTIONARY } from '@/domain/dictionary'
 import { catalogueSections } from '@/domain/menu'
 import type { Catalogue, Locale } from '@/domain/routes'
@@ -43,7 +44,7 @@ export const CataloguePage = ({
                 <li key={category.id}>
                   <a
                     href={`#${category.slug}`}
-                    className="inline-flex min-h-11 items-center px-3 text-[13px] tracking-wide text-ink-muted transition-colors duration-200 hover:text-ink active:translate-y-px"
+                    className={`inline-flex min-h-11 items-center px-3 text-[13px] tracking-wide text-ink-muted ${NAV_LINK}`}
                   >
                     {category.name}
                   </a>

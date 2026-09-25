@@ -4,10 +4,13 @@ import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '@/com
 
 import type { ResolvedLink } from '@/domain/links'
 
+import { BUTTON, BUTTON_OUTLINE, NAV_LINK } from './pressable'
+
 /**
  * The header navigation below `md`, where four links, a button, the switcher and the
  * wordmark do not fit on one line. A shadcn Sheet for the behaviour — focus trap, Escape,
- * scroll lock — dressed entirely in ADR-0004's tokens. No radius, no shadcn palette.
+ * scroll lock — dressed in ADR-0004's palette and ADR-0007's shape and states. No shadcn
+ * palette, radii or shadows.
  */
 export const MobileMenu = ({
   links,
@@ -19,18 +22,14 @@ export const MobileMenu = ({
   labels: { menu: string; close: string; nav: string }
 }) => (
   <Sheet>
-    <SheetTrigger className="border border-ink px-4 py-2 text-[13px] tracking-wide active:translate-y-px md:hidden">
-      {labels.menu}
-    </SheetTrigger>
+    <SheetTrigger className={`${BUTTON_OUTLINE} md:hidden`}>{labels.menu}</SheetTrigger>
     <SheetContent
       className="inset-y-0 right-0 flex w-[min(22rem,85vw)] flex-col gap-10 bg-ground px-6 py-6 text-ink"
       overlayClassName="bg-ink/40"
     >
       <div className="flex items-center justify-between">
         <SheetTitle className="font-display text-2xl">{labels.menu}</SheetTitle>
-        <SheetClose className="border border-ink px-4 py-2 text-[13px] tracking-wide">
-          {labels.close}
-        </SheetClose>
+        <SheetClose className={BUTTON_OUTLINE}>{labels.close}</SheetClose>
       </div>
       <nav aria-label={labels.nav}>
         <ul className="flex flex-col gap-5">
@@ -39,7 +38,7 @@ export const MobileMenu = ({
               <a
                 href={link.href}
                 aria-current={link.current ? 'page' : undefined}
-                className="font-display text-3xl"
+                className={`font-display text-3xl ${NAV_LINK}`}
               >
                 {link.label}
               </a>
@@ -50,7 +49,7 @@ export const MobileMenu = ({
       <a
         href={callToAction.href}
         aria-current={callToAction.current ? 'page' : undefined}
-        className="bg-accent px-6 py-3.5 text-center text-sm text-accent-ink"
+        className={BUTTON}
       >
         {callToAction.label}
       </a>

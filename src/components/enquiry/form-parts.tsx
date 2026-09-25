@@ -2,6 +2,7 @@
 
 import { useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from 'react'
 
+import { BUTTON, FIELD, FILE_FIELD, INLINE_LINK } from '@/components/site/pressable'
 import { DICTIONARY } from '@/domain/dictionary'
 import {
   MAX_QUANTITY,
@@ -296,8 +297,7 @@ export const usePhoto = ({
 
 export type Photo = ReturnType<typeof usePhoto>
 
-export const INPUT =
-  'mt-2 block min-h-12 w-full border border-rule bg-raised px-3 py-2 text-base text-ink aria-[invalid=true]:border-2 aria-[invalid=true]:border-ink'
+export const INPUT = `mt-2 ${FIELD}`
 
 export const LEGEND = 'font-sans text-[13px] tracking-wide text-ink-muted'
 
@@ -391,17 +391,13 @@ export const PhotoField = ({
         type="file"
         accept="image/*"
         onChange={(event) => void photo.choose(event.target.files?.[0])}
-        className="mt-2 block w-full text-sm file:mr-3 file:min-h-11 file:border file:border-rule file:bg-raised file:px-4 file:py-2 file:text-ink"
+        className={`mt-2 ${FILE_FIELD}`}
       />
       <p id="enquiry-photo-hint" className="mt-1.5 text-sm text-ink-muted">
         {words.photoHint}
       </p>
       {photo.photo ? (
-        <button
-          type="button"
-          onClick={remove}
-          className="mt-2 text-sm underline underline-offset-4 hover:text-accent"
-        >
+        <button type="button" onClick={remove} className={`mt-2 min-h-11 text-sm ${INLINE_LINK}`}>
           {words.removePhoto}
         </button>
       ) : null}
@@ -551,7 +547,7 @@ export const SendFooter = ({
       {status === 'failed' ? (
         <div role="alert" className="border-l-2 border-ink px-4 py-2 text-sm leading-relaxed">
           <p>{words.failed}</p>
-          <a href={contactHref} className="underline underline-offset-4 hover:text-accent">
+          <a href={contactHref} className={INLINE_LINK}>
             {words.contactDirectly}
           </a>
         </div>
@@ -562,11 +558,7 @@ export const SendFooter = ({
       ) : null}
 
       <div>
-        <button
-          type="submit"
-          disabled={busy}
-          className="min-h-12 bg-accent px-8 py-3.5 text-sm tracking-wide text-accent-ink motion-safe:transition-transform motion-safe:duration-200 motion-safe:active:translate-y-px disabled:opacity-60"
-        >
+        <button type="submit" disabled={busy} className={BUTTON}>
           {status === 'sending' ? words.sending : send}
         </button>
       </div>

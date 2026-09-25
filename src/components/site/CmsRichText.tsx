@@ -3,17 +3,19 @@ import type { ComponentProps, ReactNode } from 'react'
 
 import { referenceHref, type LinkReference } from '@/domain/page'
 
+import { DESCENDANT_LINKS } from './pressable'
+
 /**
- * Jana's rich text in the site's register: her serif for headings and body, the functional
- * sans kept for the machinery. Styled from outside because the words are hers and the
- * elements are Lexical's.
+ * Jana's rich text in the site's register (ADR-0007): the display face for headings, Geist
+ * for body. Styled from outside because the words are hers and the elements are Lexical's.
  */
 const RICH_TEXT = [
-  'space-y-4 font-display text-lg leading-relaxed',
+  'space-y-4 text-lg leading-relaxed',
+  '[&_h1,&_h2,&_h3,&_h4]:font-display',
   '[&_h1]:text-[40px] [&_h1]:leading-[1.1] [&_h1]:font-medium md:[&_h1]:text-6xl',
   '[&_h2]:text-[34px] [&_h2]:leading-tight [&_h2]:font-semibold',
   '[&_h3]:text-2xl [&_h3]:font-semibold [&_h4]:text-xl [&_h4]:font-semibold',
-  '[&_a]:underline [&_a]:underline-offset-4 [&_a:hover]:text-accent',
+  DESCENDANT_LINKS,
   '[&_ul]:list-disc [&_ol]:list-decimal [&_ul,&_ol]:pl-6',
 ].join(' ')
 

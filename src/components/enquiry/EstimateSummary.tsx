@@ -28,7 +28,7 @@ export const EstimateSummary = ({
     <section
       aria-labelledby={`${id}-heading`}
       aria-live={live ? 'polite' : undefined}
-      className="border border-rule bg-raised px-4 py-4"
+      className="rounded-card border border-rule bg-raised px-4 py-4"
     >
       <h3
         id={`${id}-heading`}

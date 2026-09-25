@@ -4,7 +4,8 @@ import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 
 /**
  * The one motion primitive (ADR-0004: entry reveal, hover scale, `active` states, nothing
- * else). Content arrives in reading order as it scrolls in.
+ * else; the hover and press states are ADR-0007's, in `pressable.ts`). Content arrives in
+ * reading order as it scrolls in.
  *
  * Rendered visible, and hidden only once this has run and found the element **below** the
  * viewport. So anything above the fold never flickers, a page without JavaScript shows

@@ -1,13 +1,10 @@
 import { MessageForm } from '@/components/enquiry/MessageForm'
 import { Paragraphs } from '@/components/site/Paragraphs'
 import { Photograph } from '@/components/site/Photograph'
+import { PHOTO_FRAME, TEXT_LINK } from '@/components/site/pressable'
 import { DICTIONARY } from '@/domain/dictionary'
 import { pagePath, type Locale } from '@/domain/routes'
 import type { ClosedUntil, CustomOrder, LeadTime } from '@/payload-types'
-
-/** The one secondary link style, as the homepage sets it. */
-const TEXT_LINK =
-  'inline-flex min-h-11 items-center text-sm tracking-wide underline underline-offset-4 transition-colors duration-200 hover:text-accent'
 
 const FORM_ID = 'imagine'
 
@@ -50,7 +47,7 @@ export const CustomOrderPage = ({
             />
           </header>
           {customOrder.photograph ? (
-            <div className="overflow-hidden bg-raised md:col-span-5 md:col-start-8">
+            <div className={`${PHOTO_FRAME} md:col-span-5 md:col-start-8`}>
               <Photograph
                 media={customOrder.photograph}
                 sizes="(min-width: 768px) 40vw, 100vw"

@@ -5,6 +5,7 @@ import type { Header } from '@/payload-types'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { resolveLinks } from '@/domain/links'
 import { MobileMenu } from './MobileMenu'
+import { BUTTON_SMALL, NAV_LINK } from './pressable'
 import { ThemeToggle } from './ThemeToggle'
 import { Wordmark } from './Wordmark'
 
@@ -43,7 +44,7 @@ export const SiteHeader = ({
         {words.skipToContent}
       </a>
       <div className="mx-auto flex h-[72px] max-w-[1400px] items-center justify-between gap-4 px-4 md:px-10">
-        <a href={pagePath('home', locale)} className="text-[26px] md:text-[28px]">
+        <a href={pagePath('home', locale)} className={`text-[26px] md:text-[28px] ${NAV_LINK}`}>
           <Wordmark />
         </a>
         <nav aria-label={words.mainNav} className="hidden items-center gap-8 md:flex">
@@ -53,7 +54,7 @@ export const SiteHeader = ({
                 <a
                   href={link.href}
                   aria-current={link.current ? 'page' : undefined}
-                  className="text-[13px] tracking-wide opacity-80 transition-opacity duration-300 hover:opacity-100 aria-[current=page]:opacity-100"
+                  className={`text-[13px] tracking-wide opacity-80 aria-[current=page]:opacity-100 ${NAV_LINK}`}
                 >
                   {link.label}
                 </a>
@@ -63,7 +64,7 @@ export const SiteHeader = ({
           <a
             href={callToAction.href}
             aria-current={callToAction.current ? 'page' : undefined}
-            className="bg-accent px-5 py-2.5 text-[13px] tracking-wide whitespace-nowrap text-accent-ink transition-transform duration-200 active:translate-y-px"
+            className={BUTTON_SMALL}
           >
             {callToAction.label}
           </a>

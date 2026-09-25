@@ -1,6 +1,7 @@
 import { CakeStand } from '@/components/site/CakeStand'
 import { CmsRichText } from '@/components/site/CmsRichText'
 import { Photograph } from '@/components/site/Photograph'
+import { BUTTON, PHOTO_FRAME } from '@/components/site/pressable'
 import { pagePath, type Locale } from '@/domain/routes'
 import type { About } from '@/payload-types'
 
@@ -22,7 +23,7 @@ export const AboutPage = ({
   <article className="px-4 pt-12 pb-20 md:px-10 md:pt-20 md:pb-28">
     <div className="mx-auto grid max-w-[1400px] gap-10 md:grid-cols-12 md:gap-x-12">
       <div className="md:col-span-5">
-        <div className="overflow-hidden bg-raised md:sticky md:top-24">
+        <div className={`${PHOTO_FRAME} md:sticky md:top-24`}>
           <Photograph
             media={about.photograph}
             sizes="(min-width: 768px) 40vw, 100vw"
@@ -38,10 +39,7 @@ export const AboutPage = ({
         <CmsRichText data={about.story} targets={targets} className="mt-8 max-w-[60ch]" />
         <div className="mt-14 flex flex-col items-start gap-4">
           <CakeStand className="w-14 text-ink-muted" />
-          <a
-            href={pagePath('cakes', locale)}
-            className="inline-flex min-h-12 items-center bg-accent px-8 py-3.5 text-sm tracking-wide text-accent-ink motion-safe:transition-transform motion-safe:duration-200 motion-safe:active:translate-y-px"
-          >
+          <a href={pagePath('cakes', locale)} className={BUTTON}>
             {about.cakesLabel}
           </a>
         </div>

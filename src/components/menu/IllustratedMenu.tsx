@@ -1,6 +1,13 @@
 import type { ReactNode } from 'react'
 
 import { Photograph } from '@/components/site/Photograph'
+import {
+  PHOTO_FRAME,
+  ROW_LINK,
+  TILE,
+  TILE_HEADING,
+  TILE_PHOTOGRAPH,
+} from '@/components/site/pressable'
 import { Reveal } from '@/components/site/Reveal'
 import { categoryPrice, itemPrice, menuSpans, type MenuSpan } from '@/domain/menu'
 import { itemPath, type Locale } from '@/domain/routes'
@@ -25,12 +32,12 @@ const SPAN_SIZES: Record<MenuSpan, string> = {
 
 /**
  * The illustrated menu (ADR-0004): every Category is a photograph carrying its own name,
- * tagline, Jana's italic note and her price. Not a gallery beside a menu — one thing.
+ * tagline, Jana's note and her price. Not a gallery beside a menu — one thing.
  *
- * Three rules hold it off the competitors' product grids, and are binding: unequal cells
- * (`menuSpans`), no buy buttons anywhere — an entry with somewhere to go is one link, and
- * an Item row is one link — and the name at menu-card scale in her serif, never shrunk to
- * a product label.
+ * What holds it off the competitors' product grids: unequal cells (`menuSpans`, still
+ * binding under ADR-0007), an entry with somewhere to go that is one pressable tile and an
+ * Item row that is one link (ADR-0007), and the name at menu-card scale in the display
+ * face, never shrunk to a product label.
  *
  * Built for `/cakes` and `/nibbles`, and reused by the homepage, which passes
  * `categoryHref` to send each entry to its section of the catalogue.
@@ -104,12 +111,12 @@ const Entry = ({
   const band = span === 'band'
 
   const photograph = (
-    <div className="overflow-hidden bg-raised">
+    <div className={PHOTO_FRAME}>
       <Photograph
         media={category.photograph}
         sizes={SPAN_SIZES[span]}
         preload={preload}
-        className={`aspect-[4/3] w-full object-cover motion-safe:group-hover:scale-[1.03] motion-safe:transition-transform motion-safe:duration-700 ${
+        className={`aspect-[4/3] w-full object-cover ${TILE_PHOTOGRAPH} ${
           band ? 'md:aspect-auto md:h-[46vh]' : 'md:aspect-auto md:h-[54vh]'
         }`}
       />
@@ -119,7 +126,9 @@ const Entry = ({
   const words = (
     <div className={band ? '' : 'pt-5'}>
       <div className="flex items-baseline justify-between gap-x-4">
-        <Heading className="min-w-0 font-display text-[34px] leading-tight font-semibold">
+        <Heading
+          className={`min-w-0 font-display text-[34px] leading-tight font-semibold ${href ? TILE_HEADING : ''}`}
+        >
           {category.name}
         </Heading>
         {price ? (
@@ -130,9 +139,7 @@ const Entry = ({
       </div>
       <p className="mt-1.5 font-display text-lg leading-snug text-ink-muted">{category.tagline}</p>
       {category.note ? (
-        <p className="mt-0.5 font-display text-[16px] leading-[1.4] text-ink-muted italic">
-          {category.note}
-        </p>
+        <p className="mt-0.5 text-[15px] leading-[1.4] text-ink-muted">{category.note}</p>
       ) : null}
     </div>
   )
@@ -161,10 +168,7 @@ const Entry = ({
   )
 
   return href ? (
-    <a
-      href={href}
-      className="group block transition-transform duration-200 motion-safe:active:translate-y-px"
-    >
+    <a href={href} className={TILE}>
       {content}
     </a>
   ) : (
@@ -192,10 +196,7 @@ const ItemList = ({
 
       return (
         <li key={item.id} className="border-b border-rule">
-          <a
-            href={itemPath(category.catalogue, locale, item.slug)}
-            className="flex min-h-12 items-baseline justify-between gap-4 py-3 transition-colors duration-200 hover:text-accent active:bg-raised"
-          >
+          <a href={itemPath(category.catalogue, locale, item.slug)} className={ROW_LINK}>
             <span className="font-display text-xl leading-snug">{item.title}</span>
             {row ? (
               <span className="shrink-0 text-right font-sans text-sm tracking-wide tabular-nums">

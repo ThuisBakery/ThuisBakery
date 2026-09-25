@@ -8,8 +8,9 @@ import { cn } from '@/lib/utils'
 /*
  * shadcn/ui's Sheet, kept as an **unstyled primitive**: the Radix Dialog behaviour (focus
  * trap, Escape, scroll lock, portal, ARIA) and the `data-slot` structure, with shadcn's
- * default styling removed. ThuisBakery's look is ADR-0004's tokens, applied by whoever
- * composes this — never shadcn's palette, radii or shadows.
+ * default styling removed. ThuisBakery's look is ADR-0004's palette with ADR-0007's type,
+ * corners and states, applied by whoever composes this — never shadcn's palette, radii or
+ * shadows.
  */
 
 export const Sheet = (props: ComponentProps<typeof SheetPrimitive.Root>) => (
