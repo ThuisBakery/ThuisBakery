@@ -1,11 +1,34 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import {
+  act,
+  cleanup,
+  fireEvent,
+  isInaccessible,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { EnquirySent } from '@/components/enquiry/EnquirySent'
+import type { Receipt } from '@/domain/submit-enquiry'
 import type { Allergen, Category, Filling, Item, LeadTime, Media, Sponge } from '@/payload-types'
 
 import { ItemPage } from './ItemPage'
 
-afterEach(cleanup)
+beforeEach(() => {
+  // Only the clock is faked: 21 September 2026, 09:00 in Amsterdam.
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-09-21T07:00:00Z'))
+})
+
+afterEach(() => {
+  vi.useRealTimers()
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+  sessionStorage.clear()
+  cleanup()
+})
 
 const stamps = { updatedAt: '2026-09-23T00:00:00.000Z', createdAt: '2026-09-23T00:00:00.000Z' }
 
@@ -18,26 +41,24 @@ const media = (id: number, alt: string): Media => ({
   ...stamps,
 })
 
-const description = (text: string): NonNullable<Item['description']> => ({
+const paragraph = (text: string) => ({
+  type: 'paragraph',
+  format: '' as const,
+  indent: 0,
+  version: 1,
+  direction: 'ltr' as const,
+  textFormat: 0,
+  children: [{ type: 'text', text, format: 0, detail: 0, mode: 'normal', style: '', version: 1 }],
+})
+
+const description = (...texts: string[]): NonNullable<Item['description']> => ({
   root: {
     type: 'root',
     format: '',
     indent: 0,
     version: 1,
     direction: 'ltr',
-    children: [
-      {
-        type: 'paragraph',
-        format: '',
-        indent: 0,
-        version: 1,
-        direction: 'ltr',
-        textFormat: 0,
-        children: [
-          { type: 'text', text, format: 0, detail: 0, mode: 'normal', style: '', version: 1 },
-        ],
-      },
-    ],
+    children: texts.map(paragraph),
   },
 })
 
@@ -98,6 +119,7 @@ const sibling = (id: number, title: string, slug: string, category = 4): Item =>
   title,
   slug,
   category,
+  photographs: [media(id * 10, '')],
   sizes: [{ label: 'Whole', price: 40 }],
   ...stamps,
 })
@@ -132,12 +154,6 @@ const renderPage = (overrides: Partial<Parameters<typeof ItemPage>[0]> = {}) =>
     />,
   )
 
-/** A named radio group's options, as the values they send. */
-const optionsIn = (group: string) =>
-  within(screen.getByRole('group', { name: group }))
-    .getAllByRole('radio')
-    .map((radio) => radio.getAttribute('value'))
-
 /** Whether `first` comes before `second` in the page. */
 const precedes = (first: Element, second: Element) =>
   Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING)
@@ -148,121 +164,118 @@ const structuredData = (container: HTMLElement): Record<string, unknown>[] =>
     (script) => JSON.parse(script.textContent ?? '') as Record<string, unknown>,
   )
 
-describe('ItemPage', () => {
-  it('heads the page with the Item’s title and shows its description and photographs', () => {
+/** Every **Ask Jana for this cake**: the details column's first, then the phone's bar. */
+const askButtons = () => screen.getAllByRole('button', { name: 'Ask Jana for this cake' })
+
+/** Opens the Enquiry sheet from the details column's button, and returns the sheet. */
+const openSheet = (button = askButtons()[0]!) => {
+  fireEvent.click(button)
+
+  return screen.getByRole('dialog', { name: 'Send an enquiry' })
+}
+
+/** A named radio group's options in the sheet, as the values they send. */
+const optionsIn = (sheet: HTMLElement, group: string) =>
+  within(within(sheet).getByRole('group', { name: group }))
+    .getAllByRole('radio')
+    .map((radio) => radio.getAttribute('value'))
+
+const pressEscape = () =>
+  fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+
+describe('ItemPage — deciding', () => {
+  it('opens with the Category, the title, the price and servings, and the first paragraph', () => {
     renderPage()
 
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Burnt Basque Cheesecake')
+    expect(screen.getByText('Specialty Cakes')).toBeTruthy()
+    expect(screen.getByText('from €45')).toBeTruthy()
+    expect(screen.getByText('serves 8–14')).toBeTruthy()
     expect(screen.getByText('Caramelised outside, barely set inside.')).toBeTruthy()
-    expect(screen.getByAltText('The cheesecake, cut')).toBeTruthy()
-    expect(screen.getByAltText('The cheesecake, whole')).toBeTruthy()
   })
 
-  it('offers every Size to choose, with what it is and its price', () => {
+  it('keeps the rest of the description behind More', () => {
+    renderPage({
+      item: {
+        ...cheesecake,
+        description: description(
+          'Caramelised outside, barely set inside.',
+          'Baked hot and fast, the Basque way, and left to settle overnight.',
+        ),
+      },
+    })
+
+    expect(screen.getByText('Caramelised outside, barely set inside.')).toBeTruthy()
+    const rest = screen.getByText(
+      'Baked hot and fast, the Basque way, and left to settle overnight.',
+    )
+    expect(isInaccessible(rest)).toBe(true)
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }))
+
+    expect(isInaccessible(rest)).toBe(false)
+  })
+
+  it('offers no More when the description is one paragraph', () => {
     renderPage()
 
-    // The fixture's Sizes carry no row ids, so they are keyed by position.
-    expect(optionsIn('Size')).toEqual(['0', '1'])
-
-    const sizes = within(screen.getByRole('group', { name: 'Size' }))
-    expect(sizes.getByLabelText('Small')).toBeTruthy()
-    expect(sizes.getByText('15 cm · 1 layer · serves 8')).toBeTruthy()
-    expect(sizes.getByText('€45')).toBeTruthy()
-    expect(sizes.getByLabelText('Large')).toBeTruthy()
-    expect(sizes.getByText('20 cm · 2 layers · serves 14')).toBeTruthy()
-    expect(sizes.getByText('€62.50')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'More' })).toBeNull()
   })
 
-  it('shows a single Size as already chosen, with its price', () => {
+  it('links the Category’s label back to its section', () => {
+    renderPage({ locale: 'nl' })
+
+    expect(screen.getByRole('link', { name: 'Specialty Cakes' }).getAttribute('href')).toBe(
+      '/nl/taarten#specialty',
+    )
+  })
+
+  it('runs the details column from the Category to the Allergens, with the action between', () => {
+    renderPage()
+
+    const order = [
+      screen.getByText('Specialty Cakes'),
+      screen.getByRole('heading', { level: 1 }),
+      screen.getByText('from €45'),
+      screen.getByText('Caramelised outside, barely set inside.'),
+      screen.getByRole('region', { name: 'How far ahead to ask' }),
+      screen.getByRole('list', { name: 'Sizes' }),
+      askButtons()[0]!,
+      screen.getByRole('list', { name: 'Allergens' }),
+    ]
+
+    for (const [index, element] of order.slice(1).entries()) {
+      expect(precedes(order[index]!, element)).toBe(true)
+    }
+  })
+
+  it('prints every Size with what it is and its price, outside the sheet', () => {
+    renderPage()
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    const sizes = within(screen.getByRole('list', { name: 'Sizes' }))
+    expect(sizes.getAllByRole('listitem').map((row) => row.textContent)).toEqual([
+      'Small15 cm · 1 layer · serves 8€45',
+      'Large20 cm · 2 layers · serves 14€62.50',
+    ])
+  })
+
+  it('prints a single Size, its price as the price', () => {
     renderPage({ item: { ...cheesecake, sizes: [{ id: 'whole', label: 'Whole', price: 40 }] } })
 
-    const whole = screen.getByLabelText('Whole') as HTMLInputElement
-
-    expect(optionsIn('Size')).toEqual(['whole'])
-    expect(whole.checked).toBe(true)
-    expect(within(screen.getByRole('group', { name: 'Size' })).getByText('€40')).toBeTruthy()
+    const sizes = within(screen.getByRole('list', { name: 'Sizes' }))
+    expect(sizes.getAllByRole('listitem').map((row) => row.textContent)).toEqual(['Whole€40'])
   })
 
-  it('offers the Item’s own Sponges, and every Filling when it names none, with Surcharges', () => {
+  it('states the Item’s own Lead time, days and time of day, and the earliest pickup', () => {
     renderPage()
 
-    expect(optionsIn('Sponge')).toEqual(['1', '3'])
-    expect(
-      within(screen.getByRole('group', { name: 'Sponge' }))
-        .getAllByRole('radio')
-        .map((radio) => (radio as HTMLInputElement).labels?.[0]?.textContent),
-    ).toEqual(['Chocolate', 'Red Velvet'])
-
-    const fillingGroup = within(screen.getByRole('group', { name: 'Filling' }))
-    expect(optionsIn('Filling')).toEqual(['1', '2', '3'])
-    expect(fillingGroup.getByLabelText('Cream Cheese')).toBeTruthy()
-    expect(fillingGroup.getByText('+€2.50')).toBeTruthy()
-    expect(fillingGroup.getByText('+€3')).toBeTruthy()
-  })
-
-  it('starts on the first of each choice, with an Estimate already showing', () => {
-    renderPage()
-
-    expect((screen.getByLabelText('Small') as HTMLInputElement).checked).toBe(true)
-    expect((screen.getByLabelText('Chocolate') as HTMLInputElement).checked).toBe(true)
-    expect((screen.getByLabelText('Cream Cheese') as HTMLInputElement).checked).toBe(true)
-    expect(
-      within(screen.getByRole('region', { name: /Estimate/ })).getByText('Small × 1'),
-    ).toBeTruthy()
-  })
-
-  it('changes the Estimate when a Filling with a Surcharge is chosen', () => {
-    renderPage()
-
-    fireEvent.click(screen.getByLabelText('Ganache'))
-
-    const estimate = within(screen.getByRole('region', { name: /Estimate/ }))
-    expect(estimate.getByText('Ganache × 1')).toBeTruthy()
-    expect(estimate.getByText('€48')).toBeTruthy()
-  })
-
-  it('offers no choices on an Item sold exactly as described', () => {
-    renderPage({ item: { ...cheesecake, configurable: false } })
-
-    expect(screen.queryByRole('group', { name: 'Sponge' })).toBeNull()
-    expect(screen.queryByRole('group', { name: 'Filling' })).toBeNull()
-  })
-
-  it('puts the Enquiry after the Allergens and before the Occasions', () => {
-    renderPage()
-
-    const allergens = screen.getByRole('list', { name: 'Allergens' })
-    const enquiry = screen.getByRole('region', { name: 'Send an enquiry' })
-    const occasions = screen.getByRole('link', { name: 'Wedding' })
-
-    expect(precedes(allergens, enquiry)).toBe(true)
-    expect(precedes(enquiry, occasions)).toBe(true)
-    expect(within(enquiry).getByRole('group', { name: 'Size' })).toBeTruthy()
-    // One copy of the offer: nothing else on the page lists the Sizes or the choices.
-    expect(screen.queryByRole('list', { name: 'Sizes' })).toBeNull()
-    expect(screen.getAllByRole('group', { name: 'Size' })).toHaveLength(1)
-    // It is part of the column, not a destination further down to jump to.
-    expect(screen.queryByRole('link', { name: 'Send an enquiry' })).toBeNull()
-  })
-
-  it('lists the Allergens with their icons, beside the cross-contamination statement', () => {
-    const { container } = renderPage()
-
-    const allergens = screen.getByRole('list', { name: 'Allergens' })
-    expect(
-      within(allergens)
-        .getAllByRole('listitem')
-        .map((row) => row.textContent),
-    ).toEqual(['Egg', 'Milk'])
-    expect(allergens.querySelectorAll('img')).toHaveLength(2)
-    expect(container.textContent).toContain(statement)
-  })
-
-  it('states the Item’s own Lead time, days and time of day, over the site-wide one', () => {
-    const { container } = renderPage()
-
-    expect(container.textContent).toContain('5 days’ notice')
-    expect(container.textContent).toContain('Ask before 12:00 and that day counts.')
+    const leadTime = within(screen.getByRole('region', { name: 'How far ahead to ask' }))
+    expect(leadTime.getByText('5 days’ notice')).toBeTruthy()
+    expect(leadTime.getByText('Ask before 12:00 and that day counts.')).toBeTruthy()
+    // Monday 21 September at 09:00, before the cutoff: five days on is Saturday 26.
+    expect(leadTime.getByText(/The earliest you can ask for is .*26 September/)).toBeTruthy()
   })
 
   it('falls back to the site-wide Lead time', () => {
@@ -272,37 +285,109 @@ describe('ItemPage', () => {
     expect(container.textContent).toContain('Ask before 17:00')
   })
 
-  it('links back to its Category’s section and on to Custom order', () => {
-    renderPage({ locale: 'nl' })
+  it('lists the Allergens with their icons, beside the cross-contamination statement', () => {
+    renderPage()
 
+    const allergens = screen.getByRole('list', { name: 'Allergens' })
     expect(
-      screen
-        .getAllByRole('link')
-        .some((link) => link.getAttribute('href') === '/nl/taarten#specialty'),
-    ).toBe(true)
-    expect(screen.getByRole('link', { name: 'Maatwerk' }).getAttribute('href')).toBe('/nl/maatwerk')
+      within(allergens)
+        .getAllByRole('listitem')
+        .map((row) => row.textContent),
+    ).toEqual(['Egg', 'Milk'])
+    expect(allergens.querySelectorAll('img')).toHaveLength(2)
+    expect(
+      within(screen.getByRole('region', { name: 'Allergens' })).getByText(statement),
+    ).toBeTruthy()
   })
 
-  it('links two or three sibling Items from its own catalogue', () => {
+  it('repeats the title and the action in the phone’s bar', () => {
+    renderPage()
+
+    const [, bar] = askButtons()
+    expect(bar).toBeTruthy()
+    expect(bar!.parentElement?.textContent).toContain('Burnt Basque Cheesecake')
+  })
+})
+
+describe('ItemPage — the gallery', () => {
+  it('shows one main photograph, and swaps it from the thumbnails', () => {
+    renderPage()
+
+    const first = screen.getByRole('button', { name: 'Show photograph 1' })
+    const second = screen.getByRole('button', { name: 'Show photograph 2' })
+
+    expect(screen.getByAltText('The cheesecake, cut')).toBeTruthy()
+    expect(screen.queryByAltText('The cheesecake, whole')).toBeNull()
+    expect(first.getAttribute('aria-pressed')).toBe('true')
+    expect(second.getAttribute('aria-pressed')).toBe('false')
+
+    fireEvent.click(second)
+
+    expect(screen.getByAltText('The cheesecake, whole')).toBeTruthy()
+    expect(screen.queryByAltText('The cheesecake, cut')).toBeNull()
+    expect(first.getAttribute('aria-pressed')).toBe('false')
+    expect(second.getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('shows no thumbnails for an Item with one photograph', () => {
+    renderPage({ item: { ...cheesecake, photographs: [media(1, 'The cheesecake, cut')] } })
+
+    expect(screen.getByAltText('The cheesecake, cut')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Show photograph/ })).toBeNull()
+  })
+})
+
+describe('ItemPage — the foot', () => {
+  it('links two or three sibling Items from its own catalogue, each with its price', () => {
     renderPage()
 
     const siblings = screen.getByRole('navigation', { name: 'More from the menu' })
-    expect(
-      within(siblings)
-        .getAllByRole('link')
-        .map((link) => link.getAttribute('href')),
-    ).toEqual(['/cakes/carrot-cake', '/cakes/lemon-drizzle', '/cakes/apple-pie'])
+    const links = within(siblings).getAllByRole('link')
+
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
+      '/cakes/carrot-cake',
+      '/cakes/lemon-drizzle',
+      '/cakes/apple-pie',
+    ])
+    expect(links[0]!.textContent).toBe('Carrot Cake€40')
   })
 
-  it('links back to the Occasion pages it is tagged with, and only those that exist', () => {
+  it('links the Occasion pages it is tagged with, and only those that exist, beside Custom order', () => {
+    renderPage({ locale: 'nl' })
+
+    const occasions = within(screen.getByRole('list', { name: 'Gemaakt voor' }))
+
+    expect(
+      occasions.getAllByRole('link').map((link) => [link.textContent, link.getAttribute('href')]),
+    ).toEqual([['Wedding', '/wedding-cakes']])
+    expect(screen.queryByRole('link', { name: 'Birthday' })).toBeNull()
+    expect(screen.getByRole('link', { name: 'Iets op maat' }).getAttribute('href')).toBe(
+      '/nl/maatwerk',
+    )
+  })
+
+  it('still offers Custom order when the Item is tagged with no Occasion page', () => {
+    renderPage({ occasionPages: new Map() })
+
+    expect(screen.queryByRole('list', { name: 'Made for' })).toBeNull()
+    expect(screen.getByRole('link', { name: 'Something custom' }).getAttribute('href')).toBe(
+      '/custom-order',
+    )
+  })
+
+  it('puts the Occasions and the siblings after the details column', () => {
     renderPage()
 
-    expect(screen.getByRole('link', { name: 'Wedding' }).getAttribute('href')).toBe(
-      '/wedding-cakes',
-    )
-    expect(screen.queryByRole('link', { name: 'Birthday' })).toBeNull()
+    expect(
+      precedes(
+        screen.getByRole('list', { name: 'Allergens' }),
+        screen.getByRole('link', { name: 'Wedding' }),
+      ),
+    ).toBe(true)
   })
+})
 
+describe('ItemPage — structured data', () => {
   it('shows the breadcrumb trail it marks up', () => {
     const { container } = renderPage()
 
@@ -326,17 +411,6 @@ describe('ItemPage', () => {
     ])
   })
 
-  it('holds the Enquiry to Closed until, with Jana’s notice', () => {
-    renderPage({
-      closedUntil: { date: '2099-01-04T12:00:00.000Z', notice: 'Away for the winter.' },
-    })
-
-    const enquiry = screen.getByRole('region', { name: 'Send an enquiry' })
-
-    expect(within(enquiry).getByText('Away for the winter.')).toBeTruthy()
-    expect(within(enquiry).getByText(/Jana is closed until/)).toBeTruthy()
-  })
-
   it('marks up a Product whose offers are the prices printed on the page', () => {
     const { container } = renderPage()
 
@@ -352,5 +426,191 @@ describe('ItemPage', () => {
     })
     expect(product).not.toHaveProperty('aggregateRating')
     expect(product).not.toHaveProperty('review')
+  })
+})
+
+describe('ItemPage — the Enquiry sheet', () => {
+  it('opens the Enquiry form in a sheet from Ask Jana for this cake', () => {
+    renderPage()
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    const sheet = openSheet()
+
+    expect(within(sheet).getByRole('group', { name: 'Size' })).toBeTruthy()
+    expect(within(sheet).getByRole('button', { name: 'Send enquiry' })).toBeTruthy()
+  })
+
+  it('offers every Size, and the Item’s own Sponges and every Filling, with Surcharges', () => {
+    renderPage()
+
+    const sheet = openSheet()
+
+    // The fixture's Sizes carry no row ids, so they are keyed by position.
+    expect(optionsIn(sheet, 'Size')).toEqual(['0', '1'])
+    expect(optionsIn(sheet, 'Sponge')).toEqual(['1', '3'])
+    expect(optionsIn(sheet, 'Filling')).toEqual(['1', '2', '3'])
+
+    const fillingGroup = within(within(sheet).getByRole('group', { name: 'Filling' }))
+    expect(fillingGroup.getByText('+€2.50')).toBeTruthy()
+    expect(fillingGroup.getByText('+€3')).toBeTruthy()
+  })
+
+  it('starts on the first of each choice, and the Estimate follows a Surcharge', () => {
+    renderPage()
+
+    const sheet = within(openSheet())
+
+    expect((sheet.getByLabelText('Small') as HTMLInputElement).checked).toBe(true)
+    expect((sheet.getByLabelText('Chocolate') as HTMLInputElement).checked).toBe(true)
+    expect((sheet.getByLabelText('Cream Cheese') as HTMLInputElement).checked).toBe(true)
+
+    fireEvent.click(sheet.getByLabelText('Ganache'))
+
+    const estimate = within(sheet.getByRole('region', { name: /Estimate/ }))
+    expect(estimate.getByText('Ganache × 1')).toBeTruthy()
+    expect(estimate.getByText('€48')).toBeTruthy()
+  })
+
+  it('starts a single Size chosen, and offers no choices on an Item sold as described', () => {
+    renderPage({
+      item: {
+        ...cheesecake,
+        configurable: false,
+        sizes: [{ id: 'whole', label: 'Whole', price: 40 }],
+      },
+    })
+
+    const sheet = openSheet()
+
+    expect((within(sheet).getByLabelText('Whole') as HTMLInputElement).checked).toBe(true)
+    expect(within(sheet).queryByRole('group', { name: 'Sponge' })).toBeNull()
+    expect(within(sheet).queryByRole('group', { name: 'Filling' })).toBeNull()
+  })
+
+  it('holds the Enquiry to Closed until, with Jana’s notice', () => {
+    renderPage({
+      closedUntil: { date: '2099-01-04T12:00:00.000Z', notice: 'Away for the winter.' },
+    })
+
+    const sheet = within(openSheet())
+
+    expect(sheet.getByText('Away for the winter.')).toBeTruthy()
+    expect(sheet.getByText(/Jana is closed until/)).toBeTruthy()
+  })
+
+  it('takes focus in, and puts the page behind out of reach while open', async () => {
+    renderPage()
+
+    const sheet = openSheet()
+
+    await waitFor(() => expect(sheet.contains(document.activeElement)).toBe(true))
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull()
+  })
+
+  it('closes on Escape and gives focus back to the button that opened it', async () => {
+    renderPage()
+
+    const button = askButtons()[0]!
+    const sheet = openSheet(button)
+    await waitFor(() => expect(sheet.contains(document.activeElement)).toBe(true))
+
+    pressEscape()
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    await waitFor(() => expect(document.activeElement).toBe(button))
+    expect(screen.getByRole('heading', { level: 1 })).toBeTruthy()
+  })
+
+  it('closes on a tap outside, and from the phone’s bar gives focus back to the bar', async () => {
+    renderPage()
+
+    const bar = askButtons()[1]!
+    const sheet = openSheet(bar)
+    await waitFor(() => expect(sheet.contains(document.activeElement)).toBe(true))
+
+    // A tap outside: the press, then the click it ends in.
+    fireEvent.pointerDown(document.body)
+    fireEvent.click(document.body)
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    await waitFor(() => expect(document.activeElement).toBe(bar))
+  })
+
+  it('keeps what was entered when it is closed and opened again', () => {
+    renderPage()
+
+    let sheet = within(openSheet())
+    fireEvent.click(sheet.getByLabelText('Large'))
+    fireEvent.change(sheet.getByLabelText('Your name'), { target: { value: 'Sanne de Vries' } })
+
+    fireEvent.click(sheet.getByRole('button', { name: 'Close' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    sheet = within(openSheet())
+    expect((sheet.getByLabelText('Large') as HTMLInputElement).checked).toBe(true)
+    expect((sheet.getByLabelText('Your name') as HTMLInputElement).value).toBe('Sanne de Vries')
+  })
+
+  it('sends the same Enquiry as before, and keeps the receipt the confirmation shows', async () => {
+    const receipt: Receipt = {
+      reference: 'K7MQ-3XTP',
+      enquiryType: 'item',
+      itemTitle: 'Burnt Basque Cheesecake',
+      size: 'Large',
+      quantity: 2,
+      sponge: 'Red Velvet',
+      filling: 'Salted Caramel',
+      requestedPickupDate: '2026-09-26',
+      specialRequests: null,
+      message: null,
+      estimate: null,
+      leadTimeDays: 5,
+    }
+    const fetch = vi.fn(async (_url: string, _init: RequestInit) =>
+      Response.json({ status: 'accepted', receipt }),
+    )
+    vi.stubGlobal('fetch', fetch)
+    // jsdom cannot navigate to the confirmation page; it says so on the console.
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    renderPage()
+
+    const sheet = within(openSheet())
+    fireEvent.click(sheet.getByLabelText('Large'))
+    fireEvent.change(sheet.getByLabelText('How many'), { target: { value: '2' } })
+    fireEvent.click(sheet.getByLabelText('Red Velvet'))
+    fireEvent.click(sheet.getByLabelText('Salted Caramel'))
+    fireEvent.change(sheet.getByLabelText(/Pickup date/), { target: { value: '2026-09-26' } })
+    fireEvent.change(sheet.getByLabelText('Your name'), { target: { value: 'Sanne de Vries' } })
+    fireEvent.change(sheet.getByLabelText('Email'), { target: { value: 'sanne@example.nl' } })
+
+    await act(async () => {
+      fireEvent.click(sheet.getByRole('button', { name: 'Send enquiry' }))
+    })
+
+    expect(fetch).toHaveBeenCalledTimes(1)
+    const [url, init] = fetch.mock.calls[0]!
+    expect(url).toBe('/next/enquiry')
+    expect(Object.fromEntries(init.body as FormData)).toEqual({
+      enquiryType: 'item',
+      locale: 'en',
+      item: '10',
+      size: '1',
+      quantity: '2',
+      sponge: '3',
+      filling: '2',
+      requestedPickupDate: '2026-09-26',
+      specialRequests: '',
+      name: 'Sanne de Vries',
+      email: 'sanne@example.nl',
+      phone: '',
+      website: '',
+    })
+
+    cleanup()
+    render(<EnquirySent locale="en" siteLeadTimeDays={3} contactPath="/contact" />)
+
+    expect(screen.getByText('Reference K7MQ-3XTP')).toBeTruthy()
   })
 })

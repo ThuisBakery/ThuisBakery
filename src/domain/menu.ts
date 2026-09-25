@@ -75,6 +75,28 @@ export const itemPrice = (
 }
 
 /**
+ * What a Size is, beside its label: `15 cm · 1 layer · serves 8`, each part only when Jana
+ * set it, and `null` when she set none. The same words wherever a Size is printed.
+ */
+export const sizeDetail = (
+  {
+    diameter,
+    layers,
+    servings,
+  }: { diameter?: number | null; layers?: number | null; servings?: number | null },
+  locale: Locale,
+): string | null => {
+  const words = DICTIONARY[locale].item
+  const parts = [
+    typeof diameter === 'number' ? words.diameter(diameter) : null,
+    typeof layers === 'number' ? words.layers(layers) : null,
+    typeof servings === 'number' ? words.servings(servings) : null,
+  ].filter((part) => part !== null)
+
+  return parts.length > 0 ? parts.join(' · ') : null
+}
+
+/**
  * How many an Item serves, as a tile states it — `serves 2`, `serves 10–20` — or `null`
  * when any Size leaves its servings out: a figure for some Sizes only would read as true of
  * them all.

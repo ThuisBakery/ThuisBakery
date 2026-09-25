@@ -298,9 +298,9 @@ const fetchMeta = async (
 
 /**
  * An Item page's documents: the Item, populated deep enough for its Allergens' icons; its
- * catalogue's other Items with a URL here, for the siblings; every Sponge and Filling, for
- * an Item that names none of its own; and the three globals it states or its Enquiry form
- * is held to.
+ * catalogue's other Items with a URL here, with their photographs, for the siblings; every
+ * Sponge and Filling, for an Item that names none of its own; and the three globals it
+ * states or its Enquiry form is held to.
  *
  * Read with locale fallback on. Whether the Item has a URL here was settled without it
  * (`itemListings`); what remains — a Size's label, a Filling's name — is exactly what
@@ -323,7 +323,8 @@ const fetchItem = async (payload: Payload, listing: ItemListing, current: Locale
     payload.find({
       collection: 'items',
       where: { id: { in: siblings } },
-      depth: 0,
+      // Deep enough for each sibling's photograph, which its compact tile shows.
+      depth: 1,
       locale: current,
       pagination: false,
     }),

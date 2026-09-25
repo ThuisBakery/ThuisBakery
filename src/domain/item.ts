@@ -192,3 +192,23 @@ export const occasionLinks = (
 
     return href === undefined ? [] : [{ name: occasion.name, href }]
   })
+
+/**
+ * A rich-text description cut after its first block, for an Item page that shows the first
+ * paragraph and keeps the rest behind "More" (ADR-0007). Both halves keep the stored shape,
+ * so each renders as rich text; `rest` is `null` when there is nothing more to show.
+ */
+export const splitDescription = <T extends { root: { children: readonly unknown[] } }>(
+  richText: T,
+): { lead: T; rest: T | null } => {
+  const [first, ...others] = richText.root.children
+  const cut = (children: readonly unknown[]): T => ({
+    ...richText,
+    root: { ...richText.root, children },
+  })
+
+  return {
+    lead: cut(first === undefined ? [] : [first]),
+    rest: others.length > 0 ? cut(others) : null,
+  }
+}

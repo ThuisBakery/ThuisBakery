@@ -13,7 +13,7 @@ import {
 } from '@/domain/enquiry'
 import { estimate } from '@/domain/estimate'
 import type { StoredLeadTime } from '@/domain/lead-time'
-import { formatEuros } from '@/domain/menu'
+import { formatEuros, sizeDetail } from '@/domain/menu'
 import type { Locale } from '@/domain/routes'
 import { HONEYPOT_FIELD, withPhotoProblem, type Receipt } from '@/domain/submit-enquiry'
 
@@ -202,18 +202,11 @@ export const EnquiryForm = ({
         field="size"
         legend={words.size}
         stacked
-        options={offer.sizes.map(({ id, label, price, diameter, layers, servings }) => ({
-          value: id,
-          label,
-          aside: formatEuros(price, locale),
-          detail:
-            [
-              typeof diameter === 'number' ? itemWords.diameter(diameter) : null,
-              typeof layers === 'number' ? itemWords.layers(layers) : null,
-              typeof servings === 'number' ? itemWords.servings(servings) : null,
-            ]
-              .filter((each) => each !== null)
-              .join(' · ') || undefined,
+        options={offer.sizes.map((size) => ({
+          value: size.id,
+          label: size.label,
+          aside: formatEuros(size.price, locale),
+          detail: sizeDetail(size, locale) ?? undefined,
         }))}
         value={values.size}
         onChange={(value) => change('size', value)}

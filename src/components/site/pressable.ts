@@ -183,5 +183,40 @@ export const FILE_FIELD = [
   'file:transition-colors hover:file:border-ink active:file:bg-ground',
 ].join(' ')
 
+/**
+ * A gallery thumbnail, which swaps the main photograph. Faded until hovered or shown; the one
+ * shown (`aria-pressed`) is ringed in ink, so the mark does not rely on the fade alone.
+ */
+export const THUMBNAIL = [
+  'block size-14 overflow-hidden rounded-card border-2 border-transparent bg-raised opacity-70 md:size-[4.5rem]',
+  EASE,
+  PRESS_MOTION,
+  'hover:opacity-100',
+  'active:opacity-85',
+  'aria-pressed:border-ink aria-pressed:opacity-100',
+].join(' ')
+
+/**
+ * A compact card for another Item: a small photograph, the title and the price, as one
+ * link (an Item page's foot). The border darkens on hover, as a field's does.
+ */
+export const COMPACT_TILE = [
+  'group flex min-h-12 items-center gap-4 rounded-card border border-rule bg-raised p-2 pr-4',
+  EASE,
+  'motion-safe:active:scale-[0.99]',
+  'hover:border-ink',
+  'active:opacity-85',
+].join(' ')
+
+/** A link drawn as a chip: an Occasion or Custom order at the foot of an Item page. */
+export const CHIP_LINK = [
+  PILL,
+  EASE,
+  PRESS_MOTION,
+  'min-h-11 border border-rule px-4 py-2 text-sm',
+  'hover:border-ink',
+  'active:bg-raised',
+].join(' ')
+
 /** A photograph's frame: the one radius, the raised ground while it loads. */
 export const PHOTO_FRAME = 'overflow-hidden rounded-card bg-raised'
