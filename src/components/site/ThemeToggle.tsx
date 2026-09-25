@@ -2,6 +2,8 @@
 
 import { useLayoutEffect, useSyncExternalStore } from 'react'
 
+import { DICTIONARY } from '@/domain/dictionary'
+import type { Locale } from '@/domain/routes'
 import {
   DEFAULT_THEME,
   THEME_ATTRIBUTE,
@@ -45,20 +47,11 @@ const choose = (theme: Theme) => {
   }
 }
 
-/** A choice made in another tab follows here too. */
-const onStorage = (event: StorageEvent) => {
-  if (event.key === THEME_STORAGE_KEY || event.key === null) {
-    apply(storedTheme())
-  }
-}
-
 const subscribe = (listener: () => void) => {
   listeners.add(listener)
-  window.addEventListener('storage', onStorage)
 
   return () => {
     listeners.delete(listener)
-    window.removeEventListener('storage', onStorage)
   }
 }
 
@@ -79,16 +72,16 @@ const ICONS: Record<Theme, string> = {
  * follows straight after, from the root element the pre-paint script already set. Only the
  * icon waits for hydration — the page's colours never do.
  */
-export const ThemeToggle = ({
-  labels,
-}: {
-  labels: { names: Record<Theme, string>; toggle: (current: string, next: string) => string }
-}) => {
+export const ThemeToggle = ({ locale }: { locale: Locale }) => {
+  // Its words are read here, not passed in: the accessible name is a function of the theme,
+  // and a server component cannot hand a function to a client one.
+  const words = DICTIONARY[locale].theme
   const theme = useSyncExternalStore(subscribe, appliedTheme, () => DEFAULT_THEME)
   const next = nextTheme(theme)
 
-  // Before paint, apply what storage holds. The pre-paint script has normally done this
-  // already; in development React's remount of the root clears the attribute it set.
+  // Before paint, apply what storage holds. In production the pre-paint script has already
+  // done this; in development Strict Mode's remount resets `<html>` to its JSX attributes and
+  // clears the one the script set (Next's guide, "Preventing flash before hydration").
   useLayoutEffect(() => {
     apply(storedTheme())
   }, [])
@@ -97,8 +90,8 @@ export const ThemeToggle = ({
     <button
       type="button"
       onClick={() => choose(next)}
-      aria-label={labels.toggle(labels.names[theme], labels.names[next])}
-      className="inline-flex size-9.5 shrink-0 items-center justify-center border border-ink transition-colors duration-300 hover:bg-ink hover:text-ground active:translate-y-px"
+      aria-label={words.toggle(words.names[theme], words.names[next])}
+      className="inline-flex size-9.5 shrink-0 items-center justify-center border border-ink transition-colors duration-300 hover:bg-ink hover:text-ground motion-safe:active:translate-y-px"
     >
       <svg aria-hidden="true" viewBox="0 0 256 256" fill="currentColor" className="size-4.5">
         <path d={ICONS[theme]} />

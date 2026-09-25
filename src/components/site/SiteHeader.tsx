@@ -69,7 +69,7 @@ export const SiteHeader = ({
           </a>
         </nav>
         <div className="flex items-center gap-2">
-          <ThemeToggle labels={words.theme} />
+          <ThemeToggle locale={locale} />
           <LanguageSwitcher locale={locale} page={page} alternate={alternate} />
           <MobileMenu
             links={links}
