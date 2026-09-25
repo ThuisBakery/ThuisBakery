@@ -49,11 +49,16 @@ export type Dictionary = {
     allergens: string
     leadTime: string
     occasions: string
-    /** The link back to the Item's Category section: `More Specialty Cakes`. */
-    moreOf: (category: string) => string
+    /** Every Size with its price, printed on the page (ADR-0002). */
+    sizes: string
+    /** The gallery's thumbnail buttons, numbered from 1. */
+    showPhotograph: (number: number) => string
+    /** Reveal and hide the description beyond its first paragraph. */
+    more: string
+    less: string
+    /** The Item page's one call to action, which opens the Enquiry (ADR-0007). */
+    ask: string
     siblings: string
-    /** The line before the link to Custom order. */
-    somethingElse: string
   }
   /** A marketing page's own labels. */
   page: {
@@ -195,9 +200,12 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       allergens: 'Allergens',
       leadTime: 'How far ahead to ask',
       occasions: 'Made for',
-      moreOf: (category) => `More ${category}`,
+      sizes: 'Sizes',
+      showPhotograph: (number) => `Show photograph ${number}`,
+      more: 'More',
+      less: 'Less',
+      ask: 'Ask Jana for this cake',
       siblings: 'More from the menu',
-      somethingElse: 'Imagining something else?',
     },
     page: {
       occasionItems: 'From the menu',
@@ -329,9 +337,13 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       allergens: 'Allergenen',
       leadTime: 'Hoe ver van tevoren vragen',
       occasions: 'Gemaakt voor',
-      moreOf: (category) => `Meer ${category}`,
+      sizes: 'Maten',
+      showPhotograph: (number) => `Toon foto ${number}`,
+      more: 'Meer',
+      less: 'Minder',
+      // Draft Dutch until Jana sets it (ADR-0007).
+      ask: 'Vraag Jana naar deze taart',
       siblings: 'Meer van de kaart',
-      somethingElse: 'Iets anders in gedachten?',
     },
     page: {
       occasionItems: 'Van de kaart',

@@ -121,63 +121,6 @@ body {
   }
 }
 
-/*
- * The Item's photographs from `md` up (issue #37): the whole column stays in view beside
- * the details while it fits the viewport, and only the main photograph does when it would
- * not, so the sticky column never hides part of itself. `position: sticky` only; no
- * pinning beyond it (ADR-0004). On a phone none of this applies and nothing sticks.
- *
- * Every photograph has a fixed aspect ratio, so the column's height follows from its width
- * alone: the 4:3 main photograph, then per row of secondaries a 1rem gap and a square half
- * the width. `--secondary-rows` is set on the column from the photograph count. These
- * figures mirror the classes in `ItemPage.tsx`; change one and change the other.
- *
- * When it fits, the stack is sticky at its natural height. When it does not, the stack is
- * stretched to the full column, which leaves it no room to move, and the lead grows to
- * fill everything above the secondaries, so the main photograph sticks inside it and the
- * secondaries follow at the foot of the column. When even the main photograph would not
- * fit, nothing sticks and the column scrolls as it does on a phone.
- *
- * The switches are the slack — what is left of the viewport below the top offset, less
- * 1.5rem of breathing room at the foot — scaled until clamp() or min() snaps it: to 0% or
- * 100% for `min-height`, and to the offset or far off-screen for `top`, which is how a
- * sticky element is told never to stick. Any factor that takes a pixel of slack past the
- * bounds will do.
- */
-@media (width >= 48rem) {
-  .item-photographs {
-    container-type: inline-size;
-  }
-
-  .item-photographs-stack {
-    --item-photographs-top: 6rem; /* as the About photograph's `md:top-24` */
-    --item-photographs-height: calc(
-      100cqw * 3 / 4 + var(--secondary-rows) * (1rem + (100cqw - 1rem) / 2)
-    );
-    --item-photographs-room: calc(100svh - var(--item-photographs-top) - 1.5rem);
-    --item-photographs-slack: calc(var(--item-photographs-room) - var(--item-photographs-height));
-    --item-photographs-lead-slack: calc(var(--item-photographs-room) - 100cqw * 3 / 4);
-
-    position: sticky;
-    top: min(var(--item-photographs-top), var(--item-photographs-slack) * 10000);
-    /* Stretched only when the stack does not fit but the main photograph does. */
-    min-height: clamp(
-      0%,
-      min(var(--item-photographs-slack) * -1, var(--item-photographs-lead-slack)) * 10000,
-      100%
-    );
-  }
-
-  .item-photographs-lead {
-    flex-grow: 1;
-  }
-
-  .item-photographs-lead > * {
-    position: sticky;
-    top: min(var(--item-photographs-top), var(--item-photographs-lead-slack) * 10000);
-  }
-}
-
 /* Entry reveal, set by `Reveal` on content that mounts below the fold. Only when motion is
    welcome: under reduced motion `Reveal` never marks anything, and nothing is hidden. */
 @media (prefers-reduced-motion: no-preference) {
