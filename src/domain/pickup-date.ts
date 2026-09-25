@@ -100,9 +100,16 @@ export const formatFullDate = (date: CalendarDate, locale: Locale): string =>
 /** A month of the calendar a customer picks a Requested pickup date from, `month` 1-12. */
 export type CalendarMonth = { year: number; month: number }
 
+/** Months counted from year 0, so two can be compared and shifted as numbers. */
+const monthIndex = ({ year, month }: CalendarMonth): number => year * 12 + (month - 1)
+
+/** Whether `a` is a later month than `b`. */
+export const isMonthAfter = (a: CalendarMonth, b: CalendarMonth): boolean =>
+  monthIndex(a) > monthIndex(b)
+
 /** The month `count` months after `from`; a negative `count` goes back. */
-export const shiftMonth = ({ year, month }: CalendarMonth, count: number): CalendarMonth => {
-  const index = year * 12 + (month - 1) + count
+export const shiftMonth = (from: CalendarMonth, count: number): CalendarMonth => {
+  const index = monthIndex(from) + count
 
   return { year: Math.floor(index / 12), month: (index % 12) + 1 }
 }

@@ -107,10 +107,23 @@ export const useSteps = <S extends string>({
       return true
     },
     back: () => goTo(Math.max(0, at - 1), 'title'),
-    /** The route handler's problems: shown, with the step that owns the first opened. */
-    showServerProblems: (problems: EnquiryProblems) => {
+    /**
+     * The route handler's problems: shown, with the step that owns the first opened. `false`
+     * when no step owns any of them (the Item itself was refused), which the customer cannot
+     * fix: the sheet treats that as a failure on our side.
+     */
+    showServerProblems: (problems: EnquiryProblems): boolean => {
+      if (!stepOwning(steps, fields, problems)) {
+        return false
+      }
+
       shown.showServerProblems(problems)
       open(problems)
+      return true
+    },
+    /** Moves focus to the title once the sheet next renders: its confirmation, say. */
+    focusTitle: () => {
+      pendingFocus.current = 'title'
     },
   }
 }
@@ -123,12 +136,13 @@ export const StepProgress = <S extends string>({
   label,
   steps,
   index,
-  names,
+  name,
 }: {
   label: string
   steps: readonly S[]
   index: number
-  names: Record<S, string>
+  /** A step's short name. */
+  name: (step: S) => string
 }) => (
   <ol aria-label={label} className="mt-3 grid auto-cols-fr grid-flow-col gap-1.5">
     {steps.map((step, position) => (
@@ -141,7 +155,7 @@ export const StepProgress = <S extends string>({
           aria-hidden="true"
           className={`h-1 rounded-full ${position <= index ? 'bg-ink' : 'bg-rule'}`}
         />
-        {names[step]}
+        {name(step)}
       </li>
     ))}
   </ol>

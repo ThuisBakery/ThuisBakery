@@ -12,8 +12,10 @@ import type { EnquiryField, EnquiryProblems, ItemOffer } from './enquiry'
 /** The fields each step owns, in the order they appear on it. */
 export type StepFields<S extends string> = Record<S, readonly EnquiryField[]>
 
+/** The steps of an Item's Enquiry, in the order they can come. */
 export type ItemEnquiryStep = 'size' | 'flavour' | 'date' | 'you'
 
+/** What each step of an Item's Enquiry asks for. */
 export const ITEM_STEP_FIELDS: StepFields<ItemEnquiryStep> = {
   size: ['size', 'quantity'],
   flavour: ['sponge', 'filling'],
@@ -28,7 +30,7 @@ export const ITEM_STEP_FIELDS: StepFields<ItemEnquiryStep> = {
  */
 export const itemEnquirySteps = (
   offer: Pick<ItemOffer, 'configurable' | 'sponges' | 'fillings'>,
-): ItemEnquiryStep[] => [
+): [ItemEnquiryStep, ...ItemEnquiryStep[]] => [
   'size',
   ...(offer.configurable && (offer.sponges.length > 0 || offer.fillings.length > 0)
     ? (['flavour'] as const)

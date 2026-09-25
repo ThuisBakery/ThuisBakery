@@ -10,6 +10,7 @@ import {
   formatDisplayDate,
   formatMonth,
   isClosed,
+  isMonthAfter,
   parseCalendarDate,
   pickupDateProblem,
   shiftMonth,
@@ -255,6 +256,14 @@ describe('calendarMonth', () => {
     // 1 February 2027 is a Monday; 2028 is a leap year.
     expect(calendarMonth({ year: 2027, month: 2 }).leadingBlanks).toBe(0)
     expect(calendarMonth({ year: 2028, month: 2 }).days).toHaveLength(29)
+  })
+})
+
+describe('isMonthAfter', () => {
+  it('orders months across the turn of a year', () => {
+    expect(isMonthAfter({ year: 2027, month: 1 }, { year: 2026, month: 12 })).toBe(true)
+    expect(isMonthAfter({ year: 2026, month: 12 }, { year: 2026, month: 12 })).toBe(false)
+    expect(isMonthAfter({ year: 2026, month: 11 }, { year: 2026, month: 12 })).toBe(false)
   })
 })
 

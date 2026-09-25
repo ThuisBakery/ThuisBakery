@@ -2,7 +2,7 @@
 
 import { createContext, use, useRef, useState, type ReactNode } from 'react'
 
-import { EnquiryForm } from '@/components/enquiry/EnquiryForm'
+import { EnquiryForm, type CatalogueLink } from '@/components/enquiry/EnquiryForm'
 import type { ItemOffer } from '@/domain/enquiry'
 import type { StoredLeadTime } from '@/domain/lead-time'
 import type { Locale } from '@/domain/routes'
@@ -34,7 +34,7 @@ export const ItemEnquiry = ({
   closedNotice: string | null | undefined
   contactPath: string
   /** The catalogue the Item is from: where the confirmation leads back to. */
-  catalogue: { name: string; path: string }
+  catalogue: CatalogueLink
   /** The page, with its **Ask Jana for this cake** buttons somewhere inside. */
   children: ReactNode
 }) => {

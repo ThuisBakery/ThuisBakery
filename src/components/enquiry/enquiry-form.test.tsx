@@ -376,6 +376,18 @@ describe('EnquiryForm — Next checks the step it is on', () => {
     expect(document.activeElement).toBe(screen.getByLabelText('Your name'))
   })
 
+  it('focuses the first field to fix, in the order they appear', async () => {
+    renderForm()
+
+    await chooseUpToYou()
+    fillIn('Your name', 'Sanne de Vries')
+    fillIn('Email', 'sanne@')
+    await send()
+
+    expect(document.activeElement).toBe(screen.getByLabelText('Email'))
+    expect(screen.getByText('This does not look like an email address.')).toBeTruthy()
+  })
+
   it('says nothing about a step before Next is pressed on it', async () => {
     renderForm()
 
@@ -496,6 +508,29 @@ describe('EnquiryForm — sending', () => {
     expect(sheet.getByRole('link', { name: 'Back to the cakes' }).getAttribute('href')).toBe(
       '/cakes',
     )
+  })
+
+  it('moves focus to the confirmation’s title, so it is announced', async () => {
+    renderForm()
+
+    await fillWhole()
+    await send()
+
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Sent to Jana' })),
+    )
+  })
+
+  it('treats a problem no step can fix as a failure on our side', async () => {
+    renderForm({
+      submit: async () => ({ status: 'invalid', problems: { item: 'unknownChoice' } }),
+    })
+
+    await fillWhole()
+    await send()
+
+    expect(screen.getByRole('alert').textContent).toMatch('The problem is on our side')
+    expect((screen.getByLabelText('Your name') as HTMLInputElement).value).toBe('Sanne de Vries')
   })
 
   it('confirms from what was chosen even when no receipt comes back', async () => {

@@ -535,6 +535,43 @@ describe('ItemPage — the Enquiry sheet', () => {
     ).toBe(false)
   })
 
+  it('names what is missing on a step, focuses it, and does not move on', async () => {
+    renderPage()
+
+    const sheet = within(openSheet())
+    await pressNext()
+    await pressNext()
+    await pressNext()
+
+    expect(sheet.getByRole('heading', { name: 'When do you need it?' })).toBeTruthy()
+    expect(sheet.getByText('Please choose a date.')).toBeTruthy()
+    // The Item's own Lead time: five days, by 12:00.
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        sheet.getByRole('radio', { name: 'Saturday 26 September' }),
+      ),
+    )
+  })
+
+  it('keeps every choice going Back', async () => {
+    renderPage()
+
+    const sheet = within(openSheet())
+    fireEvent.click(sheet.getByLabelText('Large'))
+    await pressNext()
+    fireEvent.click(sheet.getByLabelText('Red Velvet'))
+    fireEvent.click(sheet.getByLabelText('Ganache'))
+    await pressNext()
+    fireEvent.click(sheet.getByRole('button', { name: 'Back' }))
+
+    expect((sheet.getByLabelText('Red Velvet') as HTMLInputElement).checked).toBe(true)
+    expect((sheet.getByLabelText('Ganache') as HTMLInputElement).checked).toBe(true)
+
+    fireEvent.click(sheet.getByRole('button', { name: 'Back' }))
+
+    expect((sheet.getByLabelText('Large') as HTMLInputElement).checked).toBe(true)
+  })
+
   it('takes focus in, and puts the page behind out of reach while open', async () => {
     renderPage()
 

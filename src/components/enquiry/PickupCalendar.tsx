@@ -9,6 +9,7 @@ import {
   calendarMonth,
   formatCalendarDate,
   formatMonth,
+  isMonthAfter,
   parseCalendarDate,
   pickupDateProblem,
   shiftMonth,
@@ -20,8 +21,6 @@ import type { Locale } from '@/domain/routes'
 import { LEGEND, type FieldProps, type RequestedPickupCalendar } from './form-parts'
 
 const monthOf = ({ year, month }: CalendarDate): CalendarMonth => ({ year, month })
-
-const monthIndex = ({ year, month }: CalendarMonth) => year * 12 + month
 
 /**
  * The Requested pickup date, picked from a month calendar. A day inside the Lead time, or
@@ -59,7 +58,7 @@ export const PickupCalendar = ({
 
   const chosen = parseCalendarDate(value)
   const month = earliest ? (paged ?? monthOf(chosen ?? earliest)) : null
-  const atFirst = !month || !earliest || monthIndex(month) <= monthIndex(monthOf(earliest))
+  const atFirst = !month || !earliest || !isMonthAfter(month, monthOf(earliest))
 
   return (
     <fieldset aria-invalid={field['aria-invalid']} aria-describedby={field['aria-describedby']}>

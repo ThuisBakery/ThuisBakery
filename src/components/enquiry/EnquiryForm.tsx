@@ -6,7 +6,7 @@ import { FormSheet } from '@/components/site/FormSheet'
 import { BUTTON, CHIP, CHOICE_CARD } from '@/components/site/pressable'
 import { DICTIONARY } from '@/domain/dictionary'
 import { MAX_QUANTITY, validateEnquiry, type EnquiryField, type ItemOffer } from '@/domain/enquiry'
-import { ITEM_STEP_FIELDS, itemEnquirySteps, type ItemEnquiryStep } from '@/domain/enquiry-steps'
+import { ITEM_STEP_FIELDS, itemEnquirySteps } from '@/domain/enquiry-steps'
 import { estimate } from '@/domain/estimate'
 import type { StoredLeadTime } from '@/domain/lead-time'
 import { formatEuros, sizeDetail } from '@/domain/menu'
@@ -34,6 +34,9 @@ import {
 import { PickupCalendar } from './PickupCalendar'
 import { StepFooter, StepProgress, useSteps } from './steps'
 import { Stepper } from './Stepper'
+
+/** A catalogue's name and page: the confirmation's way back to the cakes. */
+export type CatalogueLink = { name: string; path: string }
 
 type Values = {
   size: string
@@ -90,7 +93,7 @@ export const EnquiryForm = ({
   /** Where to get in touch directly when sending fails. */
   contactPath: string
   /** The catalogue the Item is from: the confirmation's way back. */
-  catalogue: { name: string; path: string }
+  catalogue: CatalogueLink
   open: boolean
   onOpenChange: (open: boolean) => void
   /** The control focus returns to on closing: the one that opened the sheet. */
@@ -119,7 +122,7 @@ export const EnquiryForm = ({
   const [status, setStatus] = useState<'idle' | 'sending' | 'failed' | 'sent'>('idle')
   const [receipt, setReceipt] = useState<Receipt | null>(null)
 
-  const steps = itemEnquirySteps(offer) as [ItemEnquiryStep, ...ItemEnquiryStep[]]
+  const steps = itemEnquirySteps(offer)
   const calendar = useRequestedPickupCalendar({ locale, leadTime, closedUntil })
 
   const validate = (current: Values) =>
@@ -171,9 +174,10 @@ export const EnquiryForm = ({
     if (reply.status === 'accepted') {
       setReceipt(reply.receipt)
       setStatus('sent')
-    } else if (reply.status === 'invalid') {
+      // The Send button goes with the steps: focus moves to "Sent to Jana", which is announced.
+      stepper.focusTitle()
+    } else if (reply.status === 'invalid' && stepper.showServerProblems(reply.problems)) {
       setStatus('idle')
-      stepper.showServerProblems(reply.problems)
     } else {
       setStatus('failed')
     }
@@ -193,6 +197,7 @@ export const EnquiryForm = ({
         open={open}
         onOpenChange={onOpenChange}
         title={words.sentToJana}
+        titleRef={stepper.titleRef}
         kicker={offer.title}
         closeLabel={DICTIONARY[locale].close}
         returnFocus={returnFocus}
@@ -216,7 +221,7 @@ export const EnquiryForm = ({
               term: DICTIONARY[locale].sent.requestedPickupDate,
               value: pickup ? calendar.display(pickup) : null,
             },
-            { term: words.specialRequests, value: values.specialRequests.trim() },
+            { term: DICTIONARY[locale].sent.specialRequests, value: values.specialRequests.trim() },
           ]}
           estimate={figure}
           contactPath={contactPath}
@@ -241,12 +246,7 @@ export const EnquiryForm = ({
           label={words.progress}
           steps={steps}
           index={stepper.index}
-          names={{
-            size: words.steps.size.name,
-            flavour: words.steps.flavour.name,
-            date: words.steps.date.name,
-            you: words.steps.you.name,
-          }}
+          name={(each) => words.steps[each].name}
         />
       }
       closeLabel={DICTIONARY[locale].close}
