@@ -7,6 +7,7 @@ import { DICTIONARY } from '@/domain/dictionary'
 import type { EnquiryProblems } from '@/domain/enquiry'
 import { problemsOn, stepOwning, type StepFields } from '@/domain/enquiry-steps'
 import type { Locale } from '@/domain/routes'
+import { cn } from '@/lib/utils'
 
 import type { useProblems } from './form-parts'
 
@@ -206,14 +207,21 @@ export const StepFooter = ({
           </a>
         </div>
       ) : null}
-      <div className="flex items-center gap-2">
-        <div className="mr-auto min-w-0">{aside}</div>
+      {/* On a phone the Estimate takes its own line and the buttons share the one beneath:
+          all three side by side do not fit the sheet's width, in either language. */}
+      <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-3">
+        {aside ? <div className="mr-auto min-w-0 basis-full sm:basis-auto">{aside}</div> : null}
         {first ? null : (
           <button type="button" onClick={onBack} className={BUTTON_OUTLINE}>
             {words.back}
           </button>
         )}
-        <button type="submit" form={formId} disabled={busy} className={BUTTON}>
+        <button
+          type="submit"
+          form={formId}
+          disabled={busy}
+          className={cn(BUTTON, 'flex-1 px-5 sm:flex-none sm:px-8')}
+        >
           {status === 'sending' ? words.sending : last ? send : words.next}
         </button>
       </div>
