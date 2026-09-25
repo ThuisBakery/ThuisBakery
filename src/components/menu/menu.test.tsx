@@ -4,7 +4,6 @@ import { afterEach, describe, expect, it } from 'vitest'
 import type { Category, Item, Media } from '@/payload-types'
 
 import { CataloguePage } from './CataloguePage'
-import { IllustratedMenu } from './IllustratedMenu'
 
 afterEach(cleanup)
 
@@ -54,13 +53,33 @@ const categories: Category[] = [
   category({ id: 5, name: 'Nibbles', slug: 'nibbles', catalogue: 'nibbles', order: 5 }),
 ]
 
-const item = (fields: Pick<Item, 'id' | 'title' | 'slug' | 'category' | 'sizes'>): Item => ({
+const item = (
+  fields: Pick<Item, 'id' | 'title' | 'slug' | 'category' | 'sizes'> & Partial<Item>,
+): Item => ({
+  photographs: [{ ...photograph(fields.id), alt: `${fields.title}, photographed` }],
   updatedAt: '2026-09-22T00:00:00.000Z',
   createdAt: '2026-09-22T00:00:00.000Z',
   ...fields,
 })
 
 const items: Item[] = [
+  item({
+    id: 12,
+    title: 'Cheeky Bento Cake',
+    slug: 'cheeky-bento-cake',
+    category: 2,
+    sizes: [{ label: 'Bento', price: 25, servings: 2 }],
+  }),
+  item({
+    id: 13,
+    title: 'Carrot Cake',
+    slug: 'carrot-cake',
+    category: 4,
+    sizes: [
+      { label: '15 cm', price: 45, servings: 8 },
+      { label: '20 cm', price: 60, servings: 14 },
+    ],
+  }),
   item({
     id: 10,
     title: 'Burnt Basque Cheesecake',
@@ -102,24 +121,50 @@ describe('CataloguePage', () => {
     })
   })
 
-  it('carries the card’s lines: tagline, her note where she wrote one, and the price', () => {
-    render(<CataloguePage locale="nl" catalogue="cakes" categories={categories} items={items} />)
+  it('sets each Category as a heading, not a link, with the card’s tagline and her note', () => {
+    render(<CataloguePage locale="en" catalogue="cakes" categories={categories} items={items} />)
 
-    const bento = screen.getByRole('heading', { name: 'Cheeky Bento Cakes' }).closest('li')
+    const heading = screen.getByRole('heading', { level: 2, name: 'Cheeky Bento Cakes' })
+    const section = heading.closest('section')!
 
-    expect(bento).not.toBeNull()
-    expect(within(bento!).getByText('Mini Cakes for Big Moments')).toBeTruthy()
-    expect(within(bento!).getByText('personalisation available on request')).toBeTruthy()
-    expect(within(bento!).getByText('vanaf €25')).toBeTruthy()
+    expect(heading.closest('a')).toBeNull()
+    expect(within(heading).queryAllByRole('link')).toEqual([])
+    expect(within(section).getByText('Mini Cakes for Big Moments')).toBeTruthy()
+    expect(within(section).getByText('personalisation available on request')).toBeTruthy()
   })
 
-  it('lists a Category’s Items as links to their pages, in the page’s locale', () => {
+  it('lists each Category’s Items as tiles under its heading, each exactly one link to its page', () => {
     render(<CataloguePage locale="nl" catalogue="cakes" categories={categories} items={items} />)
+
+    const specialty = screen.getByRole('heading', { level: 2, name: 'Specialty Cakes' })
+    const section = specialty.closest('section')!
+    const titles = within(section).getAllByRole('heading', { level: 3 })
+
+    // In the order fetched: the page files Items, it does not sort them.
+    expect(titles.map((each) => each.textContent)).toEqual([
+      'Carrot Cake',
+      'Burnt Basque Cheesecake',
+    ])
+
+    const tile = titles[0]!.closest('li')!
+    const [link, ...others] = within(tile).getAllByRole('link')
+
+    expect(others).toEqual([])
+    expect(link?.getAttribute('href')).toBe('/nl/taarten/carrot-cake')
+    expect(within(link!).getByRole('img', { name: 'Carrot Cake, photographed' })).toBeTruthy()
+    expect(within(link!).getByText('Specialty Cakes')).toBeTruthy()
+    expect(within(link!).getByText('vanaf €45')).toBeTruthy()
+    expect(within(link!).getByText('voor 8–14 personen')).toBeTruthy()
+  })
+
+  it('prices a one-Size Item at its one price, and leaves servings out when a Size lacks them', () => {
+    render(<CataloguePage locale="en" catalogue="cakes" categories={categories} items={items} />)
 
     const link = screen.getByRole('link', { name: /Burnt Basque Cheesecake/ })
 
-    expect(link.getAttribute('href')).toBe('/nl/taarten/burnt-basque-cheesecake')
-    expect(link.textContent).toContain('€56')
+    expect(link.getAttribute('href')).toBe('/cakes/burnt-basque-cheesecake')
+    expect(within(link).getByText('€56')).toBeTruthy()
+    expect(within(link).queryByText(/serves/)).toBeNull()
   })
 
   it('is links, not buttons — no buy button, no cart', () => {
@@ -133,25 +178,5 @@ describe('CataloguePage', () => {
     render(<CataloguePage locale="en" catalogue="nibbles" categories={categories} items={items} />)
 
     expect(screen.queryByRole('navigation', { name: 'Jump to' })).toBeNull()
-  })
-})
-
-describe('IllustratedMenu', () => {
-  it('makes the whole entry one link when it is given somewhere to go, as the homepage does', () => {
-    const cakes = categories.filter((each) => each.catalogue === 'cakes')
-
-    render(
-      <IllustratedMenu
-        locale="en"
-        sections={cakes.map((each) => ({ category: each, items: [] }))}
-        categoryHref={(each) => `/cakes#${each.slug}`}
-      />,
-    )
-
-    const link = screen.getByRole('link', { name: /Cheeky Bento Cakes/ })
-
-    expect(link.getAttribute('href')).toBe('/cakes#bento')
-    expect(within(link).getByRole('img')).toBeTruthy()
-    expect(within(link).getByText('from €25')).toBeTruthy()
   })
 })

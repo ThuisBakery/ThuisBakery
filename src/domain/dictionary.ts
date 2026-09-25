@@ -28,6 +28,10 @@ export type Dictionary = {
   }
   /** Before a starting price, lower case: `from €25`. */
   priceFrom: string
+  /** How many an Item serves, on its menu tile: one figure, or the range across its Sizes. */
+  serves: (fewest: number, most: number) => string
+  /** The link to Custom order beside the homepage's main action (ADR-0007). */
+  somethingCustom: string
   /** The accessible name of a catalogue page's in-page index of its Categories. */
   categoryIndex: string
   /** Each coded page's name: its `<title>`, and the heading of a page with none of its own. */
@@ -167,6 +171,8 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       toggle: (current, next) => `Theme: ${current}. Switch to ${next}`,
     },
     priceFrom: 'from',
+    serves: (fewest, most) => (fewest === most ? `serves ${most}` : `serves ${fewest}–${most}`),
+    somethingCustom: 'Something custom',
     categoryIndex: 'Jump to',
     pageTitles: {
       home: 'Baked at home in Uithoorn',
@@ -298,6 +304,9 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       toggle: (current, next) => `Thema: ${current}. Wissel naar ${next}`,
     },
     priceFrom: 'vanaf',
+    serves: (fewest, most) =>
+      fewest === most ? `voor ${most} personen` : `voor ${fewest}–${most} personen`,
+    somethingCustom: 'Iets op maat',
     categoryIndex: 'Ga naar',
     pageTitles: {
       home: 'Thuis gebakken in Uithoorn',

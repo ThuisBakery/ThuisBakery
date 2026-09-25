@@ -1355,20 +1355,20 @@ export interface Home {
      */
     intro: string;
     /**
-     * The photograph along the foot of the opening screen, cut by the bottom edge so it leads down into the menu. A wide shot works best. Set its focal point on the photograph itself, so the subject stays in frame when the page crops it.
+     * The photograph beside the heading on a wide screen. Left out on a phone, so the cakes start on the first screen. Set its focal point on the photograph itself, so the subject stays in frame when the page crops it.
      */
     photograph?: (number | null) | Media;
     /**
-     * The main button, to the cakes — “See the cakes”.
+     * The main button, to the cakes — “Choose a cake”.
      */
     cakesLabel: string;
     /**
-     * The link beside it, to the nibbles.
+     * The link to the nibbles, beside the button in the closing band.
      */
     nibblesLabel: string;
   };
   /**
-   * Three facts under the opening. The notice needed comes from Lead time, and the starting price from the Categories — only pickup and the line under the price are written here.
+   * Three facts under the menu. The notice needed comes from Lead time, and the starting price from the Categories — only pickup and the line under the price are written here.
    */
   facts: {
     /**
@@ -1385,7 +1385,7 @@ export interface Home {
     priceDetail?: string | null;
   };
   /**
-   * The menu shows every Category, as it does on the catalogue pages.
+   * The menu shows every cake, in the Categories’ order, each linking to its own page.
    */
   menu: {
     /**

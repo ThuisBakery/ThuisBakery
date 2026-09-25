@@ -74,6 +74,24 @@ export const itemPrice = (
   return { price: priced(lowest, varies, locale), size: null }
 }
 
+/**
+ * How many an Item serves, as a tile states it — `serves 2`, `serves 10–20` — or `null`
+ * when any Size leaves its servings out: a figure for some Sizes only would read as true of
+ * them all.
+ */
+export const itemServings = (
+  sizes: readonly { servings?: number | null }[],
+  locale: Locale,
+): string | null => {
+  const counts = sizes.map(({ servings }) => servings)
+
+  if (counts.length === 0 || !counts.every((count) => typeof count === 'number')) {
+    return null
+  }
+
+  return DICTIONARY[locale].serves(Math.min(...counts), Math.max(...counts))
+}
+
 /** How wide a menu cell runs: 7 or 5 of 12 columns, or the full width as a band. */
 export type MenuSpan = 'wide' | 'narrow' | 'band'
 

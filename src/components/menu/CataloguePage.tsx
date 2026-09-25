@@ -5,13 +5,18 @@ import { catalogueSections } from '@/domain/menu'
 import type { Catalogue, Locale } from '@/domain/routes'
 import type { Category, Item } from '@/payload-types'
 
-import { IllustratedMenu } from './IllustratedMenu'
+import { IllustratedMenu, type MenuSection } from './IllustratedMenu'
+import { ItemTiles } from './ItemTiles'
 
 /**
  * `/cakes` and `/nibbles` (ADR-0003): the catalogue's Categories as anchored sections of
- * one page, each an illustrated menu entry with its Items listed beneath, as Jana's card
- * lists them. There are no Category pages; a Category is reached by in-page link, from the
- * index here or from the homepage.
+ * one page. There are no Category pages; a Category is reached by in-page link, from the
+ * index here or from a deep link, and its anchor is kept for exactly that.
+ *
+ * On `/cakes` each section is a Category heading over its Items as tiles, the same tiles as
+ * the homepage (ADR-0007): the heading names the group and leads nowhere, and each tile is
+ * the one link to its Item. `/nibbles` keeps the illustrated menu, each entry with its Items
+ * listed beneath as Jana's card lists them.
  *
  * Takes the Payload documents as fetched, so a test renders it with the real shapes; which
  * Categories belong here is read from each Category's `catalogue`, not listed in code.
@@ -55,7 +60,11 @@ export const CataloguePage = ({
         ) : null}
 
         <div className="mt-12 md:mt-16">
-          <IllustratedMenu locale={locale} sections={sections} preloadFirst />
+          {catalogue === 'cakes' ? (
+            <CakeSections locale={locale} sections={sections} />
+          ) : (
+            <IllustratedMenu locale={locale} sections={sections} preloadFirst />
+          )}
         </div>
 
         <div className="mt-16 flex justify-center">
@@ -65,3 +74,43 @@ export const CataloguePage = ({
     </div>
   )
 }
+
+/** `/cakes`: each Category an anchored section, its heading over its Items' tiles. */
+const CakeSections = ({
+  locale,
+  sections,
+}: {
+  locale: Locale
+  sections: readonly MenuSection[]
+}) => (
+  <div className="grid gap-20 md:gap-28">
+    {sections.map(({ category, items }, index) => (
+      <section
+        key={category.id}
+        id={category.slug}
+        aria-labelledby={`${category.slug}-heading`}
+        className="scroll-mt-6"
+      >
+        <h2
+          id={`${category.slug}-heading`}
+          className="font-display text-[34px] leading-tight font-semibold md:text-5xl"
+        >
+          {category.name}
+        </h2>
+        <p className="mt-1.5 font-display text-lg leading-snug text-ink-muted">
+          {category.tagline}
+        </p>
+        {category.note ? (
+          <p className="mt-0.5 text-[15px] leading-[1.4] text-ink-muted">{category.note}</p>
+        ) : null}
+        <div className="mt-8 md:mt-10">
+          <ItemTiles
+            locale={locale}
+            entries={items.map((item) => ({ item, category }))}
+            preloadFirst={index === 0}
+          />
+        </div>
+      </section>
+    ))}
+  </div>
+)
