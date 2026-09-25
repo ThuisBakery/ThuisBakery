@@ -2,9 +2,7 @@
 
 import { createContext, use, useRef, useState, type ReactNode } from 'react'
 
-import { EnquiryForm } from '@/components/enquiry/EnquiryForm'
-import { FormSheet } from '@/components/site/FormSheet'
-import { DICTIONARY } from '@/domain/dictionary'
+import { EnquiryForm, type CatalogueLink } from '@/components/enquiry/EnquiryForm'
 import type { ItemOffer } from '@/domain/enquiry'
 import type { StoredLeadTime } from '@/domain/lead-time'
 import type { Locale } from '@/domain/routes'
@@ -13,12 +11,11 @@ import type { Locale } from '@/domain/routes'
 const OpenEnquiry = createContext<((opener: HTMLElement) => void) | null>(null)
 
 /**
- * The Item page's Enquiry: the existing form, in a sheet over the page (ADR-0007). The page
- * has more than one **Ask Jana for this cake** (the details column's, and the phone's sticky
- * bar), so the sheet sits around the page and each button reaches it through context.
+ * The Item page's Enquiry: the stepped sheet over the page (ADR-0007). The page has more
+ * than one **Ask Jana for this cake** (the details column's, and the phone's sticky bar), so
+ * the sheet sits around the page and each button reaches it through context.
  *
- * The form is the one the page always had, taking the same offer and sending the same
- * Enquiry; only where it is shown has changed.
+ * It takes the same offer and sends the same Enquiry the page always has.
  */
 export const ItemEnquiry = ({
   locale,
@@ -27,6 +24,7 @@ export const ItemEnquiry = ({
   closedUntil,
   closedNotice,
   contactPath,
+  catalogue,
   children,
 }: {
   locale: Locale
@@ -35,10 +33,11 @@ export const ItemEnquiry = ({
   closedUntil: string | null | undefined
   closedNotice: string | null | undefined
   contactPath: string
+  /** The catalogue the Item is from: where the confirmation leads back to. */
+  catalogue: CatalogueLink
   /** The page, with its **Ask Jana for this cake** buttons somewhere inside. */
   children: ReactNode
 }) => {
-  const words = DICTIONARY[locale]
   const [open, setOpen] = useState(false)
   const opener = useRef<HTMLElement | null>(null)
 
@@ -50,23 +49,18 @@ export const ItemEnquiry = ({
   return (
     <OpenEnquiry value={openFrom}>
       {children}
-      <FormSheet
+      <EnquiryForm
+        locale={locale}
+        offer={offer}
+        leadTime={leadTime}
+        closedUntil={closedUntil}
+        closedNotice={closedNotice}
+        contactPath={contactPath}
+        catalogue={catalogue}
         open={open}
         onOpenChange={setOpen}
-        title={words.enquiry.heading}
-        closeLabel={words.close}
         returnFocus={opener}
-      >
-        <p className="mt-4 leading-relaxed text-ink-muted">{words.enquiry.intro}</p>
-        <EnquiryForm
-          locale={locale}
-          offer={offer}
-          leadTime={leadTime}
-          closedUntil={closedUntil}
-          closedNotice={closedNotice}
-          contactPath={contactPath}
-        />
-      </FormSheet>
+      />
     </OpenEnquiry>
   )
 }

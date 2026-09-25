@@ -80,8 +80,17 @@ export const BUTTON_OUTLINE = `${OUTLINED} ${SMALL}`
  */
 export const BUTTON_OUTLINE_LARGE = `${OUTLINED} ${LARGE}`
 
-/** An outlined round button holding only an icon: the theme control. */
-export const ICON_BUTTON = `${OUTLINED} size-11 shrink-0`
+/**
+ * An outlined round button holding only an icon: the theme control, the quantity stepper
+ * and the calendar's months. At the end of its range it is `aria-disabled` rather than
+ * disabled, so focus is not lost from under the customer's finger: faded, and still.
+ */
+export const ICON_BUTTON = [
+  OUTLINED,
+  'size-11 shrink-0',
+  'aria-disabled:cursor-default aria-disabled:opacity-40',
+  'aria-disabled:hover:bg-transparent aria-disabled:hover:text-ink motion-safe:aria-disabled:active:scale-100',
+].join(' ')
 
 /**
  * Links inside Jana's rich text and the Contact details, styled from outside because the
@@ -167,6 +176,21 @@ const CHOICE = [
 export const CHIP = `${CHOICE} rounded-full px-4 py-2`
 
 export const CHOICE_CARD = `${CHOICE} rounded-card px-4 py-3`
+
+/**
+ * A day in the Requested pickup date's calendar, drawn after its hidden `peer` radio: a round
+ * cell that inverts when chosen, as a chip does. A day that cannot be asked for is disabled,
+ * faded and struck through, so the mark does not rely on the fade alone, and answers nothing.
+ */
+export const DAY = [
+  'grid aspect-square min-h-11 place-items-center rounded-full text-[15px] tabular-nums',
+  EASE,
+  'peer-hover:bg-raised',
+  'peer-active:bg-rule motion-safe:peer-active:scale-[0.94]',
+  'peer-checked:bg-ink peer-checked:font-semibold peer-checked:text-ground',
+  'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent',
+  'peer-disabled:text-ink-muted/60 peer-disabled:line-through peer-disabled:peer-hover:bg-transparent',
+].join(' ')
 
 /** A text field, date or select: the one radius, and a border that darkens on hover. */
 export const FIELD = [

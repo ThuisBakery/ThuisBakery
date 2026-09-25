@@ -58,3 +58,34 @@ export const EstimateSummary = ({
     </section>
   )
 }
+
+/**
+ * The Estimate at its smallest, for the pinned foot of the Enquiry sheet: headed "Estimate"
+ * and marked provisional, the figure, and what it is made of without the sums. It follows the
+ * customer's choices on every step, and says so politely when it changes.
+ */
+export const EstimateFigure = ({ locale, estimate }: { locale: Locale; estimate: Estimate }) => {
+  const words = DICTIONARY[locale].enquiry
+
+  return (
+    <section aria-labelledby="enquiry-estimate-heading" aria-live="polite" className="min-w-0">
+      <h3
+        id="enquiry-estimate-heading"
+        className="flex items-center gap-2 font-sans text-[12px] tracking-wide text-ink-muted"
+      >
+        {words.estimate}
+        <span className="rounded-full border border-rule px-1.5 text-[11px] uppercase">
+          {words.provisional}
+        </span>
+      </h3>
+      <p className="font-display text-xl leading-tight tabular-nums">
+        {formatEuros(estimate.total, locale)}
+      </p>
+      <ul className="flex flex-wrap gap-x-2 text-xs text-ink-muted">
+        {estimate.lines.map((line, index) => (
+          <li key={`${index}-${line.label}`}>{words.line(line.label, line.quantity)}</li>
+        ))}
+      </ul>
+    </section>
+  )
+}

@@ -3,13 +3,18 @@ import { describe, expect, it } from 'vitest'
 import type { LeadTime } from './lead-time'
 import {
   amsterdamArrival,
+  calendarMonth,
   closedUntilDate,
   earliestPickupDate,
   formatCalendarDate,
   formatDisplayDate,
+  formatMonth,
   isClosed,
+  isMonthAfter,
   parseCalendarDate,
   pickupDateProblem,
+  shiftMonth,
+  weekdayNames,
 } from './pickup-date'
 
 /** Three days' notice, by 17:00. */
@@ -233,5 +238,47 @@ describe('formatDisplayDate', () => {
     expect(formatDisplayDate(date('2026-12-31'), 'en', date('2026-12-30'))).toBe(
       'Thursday 31 December',
     )
+  })
+})
+
+describe('calendarMonth', () => {
+  it('lays a month out from Monday, with the blanks before its first day', () => {
+    // 1 September 2026 is a Tuesday.
+    const month = calendarMonth({ year: 2026, month: 9 })
+
+    expect(month.leadingBlanks).toBe(1)
+    expect(month.days).toHaveLength(30)
+    expect(month.days[0]).toEqual({ year: 2026, month: 9, day: 1 })
+    expect(month.days[29]).toEqual({ year: 2026, month: 9, day: 30 })
+  })
+
+  it('needs no blanks for a month that starts on a Monday, and knows a leap February', () => {
+    // 1 February 2027 is a Monday; 2028 is a leap year.
+    expect(calendarMonth({ year: 2027, month: 2 }).leadingBlanks).toBe(0)
+    expect(calendarMonth({ year: 2028, month: 2 }).days).toHaveLength(29)
+  })
+})
+
+describe('isMonthAfter', () => {
+  it('orders months across the turn of a year', () => {
+    expect(isMonthAfter({ year: 2027, month: 1 }, { year: 2026, month: 12 })).toBe(true)
+    expect(isMonthAfter({ year: 2026, month: 12 }, { year: 2026, month: 12 })).toBe(false)
+    expect(isMonthAfter({ year: 2026, month: 11 }, { year: 2026, month: 12 })).toBe(false)
+  })
+})
+
+describe('shiftMonth', () => {
+  it('moves across the turn of a year both ways', () => {
+    expect(shiftMonth({ year: 2026, month: 12 }, 1)).toEqual({ year: 2027, month: 1 })
+    expect(shiftMonth({ year: 2027, month: 1 }, -1)).toEqual({ year: 2026, month: 12 })
+  })
+})
+
+describe('formatMonth and weekdayNames', () => {
+  it('names a month and the week’s days in each locale, Monday first', () => {
+    expect(formatMonth({ year: 2026, month: 9 }, 'en')).toBe('September 2026')
+    expect(formatMonth({ year: 2026, month: 9 }, 'nl')).toBe('september 2026')
+    expect(weekdayNames('en')[0]).toBe('Mon')
+    expect(weekdayNames('nl')).toHaveLength(7)
   })
 })

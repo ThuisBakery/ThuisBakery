@@ -48,8 +48,8 @@ const STICKY = 'md:sticky md:top-6 md:self-start'
  * `BreadcrumbList` are carried, and every value they mark up is printed here, outside the
  * sheet (ADR-0002): every Size with its price is listed in the details column.
  *
- * The Enquiry opens in a sheet over the page. It is the existing form, holding the Item's
- * offer from `itemOffer`, the same derivation the route handler checks.
+ * The Enquiry opens in a stepped sheet over the page, holding the Item's offer from
+ * `itemOffer`, the same derivation the route handler checks.
  *
  * The links are the ones ADR-0003 specifies for an Item, in a compact row at the foot: two
  * or three siblings computed from Item data, its Occasion pages, and Custom order.
@@ -135,6 +135,7 @@ export const ItemPage = ({
       closedUntil={closedUntil.date}
       closedNotice={closedUntil.notice}
       contactPath={pagePath('contact', locale)}
+      catalogue={{ name: words.pageTitles[catalogue], path: cataloguePath(catalogue, locale) }}
     >
       <article className="px-4 pt-2 pb-28 md:px-10 md:pt-6 md:pb-28">
         <JsonLd data={structuredData} />

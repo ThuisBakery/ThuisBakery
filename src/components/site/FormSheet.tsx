@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode, RefObject } from 'react'
+import type { ReactNode, Ref, RefObject } from 'react'
 
 import { Sheet, SheetClose, SheetContent, SheetTitle } from '@/components/ui/sheet'
 
@@ -16,6 +16,11 @@ import { BUTTON_OUTLINE } from './pressable'
  * and an optional `footer` pinned beneath it. What it holds stays mounted while it is closed,
  * so closing it to look at the photographs again and reopening it loses nothing.
  *
+ * A stepped sheet puts what the sheet is about in the `kicker` above the title, its progress
+ * in the `header` below it, and the step's title as the `title`, which is the sheet's
+ * accessible name: `titleRef` lets it move focus there when the step changes, so the new
+ * step is announced.
+ *
  * It opens from buttons elsewhere on the page rather than a trigger of its own, so it is
  * told where focus goes back to on closing: `returnFocus`, the button that opened it.
  */
@@ -23,6 +28,9 @@ export const FormSheet = ({
   open,
   onOpenChange,
   title,
+  titleRef,
+  kicker,
+  header,
   closeLabel,
   returnFocus,
   footer,
@@ -32,6 +40,12 @@ export const FormSheet = ({
   onOpenChange: (open: boolean) => void
   /** The sheet's accessible name, and its visible heading. */
   title: string
+  /** Given, the title can take focus, and this is how to give it. */
+  titleRef?: Ref<HTMLHeadingElement>
+  /** A short line above the title: what the sheet is about. */
+  kicker?: string
+  /** Beneath the title, above the scrolling body: a stepped sheet's progress. */
+  header?: ReactNode
   closeLabel: string
   /** The control focus returns to on closing: the one that opened it. */
   returnFocus: RefObject<HTMLElement | null>
@@ -56,11 +70,21 @@ export const FormSheet = ({
         'motion-safe:starting:translate-y-full md:motion-safe:starting:translate-x-full md:motion-safe:starting:translate-y-0',
       ].join(' ')}
     >
-      <div className="flex items-center justify-between gap-4 border-b border-rule px-5 pt-4 pb-3 md:px-8 md:pt-6">
-        <SheetTitle className="font-display text-[26px] leading-tight font-semibold">
-          {title}
-        </SheetTitle>
-        <SheetClose className={BUTTON_OUTLINE}>{closeLabel}</SheetClose>
+      <div className="border-b border-rule px-5 pt-4 pb-3 md:px-8 md:pt-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            {kicker ? <p className="truncate text-sm text-ink-muted">{kicker}</p> : null}
+            <SheetTitle
+              ref={titleRef}
+              tabIndex={titleRef ? -1 : undefined}
+              className="font-display text-[26px] leading-tight font-semibold"
+            >
+              {title}
+            </SheetTitle>
+          </div>
+          <SheetClose className={BUTTON_OUTLINE}>{closeLabel}</SheetClose>
+        </div>
+        {header}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-8 md:px-8">
         {children}

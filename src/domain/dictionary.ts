@@ -1,4 +1,5 @@
 import type { EnquiryProblem } from './enquiry'
+import type { ItemEnquiryStep } from './enquiry-steps'
 import type { Locale, CodedPage } from './routes'
 import type { Theme } from './theme'
 
@@ -70,7 +71,6 @@ export type Dictionary = {
    * its figure is labelled as the Estimate, and always as provisional.
    */
   enquiry: {
-    heading: string
     intro: string
     size: string
     quantity: string
@@ -112,6 +112,31 @@ export type Dictionary = {
       tooSoon: (earliest: string | null) => string
       closed: (until: string | null) => string
     }
+    /**
+     * The stepped sheet (ADR-0007): each step's short name, in the progress indicator, and
+     * its title, the sheet's heading while it is on that step.
+     */
+    steps: Record<ItemEnquiryStep, { name: string; title: string }>
+    /** The Size step's title when there is only one Size, so the step is only how many. */
+    howManyTitle: string
+    /** The progress indicator's accessible name. */
+    progress: string
+    next: string
+    back: string
+    /** The last step's button: the moment of sending, and to a person. */
+    sendToJana: string
+    /** The quantity stepper's buttons. */
+    fewer: string
+    more: string
+    /** The calendar's buttons. */
+    previousMonth: string
+    nextMonth: string
+    /** The confirmation in the sheet, once Jana has the Enquiry. */
+    sentToJana: string
+    /** How she replies, and to where. */
+    replyTo: (email: string) => string
+    /** The confirmation's way back to the catalogue the Item is from. */
+    backTo: (catalogue: string) => string
   }
   /** The Contact page's labels. Everything Jana writes there is on the Contact global. */
   contact: {
@@ -211,7 +236,6 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       occasionItems: 'From the menu',
     },
     enquiry: {
-      heading: 'Send an enquiry',
       intro:
         'Tell Jana what you have in mind. This is not an order: nothing is booked or paid until she replies.',
       size: 'Size',
@@ -260,6 +284,25 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
             ? `Jana is closed until ${until}. Choose that day or later.`
             : 'Jana is closed then.',
       },
+      steps: {
+        size: { name: 'Size', title: 'Choose a size' },
+        flavour: { name: 'Flavour', title: 'Choose your flavours' },
+        date: { name: 'Date', title: 'When do you need it?' },
+        you: { name: 'You', title: 'Where should Jana reply?' },
+      },
+      howManyTitle: 'How many?',
+      progress: 'Steps',
+      next: 'Next',
+      back: 'Back',
+      sendToJana: 'Send to Jana',
+      fewer: 'One fewer',
+      more: 'One more',
+      previousMonth: 'Previous month',
+      nextMonth: 'Next month',
+      sentToJana: 'Sent to Jana',
+      replyTo: (email) =>
+        `She replies by email to ${email}. Nothing is booked or paid until you both agree.`,
+      backTo: (catalogue) => `Back to the ${catalogue.toLowerCase()}`,
     },
     contact: {
       email: 'Email',
@@ -349,7 +392,6 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
       occasionItems: 'Van de kaart',
     },
     enquiry: {
-      heading: 'Stuur Jana je vraag',
       intro:
         'Vertel Jana wat je in gedachten hebt. Dit is geen bestelling: er ligt niets vast en je betaalt niets tot zij antwoordt.',
       size: 'Maat',
@@ -397,6 +439,26 @@ export const DICTIONARY: Record<Locale, Dictionary> = {
         closed: (until) =>
           until ? `Jana is gesloten tot ${until}. Kies die dag of later.` : 'Jana is dan gesloten.',
       },
+      // The stepped sheet's words are draft Dutch until Jana sets them (ADR-0007).
+      steps: {
+        size: { name: 'Maat', title: 'Kies een maat' },
+        flavour: { name: 'Smaak', title: 'Kies je smaken' },
+        date: { name: 'Datum', title: 'Wanneer heb je hem nodig?' },
+        you: { name: 'Jij', title: 'Waar mag Jana naar antwoorden?' },
+      },
+      howManyTitle: 'Hoeveel?',
+      progress: 'Stappen',
+      next: 'Volgende',
+      back: 'Terug',
+      sendToJana: 'Stuur naar Jana',
+      fewer: 'Eén minder',
+      more: 'Eén meer',
+      previousMonth: 'Vorige maand',
+      nextMonth: 'Volgende maand',
+      sentToJana: 'Verstuurd naar Jana',
+      replyTo: (email) =>
+        `Ze antwoordt per e-mail aan ${email}. Er ligt niets vast en je betaalt niets tot jullie het eens zijn.`,
+      backTo: (catalogue) => `Terug naar de ${catalogue.toLowerCase()}`,
     },
     contact: {
       email: 'E-mail',

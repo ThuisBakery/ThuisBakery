@@ -143,6 +143,7 @@ export const useProblems = ({
   own,
   calendar,
   formRef,
+  datePicked = false,
 }: {
   locale: Locale
   order: readonly EnquiryField[]
@@ -150,6 +151,8 @@ export const useProblems = ({
   own: EnquiryProblems
   calendar: RequestedPickupCalendar | null
   formRef: RefObject<HTMLFormElement | null>
+  /** The date is picked from a calendar, not typed: missing, it reads "choose a date". */
+  datePicked?: boolean
 }) => {
   const words = DICTIONARY[locale].enquiry
   const [touched, setTouched] = useState<ReadonlySet<EnquiryField>>(new Set())
@@ -171,6 +174,10 @@ export const useProblems = ({
 
     switch (problem) {
       case 'required':
+        if (datePicked && field === 'requestedPickupDate') {
+          return words.problems.invalidDate
+        }
+
         return CHOICE_FIELDS.has(field) ? words.problems.unknownChoice : words.problems.required
       case 'invalidQuantity':
         return words.problems.invalidQuantity(MAX_QUANTITY)
@@ -189,11 +196,12 @@ export const useProblems = ({
     const field = order.find((each) => found[each])
 
     if (field) {
-      // A choice is focused on the option already chosen, where the arrow keys start from.
+      // A choice is focused on the option already chosen, where the arrow keys start from,
+      // else on the first that can be chosen: a calendar's blocked days cannot take focus.
       const form = formRef.current
       const target =
         form?.querySelector<HTMLElement>(`[name="${field}"]:checked`) ??
-        form?.querySelector<HTMLElement>(`[name="${field}"]`)
+        form?.querySelector<HTMLElement>(`[name="${field}"]:not(:disabled)`)
 
       target?.focus()
     }

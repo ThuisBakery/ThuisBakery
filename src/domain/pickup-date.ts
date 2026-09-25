@@ -97,6 +97,62 @@ export const formatFullDate = (date: CalendarDate, locale: Locale): string =>
     year: 'numeric',
   }).format(new Date(toUtc(date)))
 
+/** A month of the calendar a customer picks a Requested pickup date from, `month` 1-12. */
+export type CalendarMonth = { year: number; month: number }
+
+/** Months counted from year 0, so two can be compared and shifted as numbers. */
+const monthIndex = ({ year, month }: CalendarMonth): number => year * 12 + (month - 1)
+
+/** Whether `a` is a later month than `b`. */
+export const isMonthAfter = (a: CalendarMonth, b: CalendarMonth): boolean =>
+  monthIndex(a) > monthIndex(b)
+
+/** The month `count` months after `from`; a negative `count` goes back. */
+export const shiftMonth = (from: CalendarMonth, count: number): CalendarMonth => {
+  const index = monthIndex(from) + count
+
+  return { year: Math.floor(index / 12), month: (index % 12) + 1 }
+}
+
+/**
+ * A month as a calendar lays it out: its days in order, and how many blank cells come before
+ * the first, in a week that starts on Monday, as it does in the Netherlands.
+ */
+export const calendarMonth = ({
+  year,
+  month,
+}: CalendarMonth): { leadingBlanks: number; days: CalendarDate[] } => {
+  const first = new Date(Date.UTC(year, month - 1, 1))
+  const length = new Date(Date.UTC(year, month, 0)).getUTCDate()
+
+  return {
+    // `getUTCDay` counts from Sunday; the week here counts from Monday.
+    leadingBlanks: (first.getUTCDay() + 6) % 7,
+    days: Array.from({ length }, (_, index) => ({ year, month, day: index + 1 })),
+  }
+}
+
+/** A calendar's heading — `September 2026` — in the customer's language. */
+export const formatMonth = ({ year, month }: CalendarMonth, locale: Locale): string =>
+  new Intl.DateTimeFormat(DISPLAY_LOCALES[locale], {
+    timeZone: 'UTC',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(Date.UTC(year, month - 1, 1)))
+
+/** The week's days, short and Monday first, for a calendar's column heads. */
+export const weekdayNames = (locale: Locale): string[] => {
+  const format = new Intl.DateTimeFormat(DISPLAY_LOCALES[locale], {
+    timeZone: 'UTC',
+    weekday: 'short',
+  })
+
+  // 5 January 2026 is a Monday.
+  return Array.from({ length: 7 }, (_, index) =>
+    format.format(new Date(Date.UTC(2026, 0, 5 + index))),
+  )
+}
+
 /**
  * The Closed until global's date as an Amsterdam day. Payload stores a day-only date as a
  * timestamp — noon UTC from its date picker — so reading it in Amsterdam gives the day Jana
