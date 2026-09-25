@@ -10,7 +10,6 @@ import {
 } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { EnquirySent } from '@/components/enquiry/EnquirySent'
 import type { Receipt } from '@/domain/submit-enquiry'
 import type { Allergen, Category, Filling, Item, LeadTime, Media, Sponge } from '@/payload-types'
 
@@ -171,7 +170,14 @@ const askButtons = () => screen.getAllByRole('button', { name: 'Ask Jana for thi
 const openSheet = (button = askButtons()[0]!) => {
   fireEvent.click(button)
 
-  return screen.getByRole('dialog', { name: 'Send an enquiry' })
+  return screen.getByRole('dialog')
+}
+
+/** Next, in the sheet's pinned foot. */
+const pressNext = async () => {
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+  })
 }
 
 /** A named radio group's options in the sheet, as the values they send. */
@@ -430,24 +436,33 @@ describe('ItemPage — structured data', () => {
 })
 
 describe('ItemPage — the Enquiry sheet', () => {
-  it('opens the Enquiry form in a sheet from Ask Jana for this cake', () => {
+  it('opens the stepped Enquiry from Ask Jana for this cake, on Size', () => {
     renderPage()
 
     expect(screen.queryByRole('dialog')).toBeNull()
 
-    const sheet = openSheet()
+    const sheet = within(openSheet())
 
-    expect(within(sheet).getByRole('group', { name: 'Size' })).toBeTruthy()
-    expect(within(sheet).getByRole('button', { name: 'Send enquiry' })).toBeTruthy()
+    expect(sheet.getByRole('heading', { name: 'Choose a size' })).toBeTruthy()
+    expect(sheet.getByText('Burnt Basque Cheesecake')).toBeTruthy()
+    expect(sheet.getByRole('group', { name: 'Size' })).toBeTruthy()
+    expect(
+      within(sheet.getByRole('list', { name: 'Steps' }))
+        .getAllByRole('listitem')
+        .map((step) => step.textContent),
+    ).toEqual(['Size', 'Flavour', 'Date', 'You'])
   })
 
-  it('offers every Size, and the Item’s own Sponges and every Filling, with Surcharges', () => {
+  it('offers every Size, and the Item’s own Sponges and every Filling, with Surcharges', async () => {
     renderPage()
 
     const sheet = openSheet()
 
     // The fixture's Sizes carry no row ids, so they are keyed by position.
     expect(optionsIn(sheet, 'Size')).toEqual(['0', '1'])
+
+    await pressNext()
+
     expect(optionsIn(sheet, 'Sponge')).toEqual(['1', '3'])
     expect(optionsIn(sheet, 'Filling')).toEqual(['1', '2', '3'])
 
@@ -456,23 +471,31 @@ describe('ItemPage — the Enquiry sheet', () => {
     expect(fillingGroup.getByText('+€3')).toBeTruthy()
   })
 
-  it('starts on the first of each choice, and the Estimate follows a Surcharge', () => {
+  it('starts on the first of each choice, and the pinned Estimate follows them', async () => {
     renderPage()
 
     const sheet = within(openSheet())
+    const estimate = () => within(sheet.getByRole('region', { name: /Estimate/ }))
 
     expect((sheet.getByLabelText('Small') as HTMLInputElement).checked).toBe(true)
+    expect(estimate().getByText('€45')).toBeTruthy()
+
+    fireEvent.click(sheet.getByRole('button', { name: 'One more' }))
+    expect(estimate().getByText('Small × 2')).toBeTruthy()
+    expect(estimate().getByText('€90')).toBeTruthy()
+
+    await pressNext()
+
     expect((sheet.getByLabelText('Chocolate') as HTMLInputElement).checked).toBe(true)
     expect((sheet.getByLabelText('Cream Cheese') as HTMLInputElement).checked).toBe(true)
 
     fireEvent.click(sheet.getByLabelText('Ganache'))
 
-    const estimate = within(sheet.getByRole('region', { name: /Estimate/ }))
-    expect(estimate.getByText('Ganache × 1')).toBeTruthy()
-    expect(estimate.getByText('€48')).toBeTruthy()
+    expect(estimate().getByText('Ganache × 2')).toBeTruthy()
+    expect(estimate().getByText('€96')).toBeTruthy()
   })
 
-  it('starts a single Size chosen, and offers no choices on an Item sold as described', () => {
+  it('arrives on a single Size already chosen, and skips Flavour on an Item sold as described', async () => {
     renderPage({
       item: {
         ...cheesecake,
@@ -481,22 +504,35 @@ describe('ItemPage — the Enquiry sheet', () => {
       },
     })
 
-    const sheet = openSheet()
+    const sheet = within(openSheet())
 
-    expect((within(sheet).getByLabelText('Whole') as HTMLInputElement).checked).toBe(true)
-    expect(within(sheet).queryByRole('group', { name: 'Sponge' })).toBeNull()
-    expect(within(sheet).queryByRole('group', { name: 'Filling' })).toBeNull()
+    expect(sheet.getByRole('heading', { name: 'How many?' })).toBeTruthy()
+    expect((sheet.getByLabelText('Whole') as HTMLInputElement).checked).toBe(true)
+
+    await pressNext()
+
+    expect(sheet.getByRole('heading', { name: 'When do you need it?' })).toBeTruthy()
+    expect(sheet.queryByRole('group', { name: 'Sponge' })).toBeNull()
+    expect(sheet.queryByRole('group', { name: 'Filling' })).toBeNull()
   })
 
-  it('holds the Enquiry to Closed until, with Jana’s notice', () => {
+  it('holds the date to Closed until, with Jana’s notice', async () => {
     renderPage({
       closedUntil: { date: '2099-01-04T12:00:00.000Z', notice: 'Away for the winter.' },
     })
 
     const sheet = within(openSheet())
+    await pressNext()
+    await pressNext()
 
     expect(sheet.getByText('Away for the winter.')).toBeTruthy()
     expect(sheet.getByText(/Jana is closed until/)).toBeTruthy()
+    expect(
+      (sheet.getByRole('radio', { name: 'Saturday 3 January 2099' }) as HTMLInputElement).disabled,
+    ).toBe(true)
+    expect(
+      (sheet.getByRole('radio', { name: 'Sunday 4 January 2099' }) as HTMLInputElement).disabled,
+    ).toBe(false)
   })
 
   it('takes focus in, and puts the page behind out of reach while open', async () => {
@@ -537,22 +573,51 @@ describe('ItemPage — the Enquiry sheet', () => {
     await waitFor(() => expect(document.activeElement).toBe(bar))
   })
 
-  it('keeps what was entered when it is closed and opened again', () => {
+  it('keeps the step and everything entered when it is closed and opened again', async () => {
     renderPage()
 
     let sheet = within(openSheet())
     fireEvent.click(sheet.getByLabelText('Large'))
+    await pressNext()
+    await pressNext()
+    fireEvent.click(sheet.getByRole('radio', { name: 'Saturday 26 September' }))
+    await pressNext()
     fireEvent.change(sheet.getByLabelText('Your name'), { target: { value: 'Sanne de Vries' } })
 
     fireEvent.click(sheet.getByRole('button', { name: 'Close' }))
     expect(screen.queryByRole('dialog')).toBeNull()
 
     sheet = within(openSheet())
-    expect((sheet.getByLabelText('Large') as HTMLInputElement).checked).toBe(true)
+    expect(sheet.getByRole('heading', { name: 'Where should Jana reply?' })).toBeTruthy()
     expect((sheet.getByLabelText('Your name') as HTMLInputElement).value).toBe('Sanne de Vries')
+
+    fireEvent.click(sheet.getByRole('button', { name: 'Back' }))
+    fireEvent.click(sheet.getByRole('button', { name: 'Back' }))
+    fireEvent.click(sheet.getByRole('button', { name: 'Back' }))
+    expect((sheet.getByLabelText('Large') as HTMLInputElement).checked).toBe(true)
   })
 
-  it('sends the same Enquiry as before, and keeps the receipt the confirmation shows', async () => {
+  /** Steps through the whole Enquiry to You, as a customer would, and fills it in. */
+  const fillWhole = async (sheet: ReturnType<typeof within>) => {
+    fireEvent.click(sheet.getByLabelText('Large'))
+    fireEvent.click(sheet.getByRole('button', { name: 'One more' }))
+    await pressNext()
+    fireEvent.click(sheet.getByLabelText('Red Velvet'))
+    fireEvent.click(sheet.getByLabelText('Salted Caramel'))
+    await pressNext()
+    fireEvent.click(sheet.getByRole('radio', { name: 'Saturday 26 September' }))
+    await pressNext()
+    fireEvent.change(sheet.getByLabelText('Your name'), { target: { value: 'Sanne de Vries' } })
+    fireEvent.change(sheet.getByLabelText('Email'), { target: { value: 'sanne@example.nl' } })
+  }
+
+  const sendToJana = async (sheet: ReturnType<typeof within>) => {
+    await act(async () => {
+      fireEvent.click(sheet.getByRole('button', { name: 'Send to Jana' }))
+    })
+  }
+
+  it('sends the same Enquiry as before, and confirms in the sheet', async () => {
     const receipt: Receipt = {
       reference: 'K7MQ-3XTP',
       enquiryType: 'item',
@@ -571,23 +636,12 @@ describe('ItemPage — the Enquiry sheet', () => {
       Response.json({ status: 'accepted', receipt }),
     )
     vi.stubGlobal('fetch', fetch)
-    // jsdom cannot navigate to the confirmation page; it says so on the console.
-    vi.spyOn(console, 'error').mockImplementation(() => {})
 
     renderPage()
 
     const sheet = within(openSheet())
-    fireEvent.click(sheet.getByLabelText('Large'))
-    fireEvent.change(sheet.getByLabelText('How many'), { target: { value: '2' } })
-    fireEvent.click(sheet.getByLabelText('Red Velvet'))
-    fireEvent.click(sheet.getByLabelText('Salted Caramel'))
-    fireEvent.change(sheet.getByLabelText(/Pickup date/), { target: { value: '2026-09-26' } })
-    fireEvent.change(sheet.getByLabelText('Your name'), { target: { value: 'Sanne de Vries' } })
-    fireEvent.change(sheet.getByLabelText('Email'), { target: { value: 'sanne@example.nl' } })
-
-    await act(async () => {
-      fireEvent.click(sheet.getByRole('button', { name: 'Send enquiry' }))
-    })
+    await fillWhole(sheet)
+    await sendToJana(sheet)
 
     expect(fetch).toHaveBeenCalledTimes(1)
     const [url, init] = fetch.mock.calls[0]!
@@ -608,9 +662,52 @@ describe('ItemPage — the Enquiry sheet', () => {
       website: '',
     })
 
-    cleanup()
-    render(<EnquirySent locale="en" siteLeadTimeDays={3} contactPath="/contact" />)
+    const sent = within(screen.getByRole('dialog', { name: 'Sent to Jana' }))
+    expect(sent.getByText('Expect her reply within 5 days.')).toBeTruthy()
+    expect(sent.getByText('Reference K7MQ-3XTP')).toBeTruthy()
+    expect(sent.getByText('Saturday 26 September')).toBeTruthy()
+    expect(sent.getByRole('link', { name: 'Back to the cakes' }).getAttribute('href')).toBe(
+      '/cakes',
+    )
+  })
 
-    expect(screen.getByText('Reference K7MQ-3XTP')).toBeTruthy()
+  it('returns to the step that owns a problem the server names', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json(
+          { status: 'invalid', problems: { requestedPickupDate: 'tooSoon' } },
+          { status: 422 },
+        ),
+      ),
+    )
+
+    renderPage()
+
+    const sheet = within(openSheet())
+    await fillWhole(sheet)
+    await sendToJana(sheet)
+
+    expect(sheet.getByRole('heading', { name: 'When do you need it?' })).toBeTruthy()
+    expect(sheet.getByText(/That is too soon/)).toBeTruthy()
+  })
+
+  it('keeps everything entered on a failure on our side, with a direct route to Jana', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Response.json({ status: 'failed' }, { status: 500 })),
+    )
+
+    renderPage()
+
+    const sheet = within(openSheet())
+    await fillWhole(sheet)
+    await sendToJana(sheet)
+
+    expect(sheet.getByRole('alert').textContent).toMatch('The problem is on our side')
+    expect(sheet.getByRole('link', { name: 'Or get in touch directly' }).getAttribute('href')).toBe(
+      '/contact',
+    )
+    expect((sheet.getByLabelText('Email') as HTMLInputElement).value).toBe('sanne@example.nl')
   })
 })

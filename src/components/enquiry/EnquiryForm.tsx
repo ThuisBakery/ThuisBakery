@@ -1,24 +1,22 @@
 'use client'
 
-import { useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useId, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react'
 
-import { CHIP, CHOICE_CARD } from '@/components/site/pressable'
+import { FormSheet } from '@/components/site/FormSheet'
+import { BUTTON, CHIP, CHOICE_CARD } from '@/components/site/pressable'
 import { DICTIONARY } from '@/domain/dictionary'
-import {
-  MAX_QUANTITY,
-  isQuantity,
-  validateEnquiry,
-  type EnquiryField,
-  type ItemOffer,
-} from '@/domain/enquiry'
+import { MAX_QUANTITY, validateEnquiry, type EnquiryField, type ItemOffer } from '@/domain/enquiry'
+import { ITEM_STEP_FIELDS, itemEnquirySteps, type ItemEnquiryStep } from '@/domain/enquiry-steps'
 import { estimate } from '@/domain/estimate'
 import type { StoredLeadTime } from '@/domain/lead-time'
 import { formatEuros, sizeDetail } from '@/domain/menu'
+import { parseCalendarDate } from '@/domain/pickup-date'
 import type { Locale } from '@/domain/routes'
 import { HONEYPOT_FIELD, withPhotoProblem, type Receipt } from '@/domain/submit-enquiry'
 
 import { downscalePhoto } from './downscale-photo'
-import { EstimateSummary } from './EstimateSummary'
+import { EnquiryConfirmation } from './EnquiryConfirmation'
+import { EstimateFigure } from './EstimateSummary'
 import {
   ClosedNotice,
   ContactFields,
@@ -26,19 +24,20 @@ import {
   INPUT,
   LEGEND,
   PhotoField,
-  RequestedPickupDateField,
-  SendFooter,
   postEnquiry,
-  toConfirmation,
   usePhoto,
   useRequestedPickupCalendar,
   useProblems,
   type FieldProps,
   type Submit,
 } from './form-parts'
+import { PickupCalendar } from './PickupCalendar'
+import { StepFooter, StepProgress, useSteps } from './steps'
+import { Stepper } from './Stepper'
 
 type Values = {
   size: string
+  /** A whole number from the stepper, kept as text: the form sends it as it always has. */
   quantity: string
   sponge: string
   filling: string
@@ -50,34 +49,21 @@ type Values = {
   [HONEYPOT_FIELD]: string
 }
 
-/** The fields in the order they appear, which is the order problems are fixed in. */
-const FIELD_ORDER: readonly EnquiryField[] = [
-  'size',
-  'quantity',
-  'sponge',
-  'filling',
-  'requestedPickupDate',
-  'specialRequests',
-  'photo',
-  'name',
-  'email',
-  'phone',
-]
-
 /**
- * The Enquiry form on an Item page: Size, quantity, Sponge and Filling with a running
- * Estimate, a Requested pickup date held to the Lead time and Closed until, Special requests,
- * and how to reach the customer.
+ * The Enquiry on an Item page, as a stepped sheet (ADR-0007): one decision per screen —
+ * Size and how many, then Sponge and Filling when the Item is Configurable, then the
+ * Requested pickup date, then Special requests, the Inspiration photo and how to reach the
+ * customer. The Estimate, Back and Next stay pinned at the foot; Next is **Send to Jana** on
+ * the last step. Once sent, the sheet says so and sums up what was asked.
  *
- * It is the one place the Item page shows its offer and the only place a customer chooses
- * from it. Every Size is printed with its price, a single one included (ADR-0002), and the
- * first Size, Sponge and Filling in Jana's order start chosen, so the Estimate has a figure
- * from the first render.
+ * The first Size, Sponge and Filling in Jana's order start chosen, so the Estimate has a
+ * figure from the first render and a customer with no preference can go straight through.
  *
- * It validates with the same function the route handler does, so the customer is told what
- * is wrong before anything is sent — and the server still decides. Takes the Item's offer as
- * plain data, so a test renders it with no network and no Payload. What it shares with the
- * Estimate-free forms is in `form-parts.tsx`.
+ * It validates with the same function the route handler does, one step at a time, and the
+ * server still decides: a problem it names opens the step that owns the field. What is sent
+ * is the Enquiry the page has always sent. Takes the Item's offer as plain data, so a test
+ * renders it with no network and no Payload. What it shares with the Estimate-free forms is
+ * in `form-parts.tsx`, and what it shares with any stepped sheet is in `steps.tsx`.
  */
 export const EnquiryForm = ({
   locale,
@@ -86,9 +72,12 @@ export const EnquiryForm = ({
   closedUntil,
   closedNotice,
   contactPath,
+  catalogue,
+  open,
+  onOpenChange,
+  returnFocus,
   submit = postEnquiry,
   downscale = downscalePhoto,
-  onSent,
 }: {
   locale: Locale
   offer: ItemOffer
@@ -100,14 +89,20 @@ export const EnquiryForm = ({
   closedNotice: string | null | undefined
   /** Where to get in touch directly when sending fails. */
   contactPath: string
+  /** The catalogue the Item is from: the confirmation's way back. */
+  catalogue: { name: string; path: string }
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  /** The control focus returns to on closing: the one that opened the sheet. */
+  returnFocus: RefObject<HTMLElement | null>
   submit?: Submit
   /** Shrinks a chosen photo before it is sent. Throws when the file is not one. */
   downscale?: (file: File) => Promise<Blob>
-  onSent?: (receipt: Receipt | null) => void
 }) => {
   const words = DICTIONARY[locale].enquiry
   const itemWords = DICTIONARY[locale].item
   const formRef = useRef<HTMLFormElement>(null)
+  const formId = useId()
 
   const [values, setValues] = useState<Values>({
     size: offer.sizes[0]?.id ?? '',
@@ -121,11 +116,10 @@ export const EnquiryForm = ({
     phone: '',
     [HONEYPOT_FIELD]: '',
   })
-  // The quantity the Estimate shows: the last whole number typed, so clearing the field to
-  // retype it does not blank the figure.
-  const [estimateQuantity, setEstimateQuantity] = useState(1)
-  const [status, setStatus] = useState<'idle' | 'sending' | 'failed'>('idle')
+  const [status, setStatus] = useState<'idle' | 'sending' | 'failed' | 'sent'>('idle')
+  const [receipt, setReceipt] = useState<Receipt | null>(null)
 
+  const steps = itemEnquirySteps(offer) as [ItemEnquiryStep, ...ItemEnquiryStep[]]
   const calendar = useRequestedPickupCalendar({ locale, leadTime, closedUntil })
 
   const validate = (current: Values) =>
@@ -141,34 +135,29 @@ export const EnquiryForm = ({
 
   const shown = useProblems({
     locale,
-    order: FIELD_ORDER,
+    order: steps.flatMap((step) => ITEM_STEP_FIELDS[step]),
     own: withPhotoProblem(validate(values), photo.issue) ?? {},
     calendar,
     formRef,
+    datePicked: true,
   })
   const { fieldProps, problemFor } = shown
+
+  const stepper = useSteps({ steps, fields: ITEM_STEP_FIELDS, shown })
 
   const change = (field: keyof Values, value: string) => {
     setValues((current) => ({ ...current, [field]: value }))
     shown.clearServerProblem(field as EnquiryField)
-
-    if (field === 'quantity') {
-      const count = Number(value)
-
-      if (value.trim() !== '' && isQuantity(count)) {
-        setEstimateQuantity(count)
-      }
-    }
   }
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    shown.attempt()
 
-    const checked = withPhotoProblem(validate(values), photo.issue)
+    if (status === 'sending' || photo.reading) {
+      return
+    }
 
-    if (checked) {
-      shown.focusFirst(checked)
+    if (!stepper.next(withPhotoProblem(validate(values), photo.issue))) {
       return
     }
 
@@ -180,148 +169,232 @@ export const EnquiryForm = ({
     )
 
     if (reply.status === 'accepted') {
-      // Stays "sending" while the confirmation page loads, so it cannot be sent twice.
-      ;(onSent ?? toConfirmation(locale))(reply.receipt)
+      setReceipt(reply.receipt)
+      setStatus('sent')
     } else if (reply.status === 'invalid') {
       setStatus('idle')
-      shown.showServerProblems(reply.problems)
+      stepper.showServerProblems(reply.problems)
     } else {
       setStatus('failed')
     }
   }
 
+  const quantity = Number(values.quantity)
   const size = offer.sizes.find((each) => each.id === values.size)
+  const sponge = offer.sponges.find((each) => String(each.id) === values.sponge) ?? null
   const filling = offer.fillings.find((each) => String(each.id) === values.filling) ?? null
-  const figure = size ? estimate({ size, quantity: estimateQuantity, filling }) : null
+  const figure = size ? estimate({ size, quantity, filling }) : null
+
+  if (status === 'sent') {
+    const pickup = parseCalendarDate(values.requestedPickupDate)
+
+    return (
+      <FormSheet
+        open={open}
+        onOpenChange={onOpenChange}
+        title={words.sentToJana}
+        kicker={offer.title}
+        closeLabel={DICTIONARY[locale].close}
+        returnFocus={returnFocus}
+        footer={
+          <a href={catalogue.path} className={`${BUTTON} w-full`}>
+            {words.backTo(catalogue.name)}
+          </a>
+        }
+      >
+        <EnquiryConfirmation
+          locale={locale}
+          email={values.email}
+          replyDays={receipt?.leadTimeDays ?? leadTime?.days ?? null}
+          reference={receipt?.reference ?? null}
+          rows={[
+            { term: DICTIONARY[locale].sent.item, value: offer.title },
+            { term: words.size, value: size ? words.line(size.label, quantity) : null },
+            { term: itemWords.sponge, value: sponge?.name },
+            { term: itemWords.filling, value: filling?.name },
+            {
+              term: DICTIONARY[locale].sent.requestedPickupDate,
+              value: pickup ? calendar.display(pickup) : null,
+            },
+            { term: words.specialRequests, value: values.specialRequests.trim() },
+          ]}
+          estimate={figure}
+          contactPath={contactPath}
+        />
+      </FormSheet>
+    )
+  }
+
+  const { step } = stepper
+  const title =
+    step === 'size' && offer.sizes.length === 1 ? words.howManyTitle : words.steps[step].title
 
   return (
-    <form ref={formRef} noValidate onSubmit={onSubmit} className="relative mt-6 grid gap-8">
-      <ClosedNotice locale={locale} calendar={calendar} notice={closedNotice} />
-
-      <Choice
-        field="size"
-        legend={words.size}
-        stacked
-        options={offer.sizes.map((size) => ({
-          value: size.id,
-          label: size.label,
-          aside: formatEuros(size.price, locale),
-          detail: sizeDetail(size, locale) ?? undefined,
-        }))}
-        value={values.size}
-        onChange={(value) => change('size', value)}
-        fieldProps={fieldProps}
-        problem={problemFor('size')}
-      />
-
-      <div>
-        <label htmlFor="enquiry-quantity" className={LEGEND}>
-          {words.quantity}
-        </label>
-        <input
-          {...fieldProps('quantity')}
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={MAX_QUANTITY}
-          step={1}
-          value={values.quantity}
-          onChange={(event) => change('quantity', event.target.value)}
-          className={`${INPUT} max-w-32`}
+    <FormSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title={title}
+      titleRef={stepper.titleRef}
+      kicker={offer.title}
+      header={
+        <StepProgress
+          label={words.progress}
+          steps={steps}
+          index={stepper.index}
+          names={{
+            size: words.steps.size.name,
+            flavour: words.steps.flavour.name,
+            date: words.steps.date.name,
+            you: words.steps.you.name,
+          }}
         />
-        {problemFor('quantity')}
-      </div>
-
-      {offer.sponges.length > 0 ? (
-        <Choice
-          field="sponge"
-          legend={itemWords.sponge}
-          options={offer.sponges.map(({ id, name }) => ({ value: String(id), label: name }))}
-          value={values.sponge}
-          onChange={(value) => change('sponge', value)}
-          fieldProps={fieldProps}
-          problem={problemFor('sponge')}
+      }
+      closeLabel={DICTIONARY[locale].close}
+      returnFocus={returnFocus}
+      footer={
+        <StepFooter
+          locale={locale}
+          formId={formId}
+          first={stepper.first}
+          last={stepper.last}
+          send={words.sendToJana}
+          status={status}
+          busy={status === 'sending' || photo.reading}
+          contactHref={contactPath}
+          onBack={stepper.back}
+          aside={figure ? <EstimateFigure locale={locale} estimate={figure} /> : null}
         />
-      ) : null}
+      }
+    >
+      <form
+        id={formId}
+        ref={formRef}
+        noValidate
+        onSubmit={onSubmit}
+        className="relative mt-5 grid gap-6"
+      >
+        {step === 'size' ? (
+          <>
+            <p className="leading-relaxed text-ink-muted">{words.intro}</p>
+            <Choice
+              field="size"
+              legend={words.size}
+              stacked
+              options={offer.sizes.map((each) => ({
+                value: each.id,
+                label: each.label,
+                aside: formatEuros(each.price, locale),
+                detail: sizeDetail(each, locale) ?? undefined,
+              }))}
+              value={values.size}
+              onChange={(value) => change('size', value)}
+              fieldProps={fieldProps}
+              problem={problemFor('size')}
+            />
+            <Stepper
+              label={words.quantity}
+              value={quantity}
+              min={1}
+              max={MAX_QUANTITY}
+              onChange={(count) => change('quantity', String(count))}
+              fewer={words.fewer}
+              more={words.more}
+              field={fieldProps('quantity')}
+              problem={problemFor('quantity')}
+            />
+          </>
+        ) : null}
 
-      {offer.fillings.length > 0 ? (
-        <Choice
-          field="filling"
-          legend={itemWords.filling}
-          options={offer.fillings.map(({ id, name, surcharge }) => ({
-            value: String(id),
-            label: name,
-            aside:
-              typeof surcharge === 'number' && surcharge > 0
-                ? `+${formatEuros(surcharge, locale)}`
-                : undefined,
-          }))}
-          value={values.filling}
-          onChange={(value) => change('filling', value)}
-          fieldProps={fieldProps}
-          problem={problemFor('filling')}
+        {step === 'flavour' ? (
+          <>
+            {offer.sponges.length > 0 ? (
+              <Choice
+                field="sponge"
+                legend={itemWords.sponge}
+                options={offer.sponges.map(({ id, name }) => ({ value: String(id), label: name }))}
+                value={values.sponge}
+                onChange={(value) => change('sponge', value)}
+                fieldProps={fieldProps}
+                problem={problemFor('sponge')}
+              />
+            ) : null}
+            {offer.fillings.length > 0 ? (
+              <Choice
+                field="filling"
+                legend={itemWords.filling}
+                options={offer.fillings.map(({ id, name, surcharge }) => ({
+                  value: String(id),
+                  label: name,
+                  aside:
+                    typeof surcharge === 'number' && surcharge > 0
+                      ? `+${formatEuros(surcharge, locale)}`
+                      : undefined,
+                }))}
+                value={values.filling}
+                onChange={(value) => change('filling', value)}
+                fieldProps={fieldProps}
+                problem={problemFor('filling')}
+              />
+            ) : null}
+          </>
+        ) : null}
+
+        {step === 'date' ? (
+          <>
+            <ClosedNotice locale={locale} calendar={calendar} notice={closedNotice} />
+            <PickupCalendar
+              locale={locale}
+              calendar={calendar}
+              value={values.requestedPickupDate}
+              onChange={(value) => change('requestedPickupDate', value)}
+              fieldProps={fieldProps}
+              problem={problemFor('requestedPickupDate')}
+            />
+          </>
+        ) : null}
+
+        {step === 'you' ? (
+          <>
+            <div>
+              <label htmlFor="enquiry-specialRequests" className={LEGEND}>
+                {words.specialRequests}
+              </label>
+              <textarea
+                {...fieldProps('specialRequests', ['enquiry-specialRequests-hint'])}
+                rows={3}
+                value={values.specialRequests}
+                onChange={(event) => change('specialRequests', event.target.value)}
+                className={INPUT}
+              />
+              <p id="enquiry-specialRequests-hint" className="mt-1.5 text-sm text-ink-muted">
+                {words.specialRequestsHint}
+              </p>
+              {problemFor('specialRequests')}
+            </div>
+
+            <PhotoField
+              locale={locale}
+              photo={photo}
+              fieldProps={fieldProps}
+              problem={problemFor('photo')}
+            />
+
+            <ContactFields
+              locale={locale}
+              values={values}
+              onChange={change}
+              fieldProps={fieldProps}
+              problemFor={problemFor}
+            />
+          </>
+        ) : null}
+
+        <Honeypot
+          value={values[HONEYPOT_FIELD]}
+          onChange={(value) => change(HONEYPOT_FIELD, value)}
         />
-      ) : null}
-
-      {figure ? (
-        <EstimateSummary locale={locale} estimate={figure} id="enquiry-estimate" live />
-      ) : null}
-
-      <RequestedPickupDateField
-        locale={locale}
-        calendar={calendar}
-        value={values.requestedPickupDate}
-        onChange={(value) => change('requestedPickupDate', value)}
-        fieldProps={fieldProps}
-        problem={problemFor('requestedPickupDate')}
-      />
-
-      <div>
-        <label htmlFor="enquiry-specialRequests" className={LEGEND}>
-          {words.specialRequests}
-        </label>
-        <textarea
-          {...fieldProps('specialRequests', ['enquiry-specialRequests-hint'])}
-          rows={4}
-          value={values.specialRequests}
-          onChange={(event) => change('specialRequests', event.target.value)}
-          className={INPUT}
-        />
-        <p id="enquiry-specialRequests-hint" className="mt-1.5 text-sm text-ink-muted">
-          {words.specialRequestsHint}
-        </p>
-        {problemFor('specialRequests')}
-      </div>
-
-      <PhotoField
-        locale={locale}
-        photo={photo}
-        fieldProps={fieldProps}
-        problem={problemFor('photo')}
-      />
-
-      <ContactFields
-        locale={locale}
-        values={values}
-        onChange={change}
-        fieldProps={fieldProps}
-        problemFor={problemFor}
-      />
-
-      <Honeypot
-        value={values[HONEYPOT_FIELD]}
-        onChange={(value) => change(HONEYPOT_FIELD, value)}
-      />
-
-      <SendFooter
-        locale={locale}
-        status={status}
-        hasProblems={shown.attempted && Object.keys(shown.problems).length > 0}
-        busy={status === 'sending' || photo.reading}
-        contactHref={contactPath}
-        send={words.send}
-      />
-    </form>
+      </form>
+    </FormSheet>
   )
 }
 

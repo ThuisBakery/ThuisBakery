@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ItemOffer } from '@/domain/enquiry'
@@ -22,6 +22,14 @@ const cheesecake: ItemOffer = {
     { id: 1, name: 'Cream Cheese', surcharge: null },
     { id: 2, name: 'Salted Caramel', surcharge: 2.5 },
   ],
+}
+
+/** Sold as described: no Sponge or Filling to choose. */
+const soldAsDescribed: ItemOffer = {
+  ...cheesecake,
+  configurable: false,
+  sponges: [],
+  fillings: [],
 }
 
 const receipt: Receipt = {
@@ -57,7 +65,6 @@ const renderForm = (overrides: Partial<Parameters<typeof EnquiryForm>[0]> = {}) 
       receipt,
     }),
   )
-  const onSent = vi.fn()
 
   render(
     <EnquiryForm
@@ -67,48 +74,191 @@ const renderForm = (overrides: Partial<Parameters<typeof EnquiryForm>[0]> = {}) 
       closedUntil={null}
       closedNotice={null}
       contactPath="/contact"
+      catalogue={{ name: 'Cakes', path: '/cakes' }}
+      open
+      onOpenChange={() => {}}
+      returnFocus={{ current: null }}
       submit={submit}
-      onSent={onSent}
       {...overrides}
     />,
   )
 
-  return { submit, onSent }
+  return { submit }
 }
+
+/** The sheet, named by the step it is on. */
+const sheetOn = (title: string) => screen.getByRole('dialog', { name: title })
+
+/** The step the progress indicator marks as current, as assistive technology reads it. */
+const currentStep = () =>
+  within(screen.getByRole('list', { name: 'Steps' }))
+    .getAllByRole('listitem')
+    .find((step) => step.getAttribute('aria-current') === 'step')?.textContent
+
+const stepNames = () =>
+  within(screen.getByRole('list', { name: 'Steps' }))
+    .getAllByRole('listitem')
+    .map((step) => step.textContent)
 
 const estimatePanel = () => screen.getByRole('region', { name: /Estimate/ })
 
-/** Which option in a named radio group starts checked. */
+/** Which option in a named radio group is checked. */
 const checkedIn = (group: string) =>
   within(screen.getByRole('group', { name: group }))
     .getAllByRole('radio')
     .filter((radio) => (radio as HTMLInputElement).checked)
     .map((radio) => radio.getAttribute('value'))
 
+const press = (name: string | RegExp) => fireEvent.click(screen.getByRole('button', { name }))
+
+const next = async () => {
+  await act(async () => {
+    press('Next')
+  })
+}
+
+const back = () => press('Back')
+
+const howMany = () =>
+  within(screen.getByRole('group', { name: 'How many' })).getByRole('status').textContent
+
+const day = (name: string) => screen.getByRole('radio', { name }) as HTMLInputElement
+
 const fillIn = (label: RegExp | string, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } })
 
-const fillWhole = () => {
+/** Size, Flavour and Date chosen, arriving on You. */
+const chooseUpToYou = async () => {
   fireEvent.click(screen.getByLabelText('Large'))
-  fillIn('How many', '2')
+  press('One more')
+  await next()
   fireEvent.click(screen.getByLabelText('Red Velvet'))
   fireEvent.click(screen.getByLabelText(/Salted Caramel/))
-  fillIn(/Pickup date/, '2026-09-26')
+  await next()
+  fireEvent.click(day('Saturday 26 September'))
+  await next()
+}
+
+/** The whole Enquiry, on the last step and ready to send. */
+const fillWhole = async () => {
+  await chooseUpToYou()
   fillIn('Your name', 'Sanne de Vries')
   fillIn('Email', 'sanne@example.nl')
 }
 
 const send = async () => {
   await act(async () => {
-    fireEvent.click(screen.getByRole('button', { name: 'Send enquiry' }))
+    press('Send to Jana')
   })
 }
 
+describe('EnquiryForm — the steps', () => {
+  it('steps a Configurable Item through Size, Flavour, Date and You', async () => {
+    renderForm()
+
+    expect(stepNames()).toEqual(['Size', 'Flavour', 'Date', 'You'])
+    expect(sheetOn('Choose a size')).toBeTruthy()
+    expect(currentStep()).toBe('Size')
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull()
+
+    await next()
+    expect(sheetOn('Choose your flavours')).toBeTruthy()
+    expect(currentStep()).toBe('Flavour')
+
+    await next()
+    expect(sheetOn('When do you need it?')).toBeTruthy()
+    expect(currentStep()).toBe('Date')
+    fireEvent.click(day('Saturday 26 September'))
+
+    await next()
+    expect(sheetOn('Where should Jana reply?')).toBeTruthy()
+    expect(currentStep()).toBe('You')
+    expect(screen.queryByRole('button', { name: 'Next' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Send to Jana' })).toBeTruthy()
+  })
+
+  it('names the Item above the step', () => {
+    renderForm()
+
+    expect(within(sheetOn('Choose a size')).getByText('Burnt Basque Cheesecake')).toBeTruthy()
+  })
+
+  it('moves focus to the new step’s title, so it is announced', async () => {
+    renderForm()
+
+    await next()
+
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByRole('heading', { name: 'Choose your flavours' }),
+      ),
+    )
+  })
+
+  it('skips Flavour for an Item that is not Configurable', async () => {
+    renderForm({ offer: soldAsDescribed })
+
+    expect(stepNames()).toEqual(['Size', 'Date', 'You'])
+
+    await next()
+
+    expect(sheetOn('When do you need it?')).toBeTruthy()
+    expect(screen.queryByRole('group', { name: 'Sponge' })).toBeNull()
+    expect(screen.queryByRole('group', { name: 'Filling' })).toBeNull()
+  })
+
+  it('arrives on Size with a single Size already chosen, asking only how many', () => {
+    renderForm({
+      offer: { ...cheesecake, sizes: [{ id: 'whole', label: 'Whole', price: 40 }] },
+    })
+
+    const sizes = within(screen.getByRole('group', { name: 'Size' }))
+
+    expect(sheetOn('How many?')).toBeTruthy()
+    expect(currentStep()).toBe('Size')
+    expect(sizes.getAllByRole('radio')).toHaveLength(1)
+    expect(checkedIn('Size')).toEqual(['whole'])
+    expect(sizes.getByText('€40')).toBeTruthy()
+  })
+
+  it('keeps every choice going Back', async () => {
+    renderForm()
+
+    fireEvent.click(screen.getByLabelText('Large'))
+    press('One more')
+    await next()
+    fireEvent.click(screen.getByLabelText('Red Velvet'))
+    await next()
+    fireEvent.click(day('Saturday 26 September'))
+    await next()
+    fillIn('Your name', 'Sanne de Vries')
+
+    back()
+    expect(sheetOn('When do you need it?')).toBeTruthy()
+    expect(day('Saturday 26 September').checked).toBe(true)
+
+    back()
+    expect(checkedIn('Sponge')).toEqual(['3'])
+
+    back()
+    expect(checkedIn('Size')).toEqual(['large'])
+    expect(howMany()).toBe('2')
+
+    await next()
+    await next()
+    await next()
+    expect((screen.getByLabelText('Your name') as HTMLInputElement).value).toBe('Sanne de Vries')
+  })
+})
+
 describe('EnquiryForm — the choices', () => {
-  it('starts on the first Size, Sponge and Filling, in Jana’s order', () => {
+  it('starts on the first Size, Sponge and Filling, in Jana’s order', async () => {
     renderForm()
 
     expect(checkedIn('Size')).toEqual(['small'])
+
+    await next()
+
     expect(checkedIn('Sponge')).toEqual(['1'])
     expect(checkedIn('Filling')).toEqual(['1'])
   })
@@ -123,28 +273,44 @@ describe('EnquiryForm — the choices', () => {
     expect(sizes.getByText('20 cm · 2 layers · serves 14')).toBeTruthy()
   })
 
-  it('shows an Item’s single Size as already chosen, with its price', () => {
-    renderForm({
-      offer: { ...cheesecake, sizes: [{ id: 'whole', label: 'Whole', price: 40 }] },
-    })
+  it('shows a Filling’s Surcharge on its chip', async () => {
+    renderForm()
 
-    const sizes = within(screen.getByRole('group', { name: 'Size' }))
+    await next()
 
-    expect(sizes.getAllByRole('radio')).toHaveLength(1)
-    expect(checkedIn('Size')).toEqual(['whole'])
-    expect(sizes.getByText('€40')).toBeTruthy()
+    expect(within(screen.getByRole('group', { name: 'Filling' })).getByText('+€2.50')).toBeTruthy()
   })
 })
 
-describe('EnquiryForm — the running Estimate', () => {
-  it('starts from the first Size, one of it, and is labelled provisional', () => {
+describe('EnquiryForm — how many', () => {
+  it('is a stepper from 1, with no field to type in', () => {
+    renderForm()
+
+    expect(howMany()).toBe('1')
+    expect(screen.queryByRole('spinbutton')).toBeNull()
+    expect(screen.queryByRole('textbox')).toBeNull()
+
+    press('One fewer')
+    expect(howMany()).toBe('1')
+
+    press('One more')
+    press('One more')
+    expect(howMany()).toBe('3')
+
+    press('One fewer')
+    expect(howMany()).toBe('2')
+  })
+})
+
+describe('EnquiryForm — the pinned Estimate', () => {
+  it('starts from the first Size, one of it, and is labelled as a provisional Estimate', () => {
     renderForm()
 
     const panel = estimatePanel()
 
     expect(within(panel).getByText('Provisional')).toBeTruthy()
     expect(within(panel).getByText('Small × 1')).toBeTruthy()
-    expect(within(panel).getAllByText('€45')).toHaveLength(2)
+    expect(within(panel).getByText('€45')).toBeTruthy()
   })
 
   it('carries a first Filling’s Surcharge from the start', () => {
@@ -156,20 +322,25 @@ describe('EnquiryForm — the running Estimate', () => {
     expect(within(panel).getByText('€47.50')).toBeTruthy()
   })
 
-  it('follows the Size, the quantity and a surcharging Filling', () => {
+  it('follows the Size, the quantity and a surcharging Filling, on every step', async () => {
     renderForm()
 
     fireEvent.click(screen.getByLabelText('Large'))
-    fillIn('How many', '2')
+    press('One more')
+    expect(within(estimatePanel()).getByText('Large × 2')).toBeTruthy()
+    expect(within(estimatePanel()).getByText('€125')).toBeTruthy()
+
+    await next()
     fireEvent.click(screen.getByLabelText(/Salted Caramel/))
+    expect(within(estimatePanel()).getByText('Salted Caramel × 2')).toBeTruthy()
+    expect(within(estimatePanel()).getByText('€130')).toBeTruthy()
 
-    const panel = estimatePanel()
+    await next()
+    expect(within(estimatePanel()).getByText('€130')).toBeTruthy()
 
-    expect(within(panel).getByText('Large × 2')).toBeTruthy()
-    expect(within(panel).getByText('€125')).toBeTruthy()
-    expect(within(panel).getByText('Salted Caramel × 2')).toBeTruthy()
-    expect(within(panel).getByText('€5')).toBeTruthy()
-    expect(within(panel).getByText('€130')).toBeTruthy()
+    fireEvent.click(day('Saturday 26 September'))
+    await next()
+    expect(within(estimatePanel()).getByText('€130')).toBeTruthy()
   })
 
   it('never calls the figure a price, a total or a quote', () => {
@@ -177,109 +348,104 @@ describe('EnquiryForm — the running Estimate', () => {
 
     expect(estimatePanel().textContent).not.toMatch(/price\b|total|quote/i)
   })
-
-  it('holds the last figure while the quantity is being retyped', () => {
-    renderForm()
-
-    fillIn('How many', '3')
-    fillIn('How many', '')
-
-    expect(within(estimatePanel()).getByText('Small × 3')).toBeTruthy()
-  })
-
-  it('asks for no Sponge or Filling on an Item that is not configurable', () => {
-    renderForm({ offer: { ...cheesecake, configurable: false, sponges: [], fillings: [] } })
-
-    expect(screen.queryByRole('group', { name: 'Sponge' })).toBeNull()
-    expect(screen.queryByRole('group', { name: 'Filling' })).toBeNull()
-  })
 })
 
-describe('EnquiryForm — telling the customer what is wrong', () => {
-  it('names every problem before anything is sent', async () => {
+describe('EnquiryForm — Next checks the step it is on', () => {
+  it('names a missing date, focuses the calendar and stays on the step', async () => {
+    renderForm()
+
+    await next()
+    await next()
+    await next()
+
+    expect(sheetOn('When do you need it?')).toBeTruthy()
+    expect(screen.getByText('Please choose a date.')).toBeTruthy()
+    // The first day that can be chosen: the Lead time blocks the days before it.
+    await waitFor(() => expect(document.activeElement).toBe(day('Thursday 24 September')))
+  })
+
+  it('names every problem on the last step before anything is sent, and focuses the first', async () => {
     const { submit } = renderForm()
 
+    await chooseUpToYou()
     await send()
 
     expect(submit).not.toHaveBeenCalled()
-    expect(screen.getByRole('alert').textContent).toMatch('A few details need another look.')
     expect(screen.getByLabelText('Your name').getAttribute('aria-invalid')).toBe('true')
-    // Name, email and the date are typed; the choices start made, so none is missing.
-    expect(screen.getAllByText('Please fill this in.')).toHaveLength(3)
-    expect(screen.queryByText('Please choose one of the options.')).toBeNull()
+    expect(screen.getAllByText('Please fill this in.')).toHaveLength(2)
+    expect(document.activeElement).toBe(screen.getByLabelText('Your name'))
   })
 
-  it('moves focus to the first field to fix, in the order they appear', async () => {
+  it('says nothing about a step before Next is pressed on it', async () => {
     renderForm()
 
-    fillIn('How many', '0')
-    await send()
+    await chooseUpToYou()
 
-    expect(document.activeElement).toBe(screen.getByLabelText('How many'))
-
-    fillIn('How many', '1')
-    await send()
-
-    // The choices and quantity are made, so the date is the first thing missing.
-    expect(document.activeElement).toBe(screen.getByLabelText(/Pickup date/))
+    expect(screen.queryByText('Please fill this in.')).toBeNull()
   })
+})
 
-  it('asks for a choice the server could not match, as a choice', async () => {
-    renderForm({
-      submit: async () => ({ status: 'invalid', problems: { sponge: 'required' } }),
-    })
-
-    fillWhole()
-    await send()
-
-    expect(screen.getByText('Please choose one of the options.')).toBeTruthy()
-    expect(document.activeElement).toBe(screen.getByLabelText('Red Velvet'))
-  })
-
-  it('says how early a pickup can be, and rejects a date inside the Lead time', () => {
+describe('EnquiryForm — the Requested pickup date', () => {
+  it('blocks the days inside the Lead time, and says how early a pickup can be', async () => {
     renderForm()
+
+    await next()
+    await next()
 
     expect(screen.getByText('The earliest you can ask for is Thursday 24 September.')).toBeTruthy()
-    expect(screen.getByLabelText(/Pickup date/).getAttribute('min')).toBe('2026-09-24')
-
-    fillIn(/Pickup date/, '2026-09-23')
-    fireEvent.blur(screen.getByLabelText(/Pickup date/))
-
-    expect(
-      screen.getByText('That is too soon. The earliest is Thursday 24 September.'),
-    ).toBeTruthy()
+    expect(day('Monday 21 September').disabled).toBe(true)
+    expect(day('Wednesday 23 September').disabled).toBe(true)
+    expect(day('Thursday 24 September').disabled).toBe(false)
   })
 
-  it('shows the Closed until notice, and rejects a date before it', () => {
+  it('shows the Closed until notice, and blocks the days before it', async () => {
     renderForm({
       closedUntil: '2026-10-05T12:00:00.000Z',
       closedNotice: 'On holiday — back soon!',
     })
 
+    await next()
+    await next()
+
     expect(screen.getByText('On holiday — back soon!')).toBeTruthy()
     expect(screen.getByText('Jana is closed until Monday 5 October.')).toBeTruthy()
-    expect(screen.getByLabelText(/Pickup date/).getAttribute('min')).toBe('2026-10-05')
-
-    fillIn(/Pickup date/, '2026-10-01')
-    fireEvent.blur(screen.getByLabelText(/Pickup date/))
-
-    expect(
-      screen.getByText('Jana is closed until Monday 5 October. Choose that day or later.'),
-    ).toBeTruthy()
+    // It opens on the month of the earliest day that can be asked for.
+    expect(day('Sunday 4 October').disabled).toBe(true)
+    expect(day('Monday 5 October').disabled).toBe(false)
   })
 
-  it('shows no notice once the Closed until date has passed', () => {
+  it('pages between months, never back before the earliest', async () => {
+    renderForm()
+
+    await next()
+    await next()
+
+    press('Previous month')
+    expect(screen.getByText('September 2026')).toBeTruthy()
+
+    press('Next month')
+    expect(screen.getByText('October 2026')).toBeTruthy()
+    fireEvent.click(day('Friday 2 October'))
+
+    press('Previous month')
+    expect(screen.getByText('September 2026')).toBeTruthy()
+  })
+
+  it('shows no notice once the Closed until date has passed', async () => {
     renderForm({ closedUntil: '2026-09-01T12:00:00.000Z', closedNotice: 'On holiday' })
+
+    await next()
+    await next()
 
     expect(screen.queryByText('On holiday')).toBeNull()
   })
 })
 
 describe('EnquiryForm — sending', () => {
-  it('sends the Enquiry for this Item, in this locale, and hands on the receipt', async () => {
-    const { submit, onSent } = renderForm()
+  it('sends the Enquiry for this Item, in this locale, as it always has', async () => {
+    const { submit } = renderForm()
 
-    fillWhole()
+    await fillWhole()
     fillIn('Special requests', 'Happy 40th, Marco')
     await send()
 
@@ -301,33 +467,106 @@ describe('EnquiryForm — sending', () => {
       },
       null,
     )
-    expect(onSent).toHaveBeenCalledWith(receipt)
   })
 
-  it('shows the problems the server names', async () => {
-    const { onSent } = renderForm({
+  it('confirms in the sheet, with when to expect a reply and a summary of what was asked', async () => {
+    renderForm()
+
+    await fillWhole()
+    await send()
+
+    const sheet = within(sheetOn('Sent to Jana'))
+
+    expect(screen.queryByRole('list', { name: 'Steps' })).toBeNull()
+    expect(sheet.getByText('Expect her reply within 3 days.')).toBeTruthy()
+    expect(sheet.getByText(/by email to sanne@example.nl/)).toBeTruthy()
+    expect(sheet.getByText('Reference K7MQ-3XTP')).toBeTruthy()
+
+    const summary = within(sheet.getByRole('region', { name: 'What you sent' }))
+    expect(summary.getByText('Burnt Basque Cheesecake')).toBeTruthy()
+    expect(summary.getByText('Large × 2')).toBeTruthy()
+    expect(summary.getByText('Red Velvet')).toBeTruthy()
+    expect(summary.getByText('Salted Caramel')).toBeTruthy()
+    expect(summary.getByText('Saturday 26 September')).toBeTruthy()
+
+    const estimate = within(sheet.getByRole('region', { name: /Estimate/ }))
+    expect(estimate.getByText('Provisional')).toBeTruthy()
+    expect(estimate.getAllByText('€130')).toHaveLength(1)
+
+    expect(sheet.getByRole('link', { name: 'Back to the cakes' }).getAttribute('href')).toBe(
+      '/cakes',
+    )
+  })
+
+  it('confirms from what was chosen even when no receipt comes back', async () => {
+    renderForm({ submit: async () => ({ status: 'accepted', receipt: null }) })
+
+    await fillWhole()
+    await send()
+
+    const sheet = within(sheetOn('Sent to Jana'))
+    expect(sheet.getByText('Expect her reply within 3 days.')).toBeTruthy()
+    expect(
+      within(sheet.getByRole('region', { name: 'What you sent' })).getByText('Large × 2'),
+    ).toBeTruthy()
+    expect(sheet.queryByText(/Reference/)).toBeNull()
+  })
+
+  it('opens the step that owns a problem the server names, with its message', async () => {
+    renderForm({
+      submit: async () => ({ status: 'invalid', problems: { requestedPickupDate: 'tooSoon' } }),
+    })
+
+    await fillWhole()
+    await send()
+
+    expect(sheetOn('When do you need it?')).toBeTruthy()
+    expect(
+      screen.getByText('That is too soon. The earliest is Thursday 24 September.'),
+    ).toBeTruthy()
+    await waitFor(() => expect(document.activeElement).toBe(day('Saturday 26 September')))
+  })
+
+  it('asks again for a choice the server could not match, as a choice', async () => {
+    renderForm({
+      submit: async () => ({ status: 'invalid', problems: { sponge: 'required' } }),
+    })
+
+    await fillWhole()
+    await send()
+
+    expect(sheetOn('Choose your flavours')).toBeTruthy()
+    expect(screen.getByText('Please choose one of the options.')).toBeTruthy()
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText('Red Velvet')))
+  })
+
+  it('shows a problem the server names on the step it is on', async () => {
+    renderForm({
       submit: async () => ({ status: 'invalid', problems: { email: 'invalidEmail' } }),
     })
 
-    fillWhole()
+    await fillWhole()
     await send()
 
-    expect(onSent).not.toHaveBeenCalled()
+    expect(sheetOn('Where should Jana reply?')).toBeTruthy()
     expect(screen.getByText('This does not look like an email address.')).toBeTruthy()
   })
 
   it('owns a failure on our side, keeps what was typed, and offers a direct route', async () => {
-    const { onSent } = renderForm({ submit: async () => ({ status: 'failed' }) })
+    renderForm({ submit: async () => ({ status: 'failed' }) })
 
-    fillWhole()
+    await fillWhole()
     await send()
 
-    expect(onSent).not.toHaveBeenCalled()
+    expect(sheetOn('Where should Jana reply?')).toBeTruthy()
     expect(screen.getByRole('alert').textContent).toMatch('The problem is on our side')
     expect(
       screen.getByRole('link', { name: 'Or get in touch directly' }).getAttribute('href'),
     ).toBe('/contact')
     expect((screen.getByLabelText('Your name') as HTMLInputElement).value).toBe('Sanne de Vries')
+
+    back()
+    expect(day('Saturday 26 September').checked).toBe(true)
   })
 
   it('carries a honeypot no person sees', () => {
@@ -354,7 +593,7 @@ describe('EnquiryForm — the Inspiration photo', () => {
     const downscale = vi.fn(async () => downscaled)
     const { submit } = renderForm({ downscale })
 
-    fillWhole()
+    await fillWhole()
     await attach(photoFile)
     await send()
 
@@ -369,7 +608,7 @@ describe('EnquiryForm — the Inspiration photo', () => {
       },
     })
 
-    fillWhole()
+    await fillWhole()
     await attach(photoFile)
 
     expect(
@@ -386,7 +625,7 @@ describe('EnquiryForm — the Inspiration photo', () => {
       downscale: async () => new Blob([new Uint8Array(5 * 1024 * 1024 + 1)]),
     })
 
-    fillWhole()
+    await fillWhole()
     await attach(photoFile)
     await send()
 
@@ -397,9 +636,9 @@ describe('EnquiryForm — the Inspiration photo', () => {
   it('lets a chosen photo be taken off again', async () => {
     const { submit } = renderForm({ downscale: async () => downscaled })
 
-    fillWhole()
+    await fillWhole()
     await attach(photoFile)
-    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }))
+    press('Remove photo')
     await send()
 
     expect(submit).toHaveBeenCalledWith(expect.anything(), null)
@@ -411,7 +650,7 @@ describe('EnquiryForm — the Inspiration photo', () => {
       submit: async () => ({ status: 'invalid', problems: { photo: 'notAnImage' } }),
     })
 
-    fillWhole()
+    await fillWhole()
     await attach(photoFile)
     await send()
 
