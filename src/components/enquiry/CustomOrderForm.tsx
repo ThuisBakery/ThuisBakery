@@ -6,7 +6,7 @@ import { FormSheet } from '@/components/site/FormSheet'
 import { BUTTON, CHIP } from '@/components/site/pressable'
 import {
   CUSTOM_ORDER_OCCASIONS,
-  PEOPLE,
+  HEAD_COUNT,
   customOrderMessage,
   isCustomOrderOccasion,
   type CustomOrderOccasion,
@@ -107,7 +107,7 @@ export const CustomOrderForm = ({
   const [values, setValues] = useState<Values>({
     occasion: '',
     idea: '',
-    people: PEOPLE.start,
+    people: HEAD_COUNT.start,
     requestedPickupDate: '',
     name: '',
     email: '',
@@ -120,13 +120,16 @@ export const CustomOrderForm = ({
   const calendar = useRequestedPickupCalendar({ locale, leadTime, closedUntil })
 
   /** The Enquiry as it is sent: the Occasion and head count folded into the message. */
-  const body = ({ occasion, idea, people, ...rest }: Values) => ({
+  const toEnquiry = ({ occasion, idea, people, ...rest }: Values) => ({
     message: customOrderMessage(locale, { occasion, people, idea }),
     ...rest,
   })
 
   const validate = (current: Values) =>
-    validateEnquiry({ enquiryType: 'custom-order', ...body(current) }, { pickup: calendar.rules })
+    validateEnquiry(
+      { enquiryType: 'custom-order', ...toEnquiry(current) },
+      { pickup: calendar.rules },
+    )
 
   const photo = usePhoto({
     downscale,
@@ -171,7 +174,7 @@ export const CustomOrderForm = ({
     setStatus('sending')
 
     const reply = await submit(
-      { enquiryType: 'custom-order', locale, ...body(values) },
+      { enquiryType: 'custom-order', locale, ...toEnquiry(values) },
       photo.photo,
     )
 
@@ -334,20 +337,17 @@ export const CustomOrderForm = ({
               <Stepper
                 label={customWords.people}
                 value={values.people}
-                min={PEOPLE.min}
-                max={PEOPLE.max}
-                step={PEOPLE.step}
+                min={HEAD_COUNT.min}
+                max={HEAD_COUNT.max}
+                step={HEAD_COUNT.step}
                 onChange={(people) => setValues((current) => ({ ...current, people }))}
                 fewer={customWords.fewerPeople}
                 more={customWords.morePeople}
                 field={{
                   id: 'custom-order-people',
                   name: 'people',
-                  'aria-invalid': undefined,
                   'aria-describedby': 'custom-order-people-hint',
-                  onBlur: () => {},
                 }}
-                problem={null}
               />
               <p id="custom-order-people-hint" className="mt-1.5 text-sm text-ink-muted">
                 {customWords.peopleHint}

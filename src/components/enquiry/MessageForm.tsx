@@ -3,10 +3,15 @@
 import { useRef, useState, type FormEvent } from 'react'
 
 import { DICTIONARY } from '@/domain/dictionary'
-import { validateEnquiry, type EnquiryField } from '@/domain/enquiry'
+import {
+  validateEnquiry,
+  type EnquiryField,
+  type EnquiryProblems,
+  type EnquiryValidation,
+} from '@/domain/enquiry'
 import { amsterdamArrival } from '@/domain/pickup-date'
 import type { Locale } from '@/domain/routes'
-import { HONEYPOT_FIELD, withPhotoProblem, type Receipt } from '@/domain/submit-enquiry'
+import { HONEYPOT_FIELD, type Receipt } from '@/domain/submit-enquiry'
 
 import {
   ContactFields,
@@ -27,6 +32,9 @@ type Values = {
   phone: string
   [HONEYPOT_FIELD]: string
 }
+
+const problemsIn = (validation: EnquiryValidation): EnquiryProblems =>
+  validation.ok ? {} : validation.problems
 
 /** The fields in the order they appear, which is the order problems are fixed in. */
 const FIELD_ORDER: readonly EnquiryField[] = ['message', 'name', 'email', 'phone']
@@ -66,14 +74,14 @@ export const MessageForm = ({
   const validate = (current: Values) =>
     validateEnquiry(
       { enquiryType: 'contact', ...current },
-      // A question carries no date, so the pickup rules are never applied.
+      // Validation takes pickup rules for every Enquiry; a question carries no date to hold to them.
       { pickup: { arrival: amsterdamArrival(new Date()), leadTime: null, closedUntil: null } },
     )
 
   const shown = useProblems({
     locale,
     order: FIELD_ORDER,
-    own: withPhotoProblem(validate(values), null) ?? {},
+    own: problemsIn(validate(values)),
     calendar: null,
     formRef,
   })
@@ -88,9 +96,9 @@ export const MessageForm = ({
     event.preventDefault()
     shown.attempt()
 
-    const checked = withPhotoProblem(validate(values), null)
+    const checked = problemsIn(validate(values))
 
-    if (checked) {
+    if (Object.keys(checked).length > 0) {
       shown.focusFirst(checked)
       return
     }

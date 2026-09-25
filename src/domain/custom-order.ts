@@ -25,7 +25,7 @@ export const isCustomOrderOccasion = (value: string): value is CustomOrderOccasi
   (CUSTOM_ORDER_OCCASIONS as readonly string[]).includes(value)
 
 /** Roughly how many people: from a small party to a wedding, two at a time. */
-export const PEOPLE = { min: 2, max: 150, step: 2, start: 12 } as const
+export const HEAD_COUNT = { min: 2, max: 150, step: 2, start: 12 } as const
 
 /**
  * The message a Custom order sends: the Occasion, if one was chosen, and the head count, each

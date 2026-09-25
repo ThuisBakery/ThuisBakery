@@ -15,7 +15,8 @@ const START_ID = 'imagine'
  * The page is Jana's words, and at the top, beside them, the way into the Custom order sheet
  * (ADR-0007) — the same stepped sheet every **Something custom** control opens, hosted by the
  * frontend layout, which holds its Requested pickup date to the site's Lead time and Closed
- * until. The way in is a link to this page, so it is still a link where scripts do not run.
+ * until. Like every Something custom control it is a link to this page, which opens the sheet
+ * in place once scripts run; the sheet needs them to send, as the inline form it replaced did.
  */
 export const CustomOrderPage = ({
   locale,

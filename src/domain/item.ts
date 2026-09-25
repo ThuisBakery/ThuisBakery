@@ -1,4 +1,4 @@
-import type { StoredLeadTime } from './lead-time'
+import { storedLeadTime, type StoredLeadTime } from './lead-time'
 import { LOCALES, itemPath, type Catalogue, type Locale } from './routes'
 
 /**
@@ -162,13 +162,13 @@ export const itemLeadTime = (
   site: Partial<StoredLeadTime>,
   override: Partial<Record<keyof StoredLeadTime, unknown>> | null | undefined,
 ): StoredLeadTime | null => {
-  for (const { days, timeOfDay } of [override ?? {}, site]) {
-    if (typeof days === 'number' && typeof timeOfDay === 'string' && timeOfDay !== '') {
-      return { days, timeOfDay }
-    }
-  }
+  const whole = (candidate: Partial<Record<keyof StoredLeadTime, unknown>>) =>
+    storedLeadTime({
+      days: typeof candidate.days === 'number' ? candidate.days : null,
+      timeOfDay: typeof candidate.timeOfDay === 'string' ? candidate.timeOfDay : null,
+    })
 
-  return null
+  return whole(override ?? {}) ?? whole(site)
 }
 
 /**

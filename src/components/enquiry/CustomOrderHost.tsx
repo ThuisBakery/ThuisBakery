@@ -46,7 +46,7 @@ export const CustomOrderHost = ({
   children: ReactNode
 }) => {
   const [open, setOpen] = useState(false)
-  // Which Custom order the sheet holds: a new one once the last was sent and closed.
+  // Which Custom order the sheet holds, as its key: a fresh one once the last was sent.
   const [round, setRound] = useState(0)
   const sent = useRef(false)
   const returnFocus = useRef<HTMLElement | null>(null)
